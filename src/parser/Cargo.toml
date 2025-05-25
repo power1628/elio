@@ -1,0 +1,7 @@
+[package]
+name = "mojito_parser"
+version = {workspace = true}
+edition = {workspace = true}
+
+[dependencies]
+peg = "0.8.5"
