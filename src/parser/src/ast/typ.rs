@@ -1,28 +1,36 @@
 use super::Expr;
+use derive_more::Display;
 
 // statement attributes
-#[derive(Debug)]
+#[derive(Debug, Display)]
+#[display("{}: {}", name, value)]
 pub struct OptionKV {
     pub name: String,
     pub value: Box<Expr>,
 }
 
-#[derive(Debug)]
-pub struct PropertyDef {
+#[derive(Debug, Display)]
+#[display("{} {} {}", name, typ, if *nullable { "NULL" } else { "NOT NULL" })]
+pub struct ColumnDef {
     pub name: String,
-    pub typ: String,    // data type
+    pub typ: DataType,  // data type
     pub nullable: bool, // whether the column can be null
-    pub attributes: Vec<OptionKV>,
 }
 
-#[derive(Debug)]
-pub struct ConstraintSpec {
-    pub kind: ConstraintKind,
-    pub columns: Vec<String>,
+#[derive(Debug, Display)]
+#[display("PRIMARY KEY ({})", columns.join(", "))]
+pub enum ConstraintSpec {
+    PrimaryKey { columns: Vec<String> },
 }
 
-#[derive(Debug)]
-pub enum ConstraintKind {
-    Unique,
-    PrimaryKey,
+#[derive(Debug, Display)]
+pub enum DataType {
+    #[display("INTEGER")]
+    Integer,
+    #[display("FLOAT")]
+    Float,
+    #[display("STRING")]
+    String,
+    #[display("BOOLEAN")]
+    Boolean,
 }

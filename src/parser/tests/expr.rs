@@ -1,4 +1,3 @@
-use mojito_parser::ast::*;
 use mojito_parser::parser::cypher_parser;
 
 #[test]

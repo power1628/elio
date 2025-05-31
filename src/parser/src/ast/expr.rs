@@ -1,4 +1,7 @@
-#[derive(Debug)]
+use derive_more::Display;
+
+#[derive(Debug, Display)]
+#[display("{}", _0)]
 pub enum Expr {
     Literal(Literal),
 }
@@ -21,11 +24,16 @@ impl Expr {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Display)]
 pub enum Literal {
+    #[display("{}", _0)]
     Boolean(bool),
+    #[display("{}", _0)]
     Integer(String), // un-parsed integer
-    Float(String),   // un-parsed float
+    #[display("{}", _0)]
+    Float(String), // un-parsed float
+    #[display("{}", _0)]
     String(String),
+    #[display("NULL")]
     Null,
 }

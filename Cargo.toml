@@ -13,4 +13,5 @@ edition = "2021"
 
 [workspace.dependencies]
 mojito_parser = { path = "src/parser" }
-
+# other dependencies can be added here
+either = "1.15.0"
