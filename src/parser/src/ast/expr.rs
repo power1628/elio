@@ -4,6 +4,26 @@ use derive_more::Display;
 #[display("{}", _0)]
 pub enum Expr {
     Literal(Literal),
+    Varaible(String),
+    Parameter(String),
+    PropertyKey(String),
+    PropertyAccess {
+        variable: Box<Expr>,
+        key: Box<Expr>,
+    },
+    Unary {
+        op: UnaryOperator,
+        oprand: Box<Expr>,
+    },
+    Binary {
+        left: Box<Expr>,
+        op: BinaryOperator,
+        right: Box<Expr>,
+    },
+    FunctionCall {
+        name: String,
+        args: Vec<Expr>,
+    },
 }
 
 impl Expr {
@@ -36,4 +56,22 @@ pub enum Literal {
     String(String),
     #[display("NULL")]
     Null,
+}
+
+pub enum UnaryOperator {
+    UnaryAdd,      // + 10
+    UnarySubtract, // - 10
+    Not,           // ! true
+}
+
+pub enum BinaryOperator {
+    // numeric
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Modulo,
+    Pow,
+    // list
+    Concat,
 }
