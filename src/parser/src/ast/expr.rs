@@ -24,6 +24,11 @@ pub enum Expr {
         name: String,
         args: Vec<Expr>,
     },
+    Case {
+        expr: Option<Box<Expr>>,
+        alternatives: Vec<(Expr, Expr)>,
+        default: Option<Box<Expr>>,
+    },
 }
 
 impl Expr {
@@ -56,22 +61,75 @@ pub enum Literal {
     String(String),
     #[display("NULL")]
     Null,
+    #[display("INF")]
+    Inf,
 }
 
-pub enum UnaryOperator {
-    UnaryAdd,      // + 10
-    UnarySubtract, // - 10
-    Not,           // ! true
+macro_rules! unary_operator {
+    ($($variant:ident => $sym:expr),* $(,)?) => {
+        #[derive(Debug)]
+        pub enum UnaryOperator {
+            $($variant),*
+        }
+        impl std::fmt::Display for UnaryOperator {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                match self {
+                    $(Self::$variant => write!(f, $sym),)*
+                }
+            }
+        }
+    };
 }
 
-pub enum BinaryOperator {
-    // numeric
-    Add,
-    Subtract,
-    Multiply,
-    Divide,
-    Modulo,
-    Pow,
+macro_rules! binary_operator {
+    ($($variant:ident => $sym:expr),* $(,)?) => {
+        #[derive(Debug)]
+        pub enum BinaryOperator {
+            $($variant),*
+        }
+
+        impl std::fmt::Display for BinaryOperator {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                match self {
+                    $(Self::$variant => write!(f, $sym),)*
+                }
+            }
+        }
+    };
+}
+
+unary_operator! {
+    UnaryAdd => "+",
+    UnarySubtract => "-",
+    Not => "NOT",
+    IsNull => "IS NULL",
+    IsNotNull => "IS NOT NULL",
+}
+
+binary_operator! {
+    // artimetic
+    Add => "+",
+    Subtract => "-",
+    Multiply => "*",
+    Divide => "/",
+    Modulo => "%",
+    Pow => "^",
     // list
-    Concat,
+    Concat => "||",
+    // logical
+    Or => "OR",
+    Xor => "XOR",
+    And => "AND",
+    // comparison
+    Eq => "=",
+    NotEq => "<>",
+    Gt => ">",
+    GtEq => ">=",
+    Lt => "<",
+    LtEq => "<=",
+    // comparasion2
+    StartsWith => "STARTS WITH",
+    EndsWith => "ENDS WITH",
+    Contains => "CONTAINS",
+    In => "IN",
 }
