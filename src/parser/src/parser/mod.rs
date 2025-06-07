@@ -29,7 +29,7 @@ peg::parser! {
     /// CREATE VERTEX TYPE IF NOT EXISTS name (column1 type1 nullable, column2 type2 nullable, PRIMARY KEY (column1))
     /// WITH (option1: value1, option2: value2)
     pub rule create_vertex_type() -> Statement
-        = CREATE() _ VERTEX() _ TYPE() _ not_exists:if_not_exists() _ name:ident() _ "(" _ column_or_constraint:(column_def_or_constraint() ** ",") _ ")"  _ options:with_attribute_list()? {
+        = CREATE() _ VERTEX() _ TYPE() _ not_exists:if_not_exists() _ name:ident() _ "(" _ column_or_constraint:(column_def_or_constraint() ** comma_separator()) _ ")"  _ options:with_attribute_list()? {
             let (columns, constraints) = {
                 let mut columns = vec![];
                 let mut constraints = vec![];
@@ -55,7 +55,7 @@ peg::parser! {
     /// CREATE EDGE TYPE IF NOT EXISTS name (FROM from_vertex_type, TO to_vertex_type, column1 type1 nullable, column2 type2 nullable, PRIMARY KEY (column1))
     /// WITH (option1: value1, option2: value2)
     pub rule create_edge_type() -> Statement
-        = CREATE() _ EDGE() _ TYPE() _ not_exists:if_not_exists() _ name:ident() _ "(" _ FROM() _ from:ident() _ "," _ TO() _ to:ident() _ "," _ column_or_constraint:(column_def_or_constraint() ** ",") _ ")" _  options:with_attribute_list()? {
+        = CREATE() _ EDGE() _ TYPE() _ not_exists:if_not_exists() _ name:ident() _ "(" _ FROM() _ from:ident() _ "," _ TO() _ to:ident() _ "," _ column_or_constraint:(column_def_or_constraint() ** comma_separator()) _ ")" _  options:with_attribute_list()? {
             let (columns, constraints) = {
                 let mut columns = vec![];
                 let mut constraints = vec![];
@@ -91,7 +91,7 @@ peg::parser! {
         / constraint:constraint_spec() { Either::Right(constraint) }
 
     rule column_def() -> ColumnDef
-        = _ name:ident() _ typ:data_type() nullable:column_nullable()? _ {
+        = name:ident() _ typ:data_type() nullable:column_nullable()?  {
             ColumnDef {
                 name: name.to_string(),
                 typ,
@@ -100,10 +100,10 @@ peg::parser! {
         }
 
     rule constraint_spec() -> ConstraintSpec
-        = _ "PRIMARY" _ "KEY" _ "(" _ columns:(ident() ** ",") _ ")" _ {
+        =  "PRIMARY" _ "KEY" _ "(" _ columns:(ident() ** ",") _ ")"  {
             ConstraintSpec::PrimaryKey{columns: columns.into_iter().map(|c| c.to_string()).collect() }
         }
-        / _ "PRIMARY" _ "KEY" _ ident:ident() _ {
+        /  "PRIMARY" _ "KEY" _ ident:ident()  {
             ConstraintSpec::PrimaryKey{columns: vec![ident.to_string()] }
         }
 
@@ -116,15 +116,101 @@ peg::parser! {
     /// ---------------------
     pub rule expr() -> Expr
         = precedence! {
-            l:literal() { l }
+            left:(@) _ OR() _ right:@ {Expr::new_binary(left, BinaryOperator::Or, right)}
+            --
+            left:(@) _ XOR() _ right:@ {Expr::new_binary(left, BinaryOperator::Xor, right)}
+            --
+            left:(@) _ AND() _ right:@ {Expr::new_binary(left, BinaryOperator::And, right)}
+            --
+                       NOT() _ right:@ {Expr::new_unary(UnaryOperator::Not, right)}
+            --
+            left:(@) _ op:$("=" / "!=" / "<>" / "<" / "<=" / ">" / ">=") _ right:@ {
+                let operator = match op {
+                    "=" => BinaryOperator::Eq,
+                    "!="  | "<>" => BinaryOperator::NotEq,
+                    "<" => BinaryOperator::Lt,
+                    "<=" => BinaryOperator::LtEq,
+                    ">" => BinaryOperator::Gt,
+                    ">=" => BinaryOperator::GtEq,
+                    _ => unreachable!(),
+                };
+                Expr::new_binary(left, operator, right)
+            }
+            --
+            left:(@) _ op:null_predicate() _ right:@ {
+                Expr::new_unary(op, right)
+            }
+            --
+            left:(@) _ op:$("+" / "-" / "||" ) _ right:@ {
+                let operator = match op {
+                    "+" => BinaryOperator::Add,
+                    "-" => BinaryOperator::Subtract,
+                    "||" => BinaryOperator::Concat,
+                    _ => unreachable!(),
+                };
+                Expr::new_binary(left, operator, right)
+            }
+            --
+            left:(@) _ op:$("*" / "/" / "%") _ right:@ {
+                let operator = match op {
+                    "*" => BinaryOperator::Multiply,
+                    "/" => BinaryOperator::Divide,
+                    "%" => BinaryOperator::Modulo,
+                    _ => unreachable!(),
+                };
+                Expr::new_binary(left, operator, right)
+            }
+            --
+            left:(@) _ op:$("^") _ right:@ {
+                Expr::new_binary(left, BinaryOperator::Pow, right)
+            }
+            --
+                       op:$("+" / "-") _ right:@ {
+                let operator = match op {
+                    "+" => UnaryOperator::UnaryAdd,
+                    "-" => UnaryOperator::UnarySubtract,
+                    _ => unreachable!(),
+                };
+                Expr::new_unary(operator, right)
+            }
+            --
+            // postfix
+            // property_access
+            left:(@) "." key:ident() { Expr::new_property_access(left, key.to_string()) }
+            --
+            // atom
+            a:atom() { a }
         }
 
+    rule atom() -> Expr
+        = l:literal() { l }
+        / "$" v:ident() { Expr::new_parameter(v.to_string()) }
+        / "(" _ e:expr() _ ")" { e }
+        / f:function_call() { f }
+        / v:variable() { v }
+
     rule literal() -> Expr
-        = b:(TRUE() / FALSE()) { Expr::new_boolean(b == "true") }
+        = b:(TRUE() / FALSE()) { Expr::new_boolean(b == "TRUE") }
         / f:float_literal() { Expr::new_float(f.to_string()) }
         / i:integer_literal() { Expr::new_integer(i.to_string()) }
         / s:string_literal() { Expr::new_string(s.to_string()) }
         / n:null_literal() { n }
+
+
+    rule function_call() -> Expr
+        = name:ident() _ "(" _ args:( expr() ** comma_separator()) _ ")" {
+            Expr::new_function_call(name.to_string(), args)
+        }
+
+    rule variable() -> Expr
+        = v:ident() { Expr::Varaible(v.to_string()) }
+
+    rule null_predicate() -> UnaryOperator
+        = is_null() / is_not_null()
+    rule is_null() -> UnaryOperator
+        = IS() _ NULL() { UnaryOperator::IsNull }
+    rule is_not_null() -> UnaryOperator
+        = IS() _ NOT() _ NULL() { UnaryOperator::IsNotNull }
 
     rule integer_literal() -> &'input str
         = $(number())
@@ -157,15 +243,17 @@ peg::parser! {
         = first:$(['a'..='z' | 'A'..='Z'] ['a'..='z' | 'A'..='Z' | '0'..='9']*) { first }
 
     rule attribute_list() -> Vec<OptionKV>
-        = "(" _ kvs:(option_kv() ** ",") _ ")" { kvs }
+        = "(" _ kvs:(option_kv() ** comma_separator()) _ ")" { kvs }
     rule option_kv() -> OptionKV
-        = _ key:ident() _ ":" _ value:expr() _ { OptionKV { name: key.to_string(), value: Box::new(value) } }
+        =  key:ident() _ ":" _ value:expr() { OptionKV { name: key.to_string(), value: Box::new(value) } }
 
-
+    rule comma_separator() = _ "," _
 
     /// ---------------------
     /// Key Words
     /// ---------------------
+    rule IS() -> &'static str
+        = ['i' | 'I'] ['s' | 'S'] { "IS" }
     rule NULL() -> &'static str
         = ['n' | 'N'] ['u' | 'U'] ['l' | 'L'] ['l' | 'L'] { "NULL" }
     rule TRUE() -> &'static str
@@ -209,5 +297,13 @@ peg::parser! {
         = ['f' | 'F'] ['r' | 'R'] ['o' | 'O'] ['m' | 'M'] { "FROM" }
     rule TO() -> &'static str
         = ['t' | 'T'] ['o' | 'O'] { "TO" }
+
+    // operator
+    rule OR() -> &'static str
+        = ['o' | 'O'] ['r' | 'R'] { "OR" }
+    rule XOR() -> &'static str
+        = ['x' | 'X'] ['o' | 'O'] ['r' | 'R'] { "XOR" }
+    rule AND() -> &'static str
+        = ['a' | 'A'] ['n' | 'N'] ['d' | 'D'] { "AND" }
   }
 }

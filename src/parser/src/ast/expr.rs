@@ -1,15 +1,13 @@
 use derive_more::Display;
 
-#[derive(Debug, Display)]
-#[display("{}", _0)]
+#[derive(Debug)]
 pub enum Expr {
     Literal(Literal),
     Varaible(String),
     Parameter(String),
-    PropertyKey(String),
     PropertyAccess {
-        variable: Box<Expr>,
-        key: Box<Expr>,
+        map: Box<Expr>,
+        key: String,
     },
     Unary {
         op: UnaryOperator,
@@ -23,11 +21,6 @@ pub enum Expr {
     FunctionCall {
         name: String,
         args: Vec<Expr>,
-    },
-    Case {
-        expr: Option<Box<Expr>>,
-        alternatives: Vec<(Expr, Expr)>,
-        default: Option<Box<Expr>>,
     },
 }
 
@@ -47,17 +40,71 @@ impl Expr {
     pub fn new_null() -> Self {
         Expr::Literal(Literal::Null)
     }
+    pub fn new_variable(name: String) -> Self {
+        Expr::Varaible(name)
+    }
+    pub fn new_parameter(name: String) -> Self {
+        Expr::Parameter(name)
+    }
+    pub fn new_property_access(map: Expr, key: String) -> Self {
+        Expr::PropertyAccess {
+            map: Box::new(map),
+            key,
+        }
+    }
+    pub fn new_unary(op: UnaryOperator, oprand: Expr) -> Self {
+        Expr::Unary {
+            op,
+            oprand: Box::new(oprand),
+        }
+    }
+    pub fn new_binary(left: Expr, op: BinaryOperator, right: Expr) -> Self {
+        Expr::Binary {
+            left: Box::new(left),
+            op,
+            right: Box::new(right),
+        }
+    }
+    pub fn new_function_call(name: String, args: Vec<Expr>) -> Self {
+        Expr::FunctionCall { name, args }
+    }
+}
+
+impl std::fmt::Display for Expr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Expr::Literal(literal) => write!(f, "{}", literal),
+            Expr::Varaible(var) => write!(f, "{}", var),
+            Expr::Parameter(param) => write!(f, "${}", param),
+            Expr::PropertyAccess { map, key } => write!(f, "{}.{}", map, key),
+            Expr::Unary { op, oprand } => match op.associativity() {
+                Associativity::Prefix => write!(f, "{}({})", op, oprand),
+                Associativity::Postfix => write!(f, "({}){}", oprand, op),
+            },
+            Expr::Binary { left, op, right } => {
+                write!(f, "({}) {} ({})", left, op, right)
+            }
+            Expr::FunctionCall { name, args } => {
+                write!(
+                    f,
+                    "{}({})",
+                    name,
+                    args.iter().map(|arg| arg.to_string()).collect::<Vec<_>>().join(", ")
+                )
+            }
+        }
+    }
 }
 
 #[derive(Debug, Display)]
 pub enum Literal {
-    #[display("{}", _0)]
+    #[display("{}", if *_0 { "TRUE" } else { "FALSE" })]
     Boolean(bool),
     #[display("{}", _0)]
     Integer(String), // un-parsed integer
     #[display("{}", _0)]
     Float(String), // un-parsed float
-    #[display("{}", _0)]
+    #[display("\'{}\'", _0)]
     String(String),
     #[display("NULL")]
     Null,
@@ -65,12 +112,26 @@ pub enum Literal {
     Inf,
 }
 
+enum Associativity {
+    Prefix,
+    Postfix,
+}
+
 macro_rules! unary_operator {
-    ($($variant:ident => $sym:expr),* $(,)?) => {
+    ($($variant:ident => $sym:expr, $assoc:expr),* $(,)?) => {
         #[derive(Debug)]
         pub enum UnaryOperator {
             $($variant),*
         }
+
+        impl UnaryOperator {
+            fn associativity(&self) -> Associativity {
+                match self {
+                    $(Self::$variant => $assoc),*
+                }
+            }
+        }
+
         impl std::fmt::Display for UnaryOperator {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 match self {
@@ -99,11 +160,11 @@ macro_rules! binary_operator {
 }
 
 unary_operator! {
-    UnaryAdd => "+",
-    UnarySubtract => "-",
-    Not => "NOT",
-    IsNull => "IS NULL",
-    IsNotNull => "IS NOT NULL",
+    UnaryAdd => "+", Associativity::Prefix,
+    UnarySubtract => "-", Associativity::Prefix,
+    Not => "NOT", Associativity::Prefix,
+    IsNull => "IS NULL",   Associativity::Postfix,
+    IsNotNull => "IS NOT NULL",   Associativity::Postfix,
 }
 
 binary_operator! {
