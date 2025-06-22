@@ -1,4 +1,6 @@
-use std::ops::Range;
+use std::{fmt::write, ops::Range};
+
+use derive_more::Display;
 
 use crate::ast::{Expr, LabelExpr};
 
@@ -20,6 +22,7 @@ pub struct CreateClause {
     pub pattern: Vec<PatternPart>,
 }
 
+#[derive(Debug)]
 pub struct PatternPart {
     pub shortest_kind: Option<ShortestKind>,
     pub nodes: Vec<NodePattern>,
@@ -27,11 +30,52 @@ pub struct PatternPart {
     pub variable: Option<String>, // named pattern part or not
 }
 
+impl PatternPart {
+    pub fn new_anonymous(nodes: Vec<NodePattern>, rels: Vec<RelationshipPattern>) -> Self {
+        Self {
+            shortest_kind: None,
+            nodes,
+            relationships: rels,
+            variable: None,
+        }
+    }
+
+    pub fn new_named(variable: String, nodes: Vec<NodePattern>, rels: Vec<RelationshipPattern>) -> Self {
+        Self {
+            shortest_kind: None,
+            nodes,
+            relationships: rels,
+            variable: Some(variable),
+        }
+    }
+}
+
+impl std::fmt::Display for PatternPart {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(variable) = &self.variable {
+            write!(f, "{} = ", variable)?;
+        }
+        let mut nodes_iter = self.nodes.iter();
+        let rels_iter = self.relationships.iter();
+        write!(f, "{}", nodes_iter.next().unwrap())?;
+        for (node, rel) in nodes_iter.zip(rels_iter) {
+            write!(f, "{}", rel)?;
+            write!(f, "{}", node)?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
 pub enum ShortestKind {
     Single, // single shortest path
     All,    // all shortest path
 }
 
+#[derive(Debug, Display)]
+#[display("({}{}{})", variable.as_ref().map(|x| x.to_string()).unwrap_or_default(),
+    label_expr.as_ref().map(|x| format!(":{}", x)).unwrap_or_default(),
+    properties.as_ref().map(|x| x.to_string()).unwrap_or_default())]
 pub struct NodePattern {
     pub variable: Option<String>,
     pub label_expr: Option<LabelExpr>,
@@ -39,6 +83,7 @@ pub struct NodePattern {
     pub predicate: Option<Expr>,
 }
 
+#[derive(Default, Debug)]
 pub struct RelationshipPattern {
     pub variable: Option<String>,
     pub label_expr: Option<LabelExpr>,
@@ -53,7 +98,54 @@ pub struct RelationshipPattern {
     pub direction: SemanticDirection,
 }
 
+impl RelationshipPattern {
+    pub fn new() -> Self {
+        Self {
+            variable: None,
+            label_expr: None,
+            properties: None,
+            predicate: None,
+            length: None,
+            direction: SemanticDirection::Both,
+        }
+    }
+}
+
+impl std::fmt::Display for RelationshipPattern {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.direction {
+            SemanticDirection::Outgoing => write!(f, "-[")?,
+            SemanticDirection::Incoming => write!(f, "<-[")?,
+            SemanticDirection::Both => { write!(f, "-[") }?,
+        };
+        write!(
+            f,
+            "{}",
+            self.variable.as_ref().map(|x| x.to_string()).unwrap_or_default()
+        )?;
+        write!(
+            f,
+            "{}",
+            self.label_expr.as_ref().map(|x| format!(":{}", x)).unwrap_or_default()
+        )?;
+        write!(
+            f,
+            "{}",
+            self.properties.as_ref().map(|x| x.to_string()).unwrap_or_default()
+        )?;
+        // TODO(length)
+
+        match self.direction {
+            SemanticDirection::Outgoing => write!(f, "]->"),
+            SemanticDirection::Incoming => write!(f, "]-"),
+            SemanticDirection::Both => write!(f, "]-"),
+        }
+    }
+}
+
+#[derive(Default, Debug)]
 pub enum SemanticDirection {
+    #[default]
     Outgoing, // ->
     Incoming, // <-
     Both,     // -

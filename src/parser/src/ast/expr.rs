@@ -5,6 +5,10 @@ pub enum Expr {
     Literal(Literal),
     Varaible(String),
     Parameter(String),
+    MapExpression {
+        keys: Vec<String>,
+        values: Vec<Expr>,
+    },
     PropertyAccess {
         map: Box<Expr>,
         key: String,
@@ -46,6 +50,9 @@ impl Expr {
     pub fn new_parameter(name: String) -> Self {
         Expr::Parameter(name)
     }
+    pub fn new_map_expression(keys: Vec<String>, values: Vec<Expr>) -> Self {
+        Expr::MapExpression { keys, values }
+    }
     pub fn new_property_access(map: Expr, key: String) -> Self {
         Expr::PropertyAccess {
             map: Box::new(map),
@@ -75,6 +82,17 @@ impl std::fmt::Display for Expr {
         match self {
             Expr::Literal(literal) => write!(f, "{}", literal),
             Expr::Varaible(var) => write!(f, "{}", var),
+            Expr::MapExpression { keys, values } => {
+                write!(
+                    f,
+                    "{{{}}}",
+                    keys.iter()
+                        .zip(values)
+                        .map(|(k, v)| format!("{}: {}", k, v))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )
+            }
             Expr::Parameter(param) => write!(f, "${}", param),
             Expr::PropertyAccess { map, key } => write!(f, "{}.{}", map, key),
             Expr::Unary { op, oprand } => match op.associativity() {

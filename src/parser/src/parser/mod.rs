@@ -111,6 +111,95 @@ peg::parser! {
         = _ NOT() _ NULL() { false }
         / _ NULL() { true }
 
+
+    /// ---------------------
+    /// Pattern
+    /// ---------------------
+    pub rule pattern() -> Vec<PatternPart>
+        = parts:(pattern_part() ** comma_separator()) _ { parts }
+
+    rule pattern_part() -> PatternPart
+        = variable:ident()? _ pattern:anonymous_pattern() {
+            let (nodes, rels) = pattern;
+            if let Some(name) = variable {
+                PatternPart::new_named(name.to_string(), nodes, rels)
+            } else {
+                PatternPart::new_anonymous(nodes, rels)
+            }
+        }
+
+
+    rule anonymous_pattern() -> (Vec<NodePattern>, Vec<RelationshipPattern>)
+        = node:node_pattern() _ chain:pattern_element_chain()* {
+            let mut nodes = vec![];
+            let mut rels = vec![];
+            nodes.push(node);
+            for (rel, node) in chain {
+                rels.push(rel);
+                nodes.push(node);
+            }
+            (nodes, rels)
+        }
+
+    rule pattern_element_chain() -> (RelationshipPattern, NodePattern)
+        = rel:relationship_pattern() _ node:node_pattern() {
+            (rel, node)
+        }
+
+    rule node_pattern() -> NodePattern
+        // TODO(pgao): support Where expr in node pattern
+        = "(" _ variable:ident()? _ label_expr:label_expr()? _ properties:map_expr()? _ ")" {
+            NodePattern {
+                variable: variable.map(|v| v.to_string()),
+                label_expr,
+                properties,
+                predicate: None,
+            }
+        }
+
+    rule relationship_pattern() -> RelationshipPattern
+        = LEFT_ARROW() _ ARROW_LINE() {
+            let mut relationship = RelationshipPattern::new();
+            relationship.direction = SemanticDirection::Incoming;
+            relationship
+        }
+        / ARROW_LINE() _ RIGHT_ARROW() {
+            let mut relationship = RelationshipPattern::new();
+            relationship.direction = SemanticDirection::Outgoing;
+            relationship
+        }
+        / ARROW_LINE() _ ARROW_LINE() {
+            let mut relationship = RelationshipPattern::new();
+            relationship.direction = SemanticDirection::Both;
+            relationship
+        }
+        / LEFT_ARROW() _  relationship:relationship_detail() _ ARROW_LINE() {
+            let mut relationship = relationship;
+            relationship.direction = SemanticDirection::Incoming;
+            relationship
+        }
+        / ARROW_LINE() _ relationship:relationship_detail() _ RIGHT_ARROW() {
+            let mut relationship = relationship;
+            relationship.direction = SemanticDirection::Outgoing;
+            relationship
+        }
+        / ARROW_LINE() _ relationship:relationship_detail() _ ARROW_LINE() {
+            let mut relationship = relationship;
+            relationship.direction = SemanticDirection::Both;
+            relationship
+        }
+
+    rule relationship_detail() -> RelationshipPattern
+        = "[" _ variable:ident()? _ label_expr:label_expr()? _ properties:map_expr()? _ "]" {
+            RelationshipPattern{
+                variable: variable.map(|v| v.to_string()),
+                label_expr,
+                properties,
+                ..Default::default()
+            }
+        }
+
+
     /// ---------------------
     /// Expression
     /// ---------------------
@@ -222,6 +311,15 @@ peg::parser! {
     rule null_literal() -> Expr
         = NULL() { Expr::new_null() }
 
+    rule map_expr() -> Expr
+        = "{" _ items:(map_expr_item() ** comma_separator()) _ "}" {
+            let (keys, values) = items.into_iter().unzip();
+            Expr::new_map_expression(keys, values)
+        }
+    rule map_expr_item() -> (String, Expr)
+        = key:ident() _ ":" _ value:expr() { (key.to_string(), value) }
+
+
     /// ---------------------
     /// Label Expression
     /// ---------------------
@@ -322,5 +420,12 @@ peg::parser! {
     rule AND() -> &'static str
         = ['a' | 'A'] ['n' | 'N'] ['d' | 'D'] { "AND" }
 
+    // pattern
+    rule ARROW_LINE() -> &'static str
+        = "-" { "-" }
+    rule LEFT_ARROW() -> &'static str
+        = "<" { "<" }
+    rule RIGHT_ARROW() -> &'static str
+        = ">" { ">" }
   }
 }
