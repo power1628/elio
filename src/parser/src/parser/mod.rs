@@ -223,6 +223,22 @@ peg::parser! {
         = NULL() { Expr::new_null() }
 
     /// ---------------------
+    /// Label Expression
+    /// ---------------------
+    pub rule label_expr() -> LabelExpr
+        = ":" _ expr:label_expr_inner() {
+            expr
+        }
+
+    rule label_expr_inner() -> LabelExpr
+        = precedence! {
+            left:(@) _ op:$("|") _ right:@ { LabelExpr::new_or(left, right)}
+            --
+            label:ident() { LabelExpr::new_label(label.to_string()) }
+        }
+
+
+    /// ---------------------
     /// Data Types
     /// ---------------------
     rule data_type() -> DataType
@@ -305,5 +321,6 @@ peg::parser! {
         = ['x' | 'X'] ['o' | 'O'] ['r' | 'R'] { "XOR" }
     rule AND() -> &'static str
         = ['a' | 'A'] ['n' | 'N'] ['d' | 'D'] { "AND" }
+
   }
 }

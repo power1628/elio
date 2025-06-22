@@ -194,3 +194,27 @@ binary_operator! {
     Contains => "CONTAINS",
     In => "IN",
 }
+
+#[derive(Debug)]
+pub enum LabelExpr {
+    Label(String),
+    Or(Box<LabelExpr>, Box<LabelExpr>),
+}
+
+impl LabelExpr {
+    pub fn new_label(label: String) -> Self {
+        Self::Label(label)
+    }
+    pub fn new_or(left: Self, right: Self) -> Self {
+        Self::Or(Box::new(left), Box::new(right))
+    }
+}
+
+impl std::fmt::Display for LabelExpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Label(label) => write!(f, "{}", label),
+            Self::Or(left, right) => write!(f, "{} | {}", left, right),
+        }
+    }
+}
