@@ -19,6 +19,11 @@ macro_rules! test_pattern {
 
 test_pattern!(single_node, "(n)", "(n)");
 test_pattern!(single_node_with_var, "(n:Person)", "(n:Person)");
+
+test_pattern!(single_rel, "()-[r]->()", "()-[r]->()");
+test_pattern!(single_rel_1, "()-[r:REL]->()", "()-[r:REL]->()");
+test_pattern!(single_rel_2, "()--()", "()-[]-()");
+test_pattern!(single_rel_3, "()<--()", "()<-[]-()");
 test_pattern!(
     single_node_with_var_and_rel,
     "(n:Person)-[r]->(m)",

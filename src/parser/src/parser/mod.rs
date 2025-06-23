@@ -424,8 +424,8 @@ peg::parser! {
     rule ARROW_LINE() -> &'static str
         = "-" { "-" }
     rule LEFT_ARROW() -> &'static str
-        = "<" { "<" }
+        = "<-" { "<-" }
     rule RIGHT_ARROW() -> &'static str
-        = ">" { ">" }
+        = "->" { "->" }
   }
 }
