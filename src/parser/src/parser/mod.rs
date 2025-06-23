@@ -111,6 +111,17 @@ peg::parser! {
         = _ NOT() _ NULL() { false }
         / _ NULL() { true }
 
+    /// ---------------------
+    /// Clauses
+    /// ---------------------
+
+    /// Create Clause
+    rule create_clause() -> CreateClause
+        = CREATE() _ pattern:pattern() {
+            CreateClause {
+                pattern,
+            }
+        }
 
     /// ---------------------
     /// Pattern
