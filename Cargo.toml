@@ -1,15 +1,12 @@
 [workspace]
 members = [
-  "src/parser",
+    "src/parser",
 ]
 resolver = "2"
-
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-
-
 
 [workspace.dependencies]
 mojito_parser = { path = "src/parser" }
