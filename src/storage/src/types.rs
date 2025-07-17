@@ -7,6 +7,7 @@ pub type PropertyId = u32;
 
 pub type PropertyKey = String;
 pub type Label = String;
+pub type RelationshipType = String;
 
 pub enum PropertyValue {
     Null,
