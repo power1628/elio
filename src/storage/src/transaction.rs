@@ -110,3 +110,23 @@ impl GraphWriteTransaction {
         todo!()
     }
 }
+
+/// Id generator
+impl GraphWriteTransaction {
+    fn node_id_alloc(&mut self) -> Result<NodeId, Error> {
+        // TODO(pgao): impl
+        todo!()
+    }
+
+    fn relationship_id_alloc(&mut self) -> Result<RelationshipId, Error> {
+        // TODO(pgao): impl
+        todo!()
+    }
+}
+
+/// Token
+impl GraphWriteTransaction {
+    fn 
+}
+
+
