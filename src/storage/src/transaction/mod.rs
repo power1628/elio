@@ -3,7 +3,14 @@ use std::{mem::ManuallyDrop, pin::Pin, sync::Arc};
 use redb::Table;
 
 mod id;
+mod node;
+mod relationship;
 mod token;
+
+pub use id::*;
+pub use node::*;
+pub use relationship::*;
+pub use token::*;
 
 use crate::{
     error::GraphStoreError,
