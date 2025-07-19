@@ -6,25 +6,25 @@ pub enum GraphStoreError {
     RedbError(
         #[from]
         #[source]
-        redb::Error,
+        Box<redb::Error>,
     ),
     #[error("redb transaction error: {0}")]
     RedbTransactionError(
         #[from]
         #[source]
-        redb::TransactionError,
+        Box<redb::TransactionError>,
     ),
     #[error("redb table error: {0}")]
     RedbTableError(
         #[from]
         #[source]
-        redb::TableError,
+        Box<redb::TableError>,
     ),
     #[error("redb storage error: {0}")]
     RedbStorageError(
         #[from]
         #[source]
-        redb::StorageError,
+        Box<redb::StorageError>,
     ),
     #[error("ill formatted data: {message}")]
     IllFormattedData { message: String, data: Vec<u8> },

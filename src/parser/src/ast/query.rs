@@ -53,14 +53,14 @@ impl PatternPart {
 impl std::fmt::Display for PatternPart {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(variable) = &self.variable {
-            write!(f, "{} = ", variable)?;
+            write!(f, "{variable} = ")?;
         }
         let mut nodes_iter = self.nodes.iter();
         let rels_iter = self.relationships.iter();
         write!(f, "{}", nodes_iter.next().unwrap())?;
         for (node, rel) in nodes_iter.zip(rels_iter) {
-            write!(f, "{}", rel)?;
-            write!(f, "{}", node)?;
+            write!(f, "{rel}")?;
+            write!(f, "{node}")?;
         }
         Ok(())
     }
@@ -74,7 +74,7 @@ pub enum ShortestKind {
 
 #[derive(Debug, Display)]
 #[display("({}{}{})", variable.as_ref().map(|x| x.to_string()).unwrap_or_default(),
-    label_expr.as_ref().map(|x| format!(":{}", x)).unwrap_or_default(),
+    label_expr.as_ref().map(|x| format!(":{x}")).unwrap_or_default(),
     properties.as_ref().map(|x| x.to_string()).unwrap_or_default())]
 pub struct NodePattern {
     pub variable: Option<String>,
@@ -126,7 +126,7 @@ impl std::fmt::Display for RelationshipPattern {
         write!(
             f,
             "{}",
-            self.label_expr.as_ref().map(|x| format!(":{}", x)).unwrap_or_default()
+            self.label_expr.as_ref().map(|x| format!(":{x}")).unwrap_or_default()
         )?;
         write!(
             f,

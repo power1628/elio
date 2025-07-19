@@ -1,16 +1,14 @@
 use std::{mem::ManuallyDrop, pin::Pin, sync::Arc};
 
-use redb::{Table, WriteTransaction};
+use redb::Table;
 
 mod id;
 mod token;
-pub use id::*;
-pub use token::*;
 
 use crate::{
     error::GraphStoreError,
     graph_store::KVSTORE_TABLE_DEFINITION,
-    types::{Label, NodeId, PropertyKey, PropertyValue, RelationshipId, RelationshipType, RelationshipTypeId},
+    types::{Label, NodeId, PropertyKey, PropertyValue, RelationshipId, RelationshipType},
 };
 
 pub struct GraphWriteTransaction {
@@ -119,14 +117,14 @@ pub struct GraphWrite {
 
 impl GraphWrite {
     pub fn new(db: &Arc<redb::Database>) -> Result<Self, GraphStoreError> {
-        let kv_tx = db.begin_write()?;
+        let kv_tx = db.begin_write().map_err(Box::new)?;
         let mut container = Self {
             kv_tx: Box::pin(kv_tx),
             table: ManuallyDrop::new(None),
         };
         let tx_ref: &'static redb::WriteTransaction =
             unsafe { std::mem::transmute(container.kv_tx.as_ref().get_ref()) };
-        let table = tx_ref.open_table(KVSTORE_TABLE_DEFINITION)?;
+        let table = tx_ref.open_table(KVSTORE_TABLE_DEFINITION).map_err(Box::new)?;
         *container.table = Some(table);
         Ok(container)
     }

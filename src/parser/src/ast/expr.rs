@@ -80,27 +80,27 @@ impl Expr {
 impl std::fmt::Display for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Expr::Literal(literal) => write!(f, "{}", literal),
-            Expr::Varaible(var) => write!(f, "{}", var),
+            Expr::Literal(literal) => write!(f, "{literal}"),
+            Expr::Varaible(var) => write!(f, "{var}"),
             Expr::MapExpression { keys, values } => {
                 write!(
                     f,
                     "{{{}}}",
                     keys.iter()
                         .zip(values)
-                        .map(|(k, v)| format!("{}: {}", k, v))
+                        .map(|(k, v)| format!("{k}: {v}"))
                         .collect::<Vec<_>>()
                         .join(", ")
                 )
             }
-            Expr::Parameter(param) => write!(f, "${}", param),
-            Expr::PropertyAccess { map, key } => write!(f, "{}.{}", map, key),
+            Expr::Parameter(param) => write!(f, "${param}"),
+            Expr::PropertyAccess { map, key } => write!(f, "{map}.{key}"),
             Expr::Unary { op, oprand } => match op.associativity() {
-                Associativity::Prefix => write!(f, "{}({})", op, oprand),
-                Associativity::Postfix => write!(f, "({}){}", oprand, op),
+                Associativity::Prefix => write!(f, "{op}({oprand})"),
+                Associativity::Postfix => write!(f, "({oprand}){op}"),
             },
             Expr::Binary { left, op, right } => {
-                write!(f, "({}) {} ({})", left, op, right)
+                write!(f, "({left}) {op} ({right})")
             }
             Expr::FunctionCall { name, args } => {
                 write!(
@@ -231,8 +231,8 @@ impl LabelExpr {
 impl std::fmt::Display for LabelExpr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Label(label) => write!(f, "{}", label),
-            Self::Or(left, right) => write!(f, "{} | {}", left, right),
+            Self::Label(label) => write!(f, "{label}"),
+            Self::Or(left, right) => write!(f, "{left} | {right}"),
         }
     }
 }

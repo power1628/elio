@@ -2,13 +2,8 @@ use std::path::Path;
 
 use redb::{self, TableDefinition};
 
-use crate::{error::GraphStoreError, transaction::GraphWriteTransaction};
 
 pub const SCHEME_KEY_PREFIX: u8 = 0x00;
-
-pub const TOKEN_LABEL_PREFIX: u8 = 0x01;
-pub const TOKEN_RELTYPE_PREFIX: u8 = 0x02;
-pub const TOKEN_PROPERTY_KEY_PREFIX: u8 = 0x03;
 
 pub const NODEID_KEY: u8 = 0x04;
 pub const RELID_KEY: u8 = 0x05;

@@ -4,59 +4,72 @@
 //!  - propertykey token
 //!
 //! This module manages register/get tokens.
+use redb::ReadableTable;
+
 use crate::{
+    codec::{TokenFormat, TokenKind},
     error::GraphStoreError,
     transaction::GraphWrite,
     types::{Label, LabelId, PropertyKey, PropertyKeyId, RelationshipType, RelationshipTypeId},
 };
 
-/// Label API
-/// Storage
-///   - key   := <LABEL_PREFIX> <label>
-///   - value := <label_id>
 impl GraphWrite {
-    // Register label, if label not exist, create one, if already exists, return the label id.
     pub fn register_label(&mut self, label: &Label) -> Result<LabelId, GraphStoreError> {
-        // TODO(pgao): impl
-        todo!()
+        self.register_token(&TokenKind::Label, label)
     }
 
-    pub fn get_label_id(&self, label: &Label) -> Result<Option<LabelId>, GraphStoreError> {
-        // TODO(pgao): impl
-        todo!()
+    pub fn register_property_key(&mut self, key: &PropertyKey) -> Result<PropertyKeyId, GraphStoreError> {
+        self.register_token(&TokenKind::PropertyKey, key)
     }
 
-    // TODO(pgao): batch api
-}
-
-/// RelType API
-/// Storage:
-///   - key   := <RELTYPE_PREFIX> <reltype>
-///   - value := <reltype_id>
-impl GraphWrite {
-    pub fn register_reltype(&mut self, reltype: &RelationshipType) -> Result<RelationshipTypeId, GraphStoreError> {
-        // TODO(pgao): impl
-        todo!()
-    }
-
-    pub fn get_reltype_id(&self, reltype: &RelationshipType) -> Result<Option<RelationshipTypeId>, GraphStoreError> {
-        // TODO(pgao): impl
-        todo!()
+    pub fn register_reltype(&mut self, rel_type: &RelationshipType) -> Result<RelationshipTypeId, GraphStoreError> {
+        self.register_token(&TokenKind::RelationshipType, rel_type)
     }
 }
 
-/// PropertyKey API
-/// Storage:
-///   - key   := <PROPERTYKEY_PREFIX> <propertykey>
-///   - value := <propertykey_id>
 impl GraphWrite {
-    pub fn register_propertykey(&mut self, propertykey: &PropertyKey) -> Result<PropertyKeyId, GraphStoreError> {
-        // TODO(pgao): impl
-        todo!()
+    // if token exists, return
+    // if not exists, create one
+    fn register_token(&mut self, kind: &TokenKind, token: &str) -> Result<u16, GraphStoreError> {
+        let token_id = self.get_token(kind, token)?;
+        if let Some(id) = token_id {
+            return Ok(id);
+        }
+
+        let table = self.table_mut();
+
+        let key = TokenFormat::next_id_key(kind);
+        let next_id = table
+            .get(key.as_slice())
+            .map_err(Box::new)?
+            .map(|buf| TokenFormat::read_next_id(buf.value()))
+            .unwrap_or_default();
+        let new_next_id = next_id + 1;
+        table
+            .insert(
+                key.as_slice(),
+                TokenFormat::encode_next_id(new_next_id).as_slice(),
+            )
+            .map_err(Box::new)?;
+        {
+            let data_key = TokenFormat::data_key(kind, token);
+            table
+                .insert(
+                    data_key.as_slice(),
+                    TokenFormat::encode(new_next_id).as_slice(),
+                )
+                .map_err(Box::new)?;
+        }
+        Ok(next_id)
     }
 
-    pub fn get_property_key_id(&self, propertykey: &PropertyKey) -> Result<Option<PropertyKeyId>, GraphStoreError> {
-        // TODO(pgao): impl
-        todo!()
+    fn get_token(&self, kind: &TokenKind, token: &str) -> Result<Option<u16>, GraphStoreError> {
+        let table = self.table();
+        let key = TokenFormat::data_key(kind, token);
+        let value = table
+            .get(key.as_slice())
+            .map_err(Box::new)?
+            .map(|v| TokenFormat::read_token(v.value()));
+        Ok(value)
     }
 }
