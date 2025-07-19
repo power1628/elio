@@ -1,23 +1,22 @@
 use std::path::Path;
 
-use redb;
+use redb::{self, TableDefinition};
 
-use crate::{
-    error::Error,
-    transaction::{GraphReadTransaction, GraphWriteTransaction},
-};
+use crate::{error::GraphStoreError, transaction::GraphWriteTransaction};
 
-/// id allocator
-pub const NODE_ID_TABLE_NAME: &str = "node_id";
-pub const REL_ID_TABLE_NAME: &str = "rel_id";
+pub const SCHEME_KEY_PREFIX: u8 = 0x00;
 
-/// token
-pub const LABEL_TOKEN_TABLE_NAME: &str = "label_token";
-pub const RELTYPE_TOKEN_TABLE_NAME: &str = "reltype_token";
-pub const PROPERTY_KEY_TOKEN_TABLE_NAME: &str = "property_key_token";
+pub const TOKEN_LABEL_PREFIX: u8 = 0x01;
+pub const TOKEN_RELTYPE_PREFIX: u8 = 0x02;
+pub const TOKEN_PROPERTY_KEY_PREFIX: u8 = 0x03;
 
-/// graph data
-pub const NODE_TABLE_NAME: &str = "node";
+pub const NODEID_KEY: u8 = 0x04;
+pub const RELID_KEY: u8 = 0x05;
+
+pub const NODE_KEY_PREFIX: u8 = 0x06;
+
+// all data are stored in single key value store table.
+pub const KVSTORE_TABLE_DEFINITION: TableDefinition<&'static [u8], &'static [u8]> = TableDefinition::new("default");
 
 pub struct GraphStore {
     db: redb::Database,
@@ -27,21 +26,5 @@ impl GraphStore {
     pub fn open(path: impl AsRef<Path>) -> Self {
         let db = redb::Database::open(path).unwrap();
         Self { db }
-    }
-
-    pub fn read_transaction(&self) -> Result<GraphReadTransaction, Error> {
-        let kv_tx = self
-            .db
-            .begin_read()
-            .map_err(|e| Error::RedbTransactionError(Box::new(e)))?;
-        Ok(GraphReadTransaction::new(kv_tx))
-    }
-
-    pub fn write_transaction(&self) -> Result<GraphWriteTransaction, Error> {
-        let kv_tx = self
-            .db
-            .begin_write()
-            .map_err(|e| Error::RedbTransactionError(Box::new(e)))?;
-        Ok(GraphWriteTransaction::new(kv_tx))
     }
 }
