@@ -1,7 +1,5 @@
-use crate::{
-    error::GraphStoreError,
-    types::{NodeId, RelationshipId},
-};
+use crate::error::GraphStoreError;
+use mojito_common::{NodeId, RelationshipId};
 
 pub struct IdReader;
 

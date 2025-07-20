@@ -2,21 +2,15 @@ use std::{mem::ManuallyDrop, pin::Pin, sync::Arc};
 
 use redb::Table;
 
+use mojito_common::{Label, NodeId, PropertyKey, RelationshipId, RelationshipType};
+
 mod id;
 mod node;
 mod relationship;
 mod token;
 
-pub use id::*;
-pub use node::*;
-pub use relationship::*;
-pub use token::*;
 
-use crate::{
-    error::GraphStoreError,
-    graph_store::KVSTORE_TABLE_DEFINITION,
-    types::{Label, NodeId, PropertyKey, PropertyValue, RelationshipId, RelationshipType},
-};
+use crate::{error::GraphStoreError, graph_store::KVSTORE_TABLE_DEFINITION, types::PropertyValue};
 
 pub struct GraphWriteTransaction {
     kv_tx: redb::WriteTransaction,

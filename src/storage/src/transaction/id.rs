@@ -5,8 +5,8 @@ use crate::{
     error::GraphStoreError,
     graph_store::{NODEID_KEY, RELID_KEY},
     transaction::GraphWrite,
-    types::{NodeId, RelationshipId},
 };
+use mojito_common::{NodeId, RelationshipId};
 
 impl GraphWrite {
     pub fn alloc_node_id(&mut self) -> Result<NodeId, GraphStoreError> {

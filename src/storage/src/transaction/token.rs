@@ -4,13 +4,13 @@
 //!  - propertykey token
 //!
 //! This module manages register/get tokens.
+use mojito_common::{Label, LabelId, PropertyKey, PropertyKeyId, RelationshipType, RelationshipTypeId};
 use redb::ReadableTable;
 
 use crate::{
     codec::{TokenFormat, TokenKind},
     error::GraphStoreError,
     transaction::GraphWrite,
-    types::{Label, LabelId, PropertyKey, PropertyKeyId, RelationshipType, RelationshipTypeId},
 };
 
 impl GraphWrite {
@@ -46,18 +46,12 @@ impl GraphWrite {
             .unwrap_or_default();
         let new_next_id = next_id + 1;
         table
-            .insert(
-                key.as_slice(),
-                TokenFormat::encode_next_id(new_next_id).as_slice(),
-            )
+            .insert(key.as_slice(), TokenFormat::encode_next_id(new_next_id).as_slice())
             .map_err(Box::new)?;
         {
             let data_key = TokenFormat::data_key(kind, token);
             table
-                .insert(
-                    data_key.as_slice(),
-                    TokenFormat::encode(new_next_id).as_slice(),
-                )
+                .insert(data_key.as_slice(), TokenFormat::encode(new_next_id).as_slice())
                 .map_err(Box::new)?;
         }
         Ok(next_id)

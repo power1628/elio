@@ -1,6 +1,7 @@
 [workspace]
 members = [
-    "src/parser", 
+    "src/common",
+    "src/parser",
     "src/storage",
 ]
 resolver = "2"
@@ -10,6 +11,7 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace.dependencies]
+mojito_common = { path = "src/common" }
 mojito_parser = { path = "src/parser" }
 mojito_storage = { path = "src/storage" }
 # other dependencies can be added here

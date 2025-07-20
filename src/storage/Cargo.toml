@@ -1,9 +1,10 @@
 [package]
-name = "storage"
+name = "mojito_storage"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
 bytes = "1.10.1"
+mojito_common = { workspace = true }
 redb = "2.6.0"
 thiserror = "2.0.12"
