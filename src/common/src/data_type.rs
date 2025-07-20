@@ -12,3 +12,12 @@ pub enum DataType {
     Relationship,
     Path,
 }
+
+impl DataType {
+    pub fn is_primitive(&self) -> bool {
+        matches!(
+            self,
+            DataType::Null | DataType::Boolean | DataType::Integer | DataType::Float | DataType::String
+        )
+    }
+}
