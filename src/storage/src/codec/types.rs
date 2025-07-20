@@ -5,6 +5,8 @@
 
 use mojito_common::data_type::DataType;
 
+use crate::types::StoreDataType;
+
 const INNER_TYPE_SHIFT: u8 = 4;
 const OUTER_TYPE_MASK: u8 = 0x0F;
 
@@ -23,9 +25,6 @@ register_type_id!(
     TYPE_ID_FLOAT = 3,
     TYPE_ID_STRING = 4,
     TYPE_ID_LIST = 5,
-    TYPE_ID_NODE = 6,
-    TYPE_ID_RELATIONSHIP = 7,
-    TYPE_ID_PATH = 8,
 );
 
 pub struct DataTypeFormat;
@@ -40,19 +39,16 @@ impl DataTypeFormat {
         }
     }
 
-    pub fn encode(data_type: &DataType) -> u8 {
+    pub fn encode(data_type: &StoreDataType) -> u8 {
         match data_type {
-            DataType::Null => TYPE_ID_NULL,
-            DataType::Boolean => TYPE_ID_BOOLEAN,
-            DataType::Integer => TYPE_ID_INTEGER,
-            DataType::Float => TYPE_ID_FLOAT,
-            DataType::String => TYPE_ID_STRING,
-            DataType::List(inner) => {
-                let inner_type = Self::encode(inner);
-                (inner_type << INNER_TYPE_SHIFT) | TYPE_ID_LIST
-            }
-            DataType::Node | DataType::Relationship | DataType::Path => {
-                unreachable!("Node/Relationship/Path should not be encoded as a property value")
+            StoreDataType::Null => TYPE_ID_NULL,
+            StoreDataType::Boolean => TYPE_ID_BOOLEAN,
+            StoreDataType::Integer => TYPE_ID_INTEGER,
+            StoreDataType::Float => TYPE_ID_FLOAT,
+            StoreDataType::String => TYPE_ID_STRING,
+            StoreDataType::List(store_data_type) => {
+                let inner_type = Self::encode(store_data_type);
+                TYPE_ID_LIST | (inner_type << INNER_TYPE_SHIFT)
             }
         }
     }
