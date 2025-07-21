@@ -26,6 +26,18 @@ pub enum GraphStoreError {
         #[source]
         Box<redb::StorageError>,
     ),
+    #[error("redb database error: {0}")]
+    RedbDatabaseError(
+        #[from]
+        #[source]
+        Box<redb::DatabaseError>,
+    ),
+    #[error("redb commit error: {0}")]
+    RedbCommitError(
+        #[from]
+        #[source]
+        Box<redb::CommitError>,
+    ),
     #[error("ill formatted data: {message}")]
     IllFormattedData { message: String, data: Vec<u8> },
 }

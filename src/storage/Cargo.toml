@@ -8,3 +8,6 @@ bytes = "1.10.1"
 mojito_common = { workspace = true }
 redb = "2.6.0"
 thiserror = "2.0.12"
+
+[dev-dependencies]
+tempfile = { workspace = true }

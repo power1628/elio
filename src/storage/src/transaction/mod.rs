@@ -9,7 +9,6 @@ mod node;
 mod relationship;
 mod token;
 
-
 use crate::{error::GraphStoreError, graph_store::KVSTORE_TABLE_DEFINITION, types::PropertyValue};
 
 pub struct GraphWriteTransaction {
@@ -138,6 +137,18 @@ impl GraphWrite {
     pub fn table_mut(&mut self) -> &mut Table<'static, &'static [u8], &'static [u8]> {
         // safety: with new, table must be initialized
         self.table.as_mut().unwrap()
+    }
+
+    pub fn commit(self) -> Result<(), GraphStoreError> {
+        let mut this = ManuallyDrop::new(self);
+
+        // manually drop table first
+        unsafe {
+            ManuallyDrop::drop(&mut this.table);
+        }
+        let tx = unsafe { Pin::into_inner_unchecked(std::ptr::read(&this.kv_tx)) };
+        tx.commit().map_err(Box::new)?;
+        Ok(())
     }
 }
 
