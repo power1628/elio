@@ -20,7 +20,7 @@
 //!                | float_list_data
 //!                | string_list_data
 //! TODO(pgao): maybe we should have an StorageDataTypes, to make it easier to extend
-//! ```
+//! ```text
 //!       2B             12*num_keys B             variable size          
 //!   +-----------++------------------------++--------------------------+
 //!   |keys_header||key_and_value_size_array||value_data                |

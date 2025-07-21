@@ -1,11 +1,12 @@
 mod id;
-pub use id::*;
-mod token;
-pub use token::*;
 mod node;
-pub use node::*;
-mod property_value;
+mod property;
 mod relationship;
-pub use property_value::*;
+mod token;
 mod types;
+pub use id::*;
+pub use node::*;
+pub use property::*;
+pub use relationship::*;
+pub use token::*;
 pub use types::*;

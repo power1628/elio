@@ -12,8 +12,9 @@
 //!
 //! RelationshipSize ::= u32 // size of relationship block
 //!
+//!
 
-use bytes::{BufMut, BytesMut};
+use bytes::{BufMut, Bytes, BytesMut};
 use mojito_common::{LabelId, PropertyKeyId};
 
 use crate::{codec::PropertyWriter, types::PropertyValue};
@@ -30,6 +31,12 @@ pub struct NodeFormatHeader {
     num_labels: u16,
     property_size: u32,
     relationship_size: u32,
+}
+
+impl NodeFormatHeader {
+    pub fn set_relationship_size(&mut self, relationship_size: u32) {
+        self.relationship_size = relationship_size;
+    }
 }
 
 pub struct NodeWriter<'a> {
@@ -78,5 +85,42 @@ impl<'a> NodeWriter<'a> {
 
     pub fn finish(self) -> usize {
         self.buf.len() - self.offset
+    }
+}
+
+pub struct NodeUpdater {
+    buf: BytesMut, // node value buffer
+}
+
+impl NodeUpdater {
+    pub fn new(buf: BytesMut) -> Self {
+        assert!(buf.len() >= NODE_HEADER_SIZE);
+        Self { buf }
+    }
+
+    pub fn add_relationship(&mut self, rel: &[u8]) {
+        let header = self.header_mut();
+        let new_rel_size = header.relationship_size + (rel.len() as u32);
+        header.set_relationship_size(new_rel_size);
+        self.buf.extend_from_slice(rel);
+    }
+
+    fn header_mut(&mut self) -> &mut NodeFormatHeader {
+        unsafe {
+            let ptr = self.buf.as_mut_ptr() as *mut NodeFormatHeader;
+            &mut *ptr
+        }
+    }
+
+    #[allow(unused)]
+    fn header(&self) -> &NodeFormatHeader {
+        unsafe {
+            let ptr = self.buf.as_ptr() as *const NodeFormatHeader;
+            &*ptr
+        }
+    }
+
+    pub fn finish(self) -> Bytes {
+        self.buf.freeze()
     }
 }

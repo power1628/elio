@@ -62,3 +62,9 @@ So we put all the data into one table with different key prefix.
 | NodeId            | 0x04       | single key value |
 | RelationshipId    | 0x05       | single key value |
 | Node              | 0x06       |                  |
+
+# Capacity
+
+- RelatioshipId: 5B
+- NodeId: 8B
+- PropertyKey/Label/RelType: 2B

@@ -35,3 +35,9 @@ impl PropertyValue {
         }
     }
 }
+
+#[repr(C)]
+pub enum RelationshipDirection {
+    Incoming, // 0
+    Outgoing, // 1
+}
