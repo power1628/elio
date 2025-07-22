@@ -17,5 +17,5 @@ mojito_storage = { path = "src/storage" }
 # other dependencies can be added here
 either = "1.15.0"
 
-[workspace.dev-dependencies]
+# dev-depencies
 tempfile = "3.5.0"
