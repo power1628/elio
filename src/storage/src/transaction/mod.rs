@@ -6,9 +6,9 @@ use mojito_common::{Label, NodeId, PropertyKey, RelationshipId, RelationshipType
 
 mod id;
 mod node;
+mod read;
 mod relationship;
 mod token;
-
 use crate::{error::GraphStoreError, graph_store::KVSTORE_TABLE_DEFINITION, types::PropertyValue};
 
 pub struct GraphWriteTransaction {
