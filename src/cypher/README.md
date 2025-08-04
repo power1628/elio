@@ -1,0 +1,1 @@
+Parsing, planning, optimizing query
