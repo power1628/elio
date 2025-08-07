@@ -1,3 +1,5 @@
+use crate::ast::RegularQuery;
+
 use super::{ColumnDef, ConstraintSpec, OptionKV};
 use derive_more::Display;
 
@@ -8,9 +10,9 @@ pub enum Statement {
     // Explain
     // CreateDatabase
     CreateDatabase(Box<CreateDatabase>),
-    CreateVertexType(Box<CreateVertexType>),
-    CreateEdgeType(Box<CreateEdgeType>),
-    //Query(Box<Query>),
+    // CreateVertexType(Box<CreateVertexType>),
+    // CreateEdgeType(Box<CreateEdgeType>),
+    Query(Box<RegularQuery>),
 }
 
 #[derive(Debug, Display)]

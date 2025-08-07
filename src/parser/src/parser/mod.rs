@@ -28,56 +28,56 @@ peg::parser! {
     /// create vertex type statement
     /// CREATE VERTEX TYPE IF NOT EXISTS name (column1 type1 nullable, column2 type2 nullable, PRIMARY KEY (column1))
     /// WITH (option1: value1, option2: value2)
-    pub rule create_vertex_type() -> Statement
-        = CREATE() _ VERTEX() _ TYPE() _ not_exists:if_not_exists() _ name:ident() _ "(" _ column_or_constraint:(column_def_or_constraint() ** comma_separator()) _ ")"  _ options:with_attribute_list()? {
-            let (columns, constraints) = {
-                let mut columns = vec![];
-                let mut constraints = vec![];
-                for item in column_or_constraint {
-                    match item {
-                        Either::Left(col) => columns.push(col),
-                        Either::Right(constraint) => constraints.push(constraint),
-                    }
-                }
-                (columns, constraints)
-            };
+    // pub rule create_vertex_type() -> Statement
+    //     = CREATE() _ VERTEX() _ TYPE() _ not_exists:if_not_exists() _ name:ident() _ "(" _ column_or_constraint:(column_def_or_constraint() ** comma_separator()) _ ")"  _ options:with_attribute_list()? {
+    //         let (columns, constraints) = {
+    //             let mut columns = vec![];
+    //             let mut constraints = vec![];
+    //             for item in column_or_constraint {
+    //                 match item {
+    //                     Either::Left(col) => columns.push(col),
+    //                     Either::Right(constraint) => constraints.push(constraint),
+    //                 }
+    //             }
+    //             (columns, constraints)
+    //         };
 
-            Statement::CreateVertexType(Box::new(CreateVertexType {
-                name: name.to_string(),
-                not_exists: false,
-                columns,
-                constrait: constraints,
-                options: options.unwrap_or_default(),
-            }))
-        }
+    //         Statement::CreateVertexType(Box::new(CreateVertexType {
+    //             name: name.to_string(),
+    //             not_exists: false,
+    //             columns,
+    //             constrait: constraints,
+    //             options: options.unwrap_or_default(),
+    //         }))
+    //     }
 
     /// create edge type statement
     /// CREATE EDGE TYPE IF NOT EXISTS name (FROM from_vertex_type, TO to_vertex_type, column1 type1 nullable, column2 type2 nullable, PRIMARY KEY (column1))
     /// WITH (option1: value1, option2: value2)
-    pub rule create_edge_type() -> Statement
-        = CREATE() _ EDGE() _ TYPE() _ not_exists:if_not_exists() _ name:ident() _ "(" _ FROM() _ from:ident() _ "," _ TO() _ to:ident() _ "," _ column_or_constraint:(column_def_or_constraint() ** comma_separator()) _ ")" _  options:with_attribute_list()? {
-            let (columns, constraints) = {
-                let mut columns = vec![];
-                let mut constraints = vec![];
-                for item in column_or_constraint {
-                    match item {
-                        Either::Left(col) => columns.push(col),
-                        Either::Right(constraint) => constraints.push(constraint),
-                    }
-                }
-                (columns, constraints)
-            };
+    // pub rule create_edge_type() -> Statement
+    //     = CREATE() _ EDGE() _ TYPE() _ not_exists:if_not_exists() _ name:ident() _ "(" _ FROM() _ from:ident() _ "," _ TO() _ to:ident() _ "," _ column_or_constraint:(column_def_or_constraint() ** comma_separator()) _ ")" _  options:with_attribute_list()? {
+    //         let (columns, constraints) = {
+    //             let mut columns = vec![];
+    //             let mut constraints = vec![];
+    //             for item in column_or_constraint {
+    //                 match item {
+    //                     Either::Left(col) => columns.push(col),
+    //                     Either::Right(constraint) => constraints.push(constraint),
+    //                 }
+    //             }
+    //             (columns, constraints)
+    //         };
 
-            Statement::CreateEdgeType(Box::new(CreateEdgeType {
-                name: name.to_string(),
-                not_exists: false,
-                from: from.to_string(),
-                to: to.to_string(),
-                columns,
-                constrait: constraints,
-                options: options.unwrap_or_default(),
-            }))
-        }
+    //         Statement::CreateEdgeType(Box::new(CreateEdgeType {
+    //             name: name.to_string(),
+    //             not_exists: false,
+    //             from: from.to_string(),
+    //             to: to.to_string(),
+    //             columns,
+    //             constrait: constraints,
+    //             options: options.unwrap_or_default(),
+    //         }))
+    //     }
 
     rule if_not_exists() -> bool
         = IF() _ NOT() _ EXISTS()   { true }
