@@ -8,3 +8,4 @@ derive_more = { version = "2", features = ["display"] }
 peg = "0.8.5"
 # workspace
 either = { workspace = true }
+itertools = { workspace = true }

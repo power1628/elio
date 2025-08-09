@@ -1,10 +1,10 @@
 [workspace]
 members = [
-  "src/common",
-  "src/cypher",
-  "src/db",
-  "src/parser",
-  "src/storage",
+    "src/common",
+    "src/cypher",
+    "src/db",
+    "src/parser",
+    "src/storage",
 ]
 resolver = "2"
 
@@ -14,15 +14,16 @@ edition = "2024"
 
 [workspace.dependencies]
 mojito_common = { path = "src/common" }
-mojito_parser = { path = "src/parser" }
-mojito_storage = { path = "src/storage" }
 mojito_cypher = { path = "src/cypher" }
 mojito_db = { path = "src/db" }
+mojito_parser = { path = "src/parser" }
+mojito_storage = { path = "src/storage" }
 
 # other
-either = "1.15.0"
-thiserror = "2.0.12"
 bytes = "1.10.1"
+either = "1.15.0"
+itertools = "0.14.0"
+thiserror = "2.0.12"
 
 # dev-depencies
 tempfile = "3.5.0"
