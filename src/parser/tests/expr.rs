@@ -1,46 +1,48 @@
+use insta::assert_snapshot;
 use mojito_parser::parser::cypher_parser;
 
-macro_rules! test_expr {
-    ($name:ident, $input:expr, $expected:expr) => {
-        #[test]
-        fn $name() {
-            let input = $input;
-            assert_eq!(
-                cypher_parser::expr(input).map(|x| x.to_string()),
-                Ok($expected.to_string())
-            );
-        }
+macro_rules! expr {
+    ($query:expr) => {
+        cypher_parser::expr($query).unwrap().to_string()
     };
 }
 
-macro_rules! test_label_expr {
-    ($name:ident, $input:expr, $expected:expr) => {
-        #[test]
-        fn $name() {
-            let input = $input;
-            assert_eq!(
-                cypher_parser::label_expr(input).map(|x| x.to_string()),
-                Ok($expected.to_string())
-            );
-        }
+macro_rules! label_expr {
+    ($query:expr) => {
+        cypher_parser::label_expr($query).unwrap().to_string()
     };
 }
 
-// test expr
-test_expr!(test_integer_literal, "123", "123");
-test_expr!(test_float_literal, "123.456", "123.456");
-test_expr!(test_string_literal, "\"hello\"", "'hello'");
-test_expr!(test_boolean_literal_true, "true", "TRUE");
-test_expr!(test_boolean_literal_false, "false", "FALSE");
-test_expr!(test_null_literal, "null", "NULL");
-test_expr!(test_unary_operator_negation, "-42", "-(42)");
-test_expr!(test_unary_operator_not, "not true", "NOT(TRUE)");
-test_expr!(test_binary_operator_addition, "1 + 2", "(1) + (2)");
+#[test]
+fn test_literal() {
+    assert_snapshot!(expr!("123"), @"123");
+    assert_snapshot!(expr!("123.456"), @"123.456");
+    assert_snapshot!(expr!("\"hello\""), @"'hello'");
+    assert_snapshot!(expr!("true"), @"TRUE");
+    assert_snapshot!(expr!("false"), @"FALSE");
+    assert_snapshot!(expr!("null"), @"NULL");
+    assert_snapshot!(expr!("-42"), @"-(42)");
+    assert_snapshot!(expr!("not true"), @"NOT(TRUE)");
+    assert_snapshot!(expr!("1 + 2"), @"(1) + (2)");
+}
 
-test_expr!(test_property_access, "node.property", "node.property");
-test_expr!(test_function_call, "func(1,2)", "func(1, 2)");
-test_expr!(test_nested_expression, "(1 + 2) * 3", "((1) + (2)) * (3)");
+#[test]
+fn test_func() {
+    assert_snapshot!(expr!("func(1,2)"), @"func(1, 2)");
+}
 
-// test label expr
-test_label_expr!(test_label_expr_or, ":a|b", "a | b");
-test_label_expr!(test_label_expr_single, ":a", "a");
+#[test]
+fn test_operator() {
+    assert_snapshot!(expr!("1 + 2"), @"(1) + (2)");
+    assert_snapshot!(expr!("1 * 2"), @"(1) * (2)");
+    assert_snapshot!(expr!("1 / 2"), @"(1) / (2)");
+    assert_snapshot!(expr!("1 % 2"), @"(1) % (2)");
+    assert_snapshot!(expr!("1 ^ 2"), @"(1) ^ (2)");
+    assert_snapshot!(expr!("(1 + 2) * 3"), @"((1) + (2)) * (3)");
+}
+
+#[test]
+fn test_label_expr() {
+    assert_snapshot!(label_expr!(":a|b"), @"a | b");
+    assert_snapshot!(label_expr!(":a"), @"a");
+}

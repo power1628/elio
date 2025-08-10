@@ -2,7 +2,7 @@ peg::parser! {
   pub grammar cypher_parser() for str {
     use crate::ast::*;
     use either::Either;
-    
+
 
     /// ---------------------
     /// Whitespace
@@ -167,7 +167,7 @@ peg::parser! {
     pub rule pattern() -> Vec<PatternPart>
         = parts:(pattern_part() ** comma_separator()) _ { parts }
 
-    rule pattern_part() -> PatternPart
+    pub rule pattern_part() -> PatternPart
         = variable:variable_declare()? _ selector:selector()? _ factors:anonymous_pattern() {
             PatternPart{
                 variable,
