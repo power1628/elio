@@ -118,7 +118,7 @@ peg::parser! {
     /// RegularQuery
     /// ---------------------
     rule regular_query() -> Statement
-        = first:single_query() _ union:(union_query())* {
+        = first:single_query() _ union:(union_query())++ _ {
             let mut queries = vec![first];
             let mut union_all = false;
             for (is_all, query) in union {
@@ -147,7 +147,7 @@ peg::parser! {
     /// Clauses
     /// ---------------------
 
-    rule clause() -> Clause
+    pub rule clause() -> Clause
         = create:create_clause() {
             Clause::Create(create)
         }
@@ -176,31 +176,31 @@ peg::parser! {
             }
         }
 
-    rule selector() -> Selector
-        = ALL() _ PATH() {
+    pub(crate) rule selector() -> Selector
+        = ALL() _ PATH_OR_PATHS() {
             Selector::AllPaths
         }
-        / ANY() _ count:integer_literal() _ PATH() {
+        / ANY() _ count:integer_literal() _ PATH_OR_PATHS() {
             let count: u32 = count.parse().unwrap();
             Selector::AnyPath(count)
         }
-        / ALL() _ SHORTEST() _ PATH() {
+        / ALL() _ SHORTEST() _ PATH_OR_PATHS() {
             Selector::AllShortest
         }
-        / ANY() _ SHORTEST() _ PATH() {
+        / ANY() _ SHORTEST() _ PATH_OR_PATHS() {
             Selector::AnyShortestPath
         }
-        / SHORTEST() _ count:integer_literal() _ PATH() {
-            let count: u32 = count.parse().unwrap();
-            Selector::CountedShortestPath(count)
-        }
-        / SHORTEST() _ count:integer_literal() _ PATH() _ GROUP() {
+        / SHORTEST() _ count:integer_literal() _ PATH_OR_PATHS() _ GROUP_OR_GROUPS() {
             let count: u32 = count.parse().unwrap();
             Selector::CountedShortestGroup(count)
         }
+        / SHORTEST() _ count:integer_literal() _ PATH_OR_PATHS() {
+            let count: u32 = count.parse().unwrap();
+            Selector::CountedShortestPath(count)
+        }
 
     rule anonymous_pattern() -> Vec<PathFactor>
-        = head:simple_path_pattern() _ tail:path_facror()* {
+        = head:simple_path_pattern() _ tail:path_facror() ** _ {
             let mut parts = vec![];
             parts.push(PathFactor::Simple(head));
             parts.extend(tail);
@@ -522,10 +522,19 @@ peg::parser! {
         = ['s' | 'S'] ['h' | 'H'] ['o' | 'O'] ['r' | 'R'] ['t' | 'T'] ['e' | 'E'] ['s' | 'S'] ['t' | 'T'] { "SHORTEST" }
     rule PATH() -> &'static str
         = ['p' | 'P'] ['a' | 'A'] ['t' | 'T'] ['h' | 'H'] { "PATH" }
+    rule PATHS() -> &'static str
+        = ['p' | 'P'] ['a' | 'A'] ['t' | 'T'] ['h' | 'H'] ['s' | 'S'] { "PATHS" }
+    rule PATH_OR_PATHS() -> &'static str
+        = PATHS() / PATH()
     rule GROUP() -> &'static str
         = ['g' | 'G'] ['r' | 'R'] ['o' | 'O'] ['u' | 'U'] ['p' | 'P'] { "GROUP" }
+    rule GROUPS() -> &'static str
+        = ['g' | 'G'] ['r' | 'R'] ['o' | 'O'] ['u' | 'U'] ['p' | 'P'] ['s' | 'S'] { "GROUPS" }
+    rule GROUP_OR_GROUPS() -> &'static str
+        = GROUPS() / GROUP()
     rule WHERE() -> &'static str
         = ['w' | 'W'] ['h' | 'H'] ['e' | 'E'] ['r' | 'R'] ['e' | 'E'] { "WHERE" }
+
 
     rule INTEGER() -> &'static str
         = ['i' | 'I'] ['n' | 'N'] ['t' | 'T'] ['e' | 'E'] ['g' | 'G'] ['e' | 'E'] ['r' | 'R'] { "INTEGER" }

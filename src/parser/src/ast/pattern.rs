@@ -66,7 +66,9 @@ impl std::fmt::Display for PatternPart {
         if let Some(name) = self.variable.as_ref() {
             write!(f, "{name} = ")?;
         }
-        write!(f, "{}", self.selector)?;
+        if self.selector.is_selective() {
+            write!(f, "{} ", self.selector)?;
+        }
         write!(
             f,
             "{}",
@@ -111,13 +113,13 @@ pub struct QuantifiedPathPattern {
 
 impl std::fmt::Display for QuantifiedPathPattern {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(")?;
+        write!(f, " (")?;
         write!(f, "{}", self.non_selective_part)?;
         if let Some(filter) = self.filter.as_ref() {
             write!(f, " WHERE {filter}")?;
         }
         write!(f, ")")?;
-        write!(f, "{}", self.quantifier)?;
+        write!(f, "{} ", self.quantifier)?;
         Ok(())
     }
 }
@@ -125,9 +127,9 @@ impl std::fmt::Display for QuantifiedPathPattern {
 #[derive(Debug, Display)]
 #[display("{}", _0)]
 pub enum PatternQuantifier {
-    #[display("{{+}}")]
+    #[display("+")]
     Plus, // {+}
-    #[display("{{*}}")]
+    #[display("*")]
     Star, // {*}
     #[display("{{{}}}", _0)]
     Fixed(u32), // {n}

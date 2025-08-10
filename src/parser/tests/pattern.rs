@@ -1,4 +1,4 @@
-use insta::{self, assert_snapshot};
+use insta::assert_snapshot;
 use mojito_parser::parser::cypher_parser;
 
 // macro_rules! test_pattern {
@@ -48,4 +48,20 @@ fn test_rel_pattern() {
     assert_snapshot!(pattern_part!("()-[r]->()"), @"()-[r]->()");
     assert_snapshot!(pattern_part!("()-[r:REL]->()"), @"()-[r:REL]->()");
     assert_snapshot!(pattern_part!("()-[r:REL{a: 1}]->()"), @"()-[r:REL{a: 1}]->()");
+}
+
+#[test]
+fn test_quantified_pattern() {
+    assert_snapshot!(pattern_part!("(a:Person) ( ()-[]-() ){1,5} (b)"), @"(a:Person) (()-[]-()){1,5} (b)");
+    assert_snapshot!(pattern_part!("(a:Person) ( (a1)-[]-(a2) WHERE a1.col1 > 10 )+ (b)"), @"(a:Person) ((a1)-[]-(a2) WHERE (a1.col1) > (10))+ (b)");
+}
+
+#[test]
+fn test_pattern_with_selector() {
+    assert_snapshot!(pattern_part!("p = ALL PATHS (a:Person)-[]-(b)"), @"p = (a:Person)-[]-(b)");
+    assert_snapshot!(pattern_part!("p = ANY 42 PATHS (a:Person)-[]-(b)"), @"p = ANY 42 PATHS (a:Person)-[]-(b)");
+    assert_snapshot!(pattern_part!("p = ALL SHORTEST PATHS (a:Person)-[]-(b)"), @"p = ALL SHORTEST PATHS (a:Person)-[]-(b)");
+    assert_snapshot!(pattern_part!("p = ANY SHORTEST PATHS (a:Person)-[]-(b)"), @"p = ANY SHORTEST PATHS (a:Person)-[]-(b)");
+    assert_snapshot!(pattern_part!("p = SHORTEST 42 PATHS (a:Person)-[]-(b)"), @"p = SHORTEST 42 PATHS (a:Person)-[]-(b)");
+    assert_snapshot!(pattern_part!("p = SHORTEST 42 PATH GROUPS (a:Person)-[]-(b)"), @"p = SHORTEST 42 PATH GROUPS (a:Person)-[]-(b)");
 }
