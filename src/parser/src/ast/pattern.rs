@@ -8,7 +8,7 @@ use crate::ast::{Expr, LabelExpr};
 #[derive(Debug, Display)]
 #[display("{}", patterns.iter().map(|x| x.to_string()).join(", "))]
 pub struct MatchPattern {
-    pub patterns: Vec<PatternPartWithSelector>,
+    pub patterns: Vec<PatternPart>,
 }
 
 #[derive(Debug, Display)]
@@ -17,7 +17,7 @@ pub struct UpdatePattern {
     pub patterns: Vec<PatternPart>,
 }
 
-#[derive(Default, Debug, Display)]
+#[derive(Default, Debug, Display, PartialEq, Eq)]
 #[display("{}", _0)]
 pub enum Selector {
     #[default]
@@ -25,12 +25,14 @@ pub enum Selector {
     AllPaths, // ALL PATHS
     #[display("ANY {} PATHS", _0)]
     AnyPath(u32), // ANY <count> PATHS
-    #[display("SHORTEST {} PATHS", _0)]
-    AnyShortestPath(u32), // SHORTEST <count> PATHS
     #[display("ALL SHORTEST PATHS")]
     AllShortest, // ALL SHORTEST PATHS
+    #[display("ANY SHORTEST PATHS")]
+    AnyShortestPath, // ANY SHORTEST PATHS
+    #[display("SHORTEST {} PATHS", _0)]
+    CountedShortestPath(u32),
     #[display("SHORTEST {} PATH GROUPS", _0)]
-    ShortestGroup(u32), // SHORTEST <count> PATH GROUPS
+    CountedShortestGroup(u32),
 }
 
 impl Selector {
@@ -41,39 +43,30 @@ impl Selector {
     pub fn is_counted(&self) -> bool {
         matches!(
             self,
-            Self::AnyPath(_) | Self::AnyShortestPath(_) | Self::ShortestGroup(_)
+            Self::AnyPath(_) | Self::CountedShortestPath(_) | Self::CountedShortestGroup(_)
         )
     }
 }
 
-#[derive(Debug, Display)]
-#[display("{} {}", selector, part)]
-pub struct PatternPartWithSelector {
-    pub selector: Selector,
-    pub part: PatternPart,
-}
-
 #[derive(Debug)]
 pub struct PatternPart {
-    pub name: Option<String>,           // pattern part with name
-    pub shortest: Option<ShortestKind>, // not, single, all shortest
-    pub factors: Vec<PathFactor>,       // must start with simple and ends with simple
+    pub variable: Option<String>, // pattern part with name
+    pub selector: Selector,
+    pub factors: Vec<PathFactor>, // must start with simple and ends with simple
 }
 
 impl PatternPart {
     pub fn is_anonymous(&self) -> bool {
-        self.name.is_none()
+        self.variable.is_none()
     }
 }
 
 impl std::fmt::Display for PatternPart {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(path) = self.name.as_ref() {
-            write!(f, "{} = ", path)?;
+        if let Some(name) = self.variable.as_ref() {
+            write!(f, "{name} = ")?;
         }
-        if let Some(ref shortest) = self.shortest {
-            write!(f, "{}", shortest)?;
-        }
+        write!(f, "{}", self.selector)?;
         write!(
             f,
             "{}",
@@ -82,54 +75,46 @@ impl std::fmt::Display for PatternPart {
         Ok(())
     }
 }
-#[derive(Debug, Display)]
-#[display("{}", _0)]
-pub enum ShortestKind {
-    #[display("SINGLE")]
-    Single, // single shortest path
-    #[display("ALL")]
-    All, // all shortest path
-}
 
 #[derive(Debug, Display)]
 #[display("{}", _0)]
 pub enum PathFactor {
     #[display("{}", _0)]
-    Simple(SimplePattern),
+    Simple(SimplePathPattern),
     #[display("{}", _0)]
-    Quantified(QuantifiedPath),
+    Quantified(QuantifiedPathPattern),
 }
 
 #[derive(Debug)]
-pub struct SimplePattern {
+pub struct SimplePathPattern {
     pub nodes: Vec<NodePattern>,
     pub relationships: Vec<RelationshipPattern>,
 }
 
-impl std::fmt::Display for SimplePattern {
+impl std::fmt::Display for SimplePathPattern {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let n = self.nodes.iter().map(|x| x.to_string());
         let e = self.relationships.iter().map(|x| x.to_string());
         for x in n.interleave(e) {
-            write!(f, "{}", x)?;
+            write!(f, "{x}")?;
         }
         Ok(())
     }
 }
 
 #[derive(Debug)]
-pub struct QuantifiedPath {
+pub struct QuantifiedPathPattern {
     pub non_selective_part: Box<PatternPart>,
     pub quantifier: PatternQuantifier,
     pub filter: Option<Box<Expr>>,
 }
 
-impl std::fmt::Display for QuantifiedPath {
+impl std::fmt::Display for QuantifiedPathPattern {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "(")?;
         write!(f, "{}", self.non_selective_part)?;
         if let Some(filter) = self.filter.as_ref() {
-            write!(f, " WHERE {}", filter)?;
+            write!(f, " WHERE {filter}")?;
         }
         write!(f, ")")?;
         write!(f, "{}", self.quantifier)?;
@@ -143,7 +128,7 @@ pub enum PatternQuantifier {
     #[display("{{+}}")]
     Plus, // {+}
     #[display("{{*}}")]
-    Start, // {*}
+    Star, // {*}
     #[display("{{{}}}", _0)]
     Fixed(u32), // {n}
     #[display("{{{},{}}}", lower.map(|x| x.to_string()).unwrap_or_default(), upper.map(|x| x.to_string()).unwrap_or_default())]

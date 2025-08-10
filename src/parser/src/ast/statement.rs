@@ -9,7 +9,7 @@ pub enum Statement {
     // Analyze
     // Explain
     // CreateDatabase
-    CreateDatabase(Box<CreateDatabase>),
+    // CreateDatabase(Box<CreateDatabase>),
     // CreateVertexType(Box<CreateVertexType>),
     // CreateEdgeType(Box<CreateEdgeType>),
     Query(Box<RegularQuery>),

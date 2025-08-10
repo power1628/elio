@@ -2,6 +2,7 @@ peg::parser! {
   pub grammar cypher_parser() for str {
     use crate::ast::*;
     use either::Either;
+    
 
     /// ---------------------
     /// Whitespace
@@ -13,17 +14,18 @@ peg::parser! {
     /// Statement
     /// ---------------------
     pub rule statement() -> Statement
-        = _ s:(create_database() / create_vertex_type() / create_edge_type()) _ {s}
+        // = _ s:(create_database()/ create_vertex_type() / create_edge_type()) _ {s}
+        = _ s:regular_query() _ {s}
 
     /// create database statement
-    pub rule create_database() -> Statement
-        = CREATE() _ DATABASE() _ not_exists:if_not_exists() _ db_name:ident() _ options:with_attribute_list()? {
-            Statement::CreateDatabase(Box::new(CreateDatabase {
-                db_name: db_name.to_string(),
-                not_exists: false,
-                options: options.unwrap_or_default(),
-            }))
-        }
+    // pub rule create_database() -> Statement
+    //     = CREATE() _ DATABASE() _ not_exists:if_not_exists() _ db_name:ident() _ options:with_attribute_list()? {
+    //         Statement::CreateDatabase(Box::new(CreateDatabase {
+    //             db_name: db_name.to_string(),
+    //             not_exists: false,
+    //             options: options.unwrap_or_default(),
+    //         }))
+    //     }
 
     /// create vertex type statement
     /// CREATE VERTEX TYPE IF NOT EXISTS name (column1 type1 nullable, column2 type2 nullable, PRIMARY KEY (column1))
@@ -111,15 +113,51 @@ peg::parser! {
         = _ NOT() _ NULL() { false }
         / _ NULL() { true }
 
+
+    /// ---------------------
+    /// RegularQuery
+    /// ---------------------
+    rule regular_query() -> Statement
+        = first:single_query() _ union:(union_query())* {
+            let mut queries = vec![first];
+            let mut union_all = false;
+            for (is_all, query) in union {
+                union_all |= is_all;
+                queries.push(query);
+            }
+            Statement::Query(Box::new(RegularQuery{
+                queries,
+                union_all,
+            }))
+        }
+
+    rule single_query() -> SingleQuery
+        = clauses:(clause())+ {
+            SingleQuery {
+                clauses,
+            }
+        }
+
+    rule union_query() -> (bool, SingleQuery)
+        = UNION() _ union_all:ALL()? _ query:single_query() {
+            (union_all.is_some(), query)
+        }
+
     /// ---------------------
     /// Clauses
     /// ---------------------
 
+    rule clause() -> Clause
+        = create:create_clause() {
+            Clause::Create(create)
+        }
+
+
     /// Create Clause
     rule create_clause() -> CreateClause
-        = CREATE() _ pattern:pattern() {
+        = CREATE() _ patterns:pattern() {
             CreateClause {
-                pattern,
+                pattern: UpdatePattern{ patterns },
             }
         }
 
@@ -130,27 +168,76 @@ peg::parser! {
         = parts:(pattern_part() ** comma_separator()) _ { parts }
 
     rule pattern_part() -> PatternPart
-        = variable:ident()? _ pattern:anonymous_pattern() {
-            let (nodes, rels) = pattern;
-            if let Some(name) = variable {
-                PatternPart::new_named(name.to_string(), nodes, rels)
-            } else {
-                PatternPart::new_anonymous(nodes, rels)
+        = variable:variable_declare()? _ selector:selector()? _ factors:anonymous_pattern() {
+            PatternPart{
+                variable,
+                selector: selector.unwrap_or_default(),
+                factors
             }
         }
 
+    rule selector() -> Selector
+        = ALL() _ PATH() {
+            Selector::AllPaths
+        }
+        / ANY() _ count:integer_literal() _ PATH() {
+            let count: u32 = count.parse().unwrap();
+            Selector::AnyPath(count)
+        }
+        / ALL() _ SHORTEST() _ PATH() {
+            Selector::AllShortest
+        }
+        / ANY() _ SHORTEST() _ PATH() {
+            Selector::AnyShortestPath
+        }
+        / SHORTEST() _ count:integer_literal() _ PATH() {
+            let count: u32 = count.parse().unwrap();
+            Selector::CountedShortestPath(count)
+        }
+        / SHORTEST() _ count:integer_literal() _ PATH() _ GROUP() {
+            let count: u32 = count.parse().unwrap();
+            Selector::CountedShortestGroup(count)
+        }
 
-    rule anonymous_pattern() -> (Vec<NodePattern>, Vec<RelationshipPattern>)
+    rule anonymous_pattern() -> Vec<PathFactor>
+        = head:simple_path_pattern() _ tail:path_facror()* {
+            let mut parts = vec![];
+            parts.push(PathFactor::Simple(head));
+            parts.extend(tail);
+            parts
+        }
+
+    rule path_facror() -> PathFactor
+        = simple:simple_path_pattern() {
+            PathFactor::Simple(simple)
+        }
+        / quantified:quantified_path_pattern() {
+            PathFactor::Quantified(quantified)
+        }
+
+    rule simple_path_pattern() -> SimplePathPattern
         = node:node_pattern() _ chain:pattern_element_chain()* {
             let mut nodes = vec![];
-            let mut rels = vec![];
+            let mut relationships = vec![];
             nodes.push(node);
             for (rel, node) in chain {
-                rels.push(rel);
+                relationships.push(rel);
                 nodes.push(node);
             }
-            (nodes, rels)
+            SimplePathPattern {
+                nodes,
+                relationships,
+            }
         }
+
+    rule quantified_path_pattern() -> QuantifiedPathPattern
+        = "(" _ pattern:pattern_part() _ filter:(where_clause())? _ ")" _ quantifier:quantifier() {
+            QuantifiedPathPattern{
+                non_selective_part: Box::new(pattern),
+                quantifier,
+                filter,
+            }
+         }
 
     rule pattern_element_chain() -> (RelationshipPattern, NodePattern)
         = rel:relationship_pattern() _ node:node_pattern() {
@@ -210,6 +297,28 @@ peg::parser! {
             }
         }
 
+    rule quantifier() -> PatternQuantifier
+        = "+" { PatternQuantifier::Plus}
+        / "*" { PatternQuantifier::Star}
+        / "{" _ count:integer_literal() _ "}" {
+            let count: u32 = count.parse().unwrap();
+            PatternQuantifier::Fixed(count)
+        }
+        / "{" _ lower:integer_literal()? _ "," _ upper:integer_literal()? _ "}" {
+            let lower: Option<u32> = lower.map(|v| v.parse().unwrap());
+            let upper: Option<u32> = upper.map(|v| v.parse().unwrap());
+            PatternQuantifier::Interval{ lower, upper}
+        }
+
+    rule variable_declare() -> String
+         = variable:ident() _ "=" {
+            variable.to_string()
+         }
+
+    rule where_clause() -> Box<Expr>
+         = _:WHERE() _ expr:expr() {
+            Box::new(expr)
+         }
 
     /// ---------------------
     /// Expression
@@ -403,6 +512,20 @@ peg::parser! {
         = ['n' | 'N'] ['o' | 'O'] ['t' | 'T'] { "NOT" }
     rule EXISTS() -> &'static str
         = ['e' | 'E'] ['x' | 'X'] ['i' | 'I'] ['s' | 'S'] ['t' | 'T'] ['s' | 'S'] { "EXISTS" }
+    rule UNION() -> &'static str
+        = ['u' | 'U'] ['n' | 'N'] ['i' | 'I'] ['o' | 'O'] ['n' | 'N'] { "UNION" }
+    rule ALL() -> &'static str
+        = ['a' | 'A'] ['l' | 'L'] ['l' | 'L'] { "ALL" }
+    rule ANY() -> &'static str
+        = ['a' | 'A'] ['n' | 'N'] ['y' | 'Y'] { "ANY" }
+    rule SHORTEST() -> &'static str
+        = ['s' | 'S'] ['h' | 'H'] ['o' | 'O'] ['r' | 'R'] ['t' | 'T'] ['e' | 'E'] ['s' | 'S'] ['t' | 'T'] { "SHORTEST" }
+    rule PATH() -> &'static str
+        = ['p' | 'P'] ['a' | 'A'] ['t' | 'T'] ['h' | 'H'] { "PATH" }
+    rule GROUP() -> &'static str
+        = ['g' | 'G'] ['r' | 'R'] ['o' | 'O'] ['u' | 'U'] ['p' | 'P'] { "GROUP" }
+    rule WHERE() -> &'static str
+        = ['w' | 'W'] ['h' | 'H'] ['e' | 'E'] ['r' | 'R'] ['e' | 'E'] { "WHERE" }
 
     rule INTEGER() -> &'static str
         = ['i' | 'I'] ['n' | 'N'] ['t' | 'T'] ['e' | 'E'] ['g' | 'G'] ['e' | 'E'] ['r' | 'R'] { "INTEGER" }
