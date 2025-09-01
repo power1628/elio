@@ -4,7 +4,7 @@ use thiserror::Error;
 pub enum Error {
     #[error("open db failed")]
     OpenDbFailed {
-        #[source]
+        #[from]
         source: mojito_storage::error::GraphStoreError,
     },
 }

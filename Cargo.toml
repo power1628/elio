@@ -2,7 +2,7 @@
 members = [
     "src/common",
     "src/cypher",
-    "src/db",
+    "src/core",
     "src/parser",
     "src/storage",
 ]
@@ -15,7 +15,7 @@ edition = "2024"
 [workspace.dependencies]
 mojito_common = { path = "src/common" }
 mojito_cypher = { path = "src/cypher" }
-mojito_db = { path = "src/db" }
+mojito_db = { path = "src/core" }
 mojito_parser = { path = "src/parser" }
 mojito_storage = { path = "src/storage" }
 

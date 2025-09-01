@@ -1,12 +1,12 @@
 [package]
-name = "mojito_db"
+name = "mojito_core"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
 # workspace
 mojito_common = { workspace = true }
-mojito_storage = { workspace = true }
 mojito_cypher = { workspace = true }
-thiserror = {workspace = true}
+mojito_storage = { workspace = true }
+thiserror = { workspace = true }
 # other
