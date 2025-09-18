@@ -18,7 +18,7 @@ pub enum QueryKind {
 }
 
 pub enum QueryExecutionKind {
-    Query(QueryType),
+    Query(QueryKind),
     Profile,
     Explain,
 }
@@ -39,21 +39,19 @@ pub enum QueryExecutionKind {
 ///     - on query finished
 ///     - ...
 /// ResultHandle communicate with execution engine with QueryExecutionHandle object
-pub struct ResultHandle {}
+pub struct ResultHandle {
+    execution_kind: QueryExecutionKind,
+    columns: Vec<String>,
+    // TODO(pgao): output buffer channel
+}
 
 impl ResultHandle {
     pub fn execution_kind(&self) -> QueryExecutionKind {
-        todo!()
+        self.execution_kind
     }
 
     // result column names
-    pub fn column(&self) -> Vec<String> {
-        todo!()
+    pub fn columns(&self) -> Vec<String> {
+        self.columns
     }
-}
-
-// ResultHandle also act as an result iterator.
-pub trait ResultHandle: Iterator<Item = Vec<(String, Value)>> {
-    // return the result column names
-    fn columns(&self) -> Vec<String>;
 }
