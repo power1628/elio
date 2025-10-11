@@ -80,4 +80,9 @@ impl GraphRead {
         *container.table = Some(table);
         Ok(container)
     }
+
+    pub fn table(&self) -> &ReadOnlyTable<&'static [u8], &'static [u8]> {
+        // safety: with new, table must be initialized
+        self.table.as_ref().unwrap()
+    }
 }

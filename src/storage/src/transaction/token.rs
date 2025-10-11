@@ -10,7 +10,7 @@ use redb::ReadableTable;
 use crate::{
     codec::{TokenFormat, TokenKind},
     error::GraphStoreError,
-    transaction::GraphWrite,
+    transaction::{GraphRead, GraphWrite},
 };
 
 impl GraphWrite {
@@ -58,6 +58,18 @@ impl GraphWrite {
     }
 
     fn get_token(&self, kind: &TokenKind, token: &str) -> Result<Option<u16>, GraphStoreError> {
+        let table = self.table();
+        let key = TokenFormat::data_key(kind, token);
+        let value = table
+            .get(key.as_slice())
+            .map_err(Box::new)?
+            .map(|v| TokenFormat::read_token(v.value()));
+        Ok(value)
+    }
+}
+
+impl GraphRead {
+    pub fn get_token(&self, kind: &TokenKind, token: &str) -> Result<Option<u16>, GraphStoreError> {
         let table = self.table();
         let key = TokenFormat::data_key(kind, token);
         let value = table

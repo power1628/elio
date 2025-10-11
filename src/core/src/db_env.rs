@@ -1,16 +1,9 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashMap, sync::Arc};
 
 use mojito_common::value::Value;
 use mojito_storage::graph_store::{GraphStore, GraphStoreConfig};
 
-use crate::{
-    error::Error,
-    session::{Session, SessionId},
-    transaction::ResultHandle,
-};
+use crate::{error::Error, result::ResultHandle};
 
 pub struct DbConfig {
     store_config: GraphStoreConfig,

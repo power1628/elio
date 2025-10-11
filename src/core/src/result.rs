@@ -1,9 +1,3 @@
-use std::{collections::HashMap, sync::Arc};
-
-use mojito_common::value::Value;
-
-use crate::{db_env::DbEnv, error::Error};
-
 pub enum QueryKind {
     // read only query
     Read,
@@ -46,12 +40,12 @@ pub struct ResultHandle {
 }
 
 impl ResultHandle {
-    pub fn execution_kind(&self) -> QueryExecutionKind {
-        self.execution_kind
+    pub fn execution_kind(&self) -> &QueryExecutionKind {
+        &self.execution_kind
     }
 
     // result column names
-    pub fn columns(&self) -> Vec<String> {
-        self.columns
+    pub fn columns(&self) -> &[String] {
+        self.columns.as_slice()
     }
 }
