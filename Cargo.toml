@@ -1,10 +1,11 @@
 [workspace]
 members = [
-  "src/common",
-  "src/core",
-  "src/cypher",
-  "src/parser",
-  "src/storage",
+    "src/common",
+    "src/core",
+    "src/cypher",
+    "src/parser",
+    "src/storage",
+    "src/storage2",
 ]
 resolver = "2"
 
