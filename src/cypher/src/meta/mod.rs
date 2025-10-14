@@ -1,6 +1,5 @@
 use crate::error::PlanError;
 use mojito_common::LabelId;
-use mojito_storage::codec::TokenKind;
 
 pub trait MetaReader {
     fn get_label(&self, label: &str) -> Result<Option<LabelId>, PlanError>;

@@ -7,7 +7,6 @@ use std::{
 };
 
 use mojito_common::{LabelId, PropertyKeyId, RelationshipTypeId};
-use rocksdb::BoundColumnFamily;
 
 use crate::{
     CF_META,

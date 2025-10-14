@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use rocksdb::{self, MultiThreaded};
+use rocksdb::{self};
 
 pub mod graph_cf {
     pub const CF_META: &str = "cf_meta";
