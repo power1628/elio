@@ -17,7 +17,6 @@ use crate::{
 
 pub struct MetaStore {
     db: Arc<rocksdb::TransactionDB>,
-    // TODO(power): meta cf here
     // in memory cache
     next_label_id: AtomicU16,
     next_reltype_id: AtomicU16,
@@ -44,8 +43,20 @@ impl MetaStore {
 
     fn load_from_db(&mut self) -> Result<(), GraphStoreError> {
         // load state from db to cache
-        let cf = self.db.cf_handle(CF_META).unwrap();
-        todo!("load meta from db");
+        // token next id
+        self.next_label_id
+            .store(self.db_get_token_next_id(TokenKind::Label)?, Ordering::Relaxed);
+        self.next_reltype_id.store(
+            self.db_get_token_next_id(TokenKind::RelationshipType)?,
+            Ordering::Relaxed,
+        );
+        self.next_property_key_id
+            .store(self.db_get_token_next_id(TokenKind::PropertyKey)?, Ordering::Relaxed);
+        // token dict
+        self.load_token_dict(TokenKind::Label)?;
+        self.load_token_dict(TokenKind::RelationshipType)?;
+        self.load_token_dict(TokenKind::PropertyKey)?;
+        Ok(())
     }
 
     pub fn get_label_id(&self, label: &str) -> Option<LabelId> {
@@ -74,7 +85,9 @@ impl MetaStore {
     pub fn get_or_create_property_key_id(&self, property_key: &str) -> Result<PropertyKeyId, GraphStoreError> {
         self.get_or_create_token(property_key, TokenKind::PropertyKey)
     }
+}
 
+impl MetaStore {
     fn get_or_create_token(&self, token: &str, token_kind: TokenKind) -> Result<u16, GraphStoreError> {
         let mut tokens = match token_kind {
             TokenKind::Label => self.labels.write().unwrap(),
@@ -97,7 +110,7 @@ impl MetaStore {
         {
             // insert next id  to db
             let key = TokenFormat::next_id_key(&token_kind);
-            let value = TokenFormat::encode_next_id(token_id);
+            let value = TokenFormat::next_id_value(token_id);
             self.db.put_cf(&cf, key, value)?;
         }
         {
@@ -107,5 +120,41 @@ impl MetaStore {
             self.db.put_cf(&cf, key, value)?;
         }
         Ok(token_id)
+    }
+
+    fn load_token_dict(&mut self, token_kind: TokenKind) -> Result<(), GraphStoreError> {
+        let tokens = self.db_get_all_token(token_kind)?;
+        let dict = match token_kind {
+            TokenKind::Label => &mut self.labels,
+            TokenKind::RelationshipType => &mut self.reltypes,
+            TokenKind::PropertyKey => &mut self.property_keys,
+        };
+        let mut dict = dict.write().unwrap();
+        dict.clear();
+        dict.extend(tokens);
+        Ok(())
+    }
+
+    fn db_get_all_token(&self, token_kind: TokenKind) -> Result<Vec<(String, u16)>, GraphStoreError> {
+        let cf = self.db.cf_handle(CF_META).unwrap();
+        let prefix = TokenFormat::data_key_prefix(&token_kind);
+        let iter = self.db.prefix_iterator_cf(&cf, prefix);
+
+        let mut tokens = Vec::new();
+        for res in iter {
+            let (key, value) = res?;
+            let (_, token) = TokenFormat::decode_data_key(&key);
+            let token_id = TokenFormat::decode_data_value(&value);
+            tokens.push((token, token_id));
+        }
+        Ok(tokens)
+    }
+
+    fn db_get_token_next_id(&self, token_kind: TokenKind) -> Result<u16, GraphStoreError> {
+        let cf = self.db.cf_handle(CF_META).unwrap();
+        let key = TokenFormat::next_id_key(&token_kind);
+        let res = self.db.get_cf(&cf, key)?;
+        let next_id = res.map_or(0, |v| TokenFormat::decode_next_id(&v));
+        Ok(next_id)
     }
 }

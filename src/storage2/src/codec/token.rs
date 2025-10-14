@@ -15,6 +15,7 @@ const NEXT_PROPERTY_KEY_ID_PREFIX: u8 = 0x06;
 ///   - value := <next_id>
 pub struct TokenFormat;
 
+#[derive(Copy, Clone)]
 pub enum TokenKind {
     Label,
     RelationshipType,
@@ -27,6 +28,15 @@ impl TokenFormat {
             TokenKind::RelationshipType => [NEXT_RELTYPE_ID_PREFIX],
             TokenKind::PropertyKey => [NEXT_PROPERTY_KEY_ID_PREFIX],
         }
+    }
+
+    #[inline]
+    pub fn next_id_value(next_id: u16) -> [u8; 2] {
+        next_id.to_le_bytes()
+    }
+
+    pub fn decode_next_id(buf: &[u8]) -> u16 {
+        u16::from_le_bytes([buf[0], buf[1]])
     }
 
     pub fn data_key(kind: &TokenKind, token: &str) -> Vec<u8> {
@@ -45,22 +55,36 @@ impl TokenFormat {
         key.extend_from_slice(token.as_bytes());
         key
     }
+
+    /// Used for prefix scan
+    pub fn data_key_prefix(kind: &TokenKind) -> Vec<u8> {
+        match kind {
+            TokenKind::Label => vec![LABEL_KEY_PREFIX],
+            TokenKind::RelationshipType => vec![RELTYPE_KEY_PREFIX],
+            TokenKind::PropertyKey => vec![PROPERTY_KEY_PREFIX],
+        }
+    }
+
+    pub fn decode_data_key(key: &[u8]) -> (TokenKind, String) {
+        let kind = match key[0] {
+            LABEL_KEY_PREFIX => TokenKind::Label,
+            RELTYPE_KEY_PREFIX => TokenKind::RelationshipType,
+            PROPERTY_KEY_PREFIX => TokenKind::PropertyKey,
+            _ => panic!("invalid token kind"),
+        };
+        let token = String::from_utf8_lossy(&key[1..]).to_string();
+        (kind, token)
+    }
+
+    pub fn decode_data_value(val: &[u8]) -> u16 {
+        u16::from_le_bytes([val[0], val[1]])
+    }
 }
 
 impl TokenFormat {
     #[inline]
-    pub fn read_next_id(buf: &[u8]) -> u16 {
-        u16::from_le_bytes([buf[0], buf[1]])
-    }
-
-    #[inline]
     pub fn read_token(buf: &[u8]) -> u16 {
         TokenFormat::decode(buf)
-    }
-
-    #[inline]
-    pub fn encode_next_id(next_id: u16) -> [u8; 2] {
-        next_id.to_le_bytes()
     }
 
     #[inline]
