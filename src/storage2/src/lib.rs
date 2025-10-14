@@ -1,6 +1,7 @@
 use crate::{graph::GraphStore, meta::MetaStore};
 
 pub mod codec;
+pub mod dict;
 pub mod error;
 pub mod graph;
 pub mod meta;

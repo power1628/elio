@@ -1,4 +1,5 @@
 pub mod data_type;
+pub mod store_types;
 pub mod value;
 
 pub type NodeId = u64;
