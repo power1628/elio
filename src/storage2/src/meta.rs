@@ -10,7 +10,7 @@ use mojito_common::{LabelId, PropertyKeyId, RelationshipTypeId};
 
 use crate::{
     CF_META,
-    codec::{TokenFormat, TokenKind},
+    codec::{TokenCodec, TokenKind},
     error::GraphStoreError,
 };
 
@@ -42,15 +42,6 @@ impl MetaStore {
 
     fn load_from_db(&mut self) -> Result<(), GraphStoreError> {
         // load state from db to cache
-        // token next id
-        self.next_label_id
-            .store(self.db_get_token_next_id(TokenKind::Label)?, Ordering::Relaxed);
-        self.next_reltype_id.store(
-            self.db_get_token_next_id(TokenKind::RelationshipType)?,
-            Ordering::Relaxed,
-        );
-        self.next_property_key_id
-            .store(self.db_get_token_next_id(TokenKind::PropertyKey)?, Ordering::Relaxed);
         // token dict
         self.load_token_dict(TokenKind::Label)?;
         self.load_token_dict(TokenKind::RelationshipType)?;
@@ -107,15 +98,9 @@ impl MetaStore {
         // write to db
         let cf = self.db.cf_handle(CF_META).unwrap();
         {
-            // insert next id  to db
-            let key = TokenFormat::next_id_key(&token_kind);
-            let value = TokenFormat::next_id_value(token_id);
-            self.db.put_cf(&cf, key, value)?;
-        }
-        {
             // insert token -> id to db
-            let key = TokenFormat::data_key(&token_kind, token);
-            let value = TokenFormat::encode_data_value(token_id);
+            let key = TokenCodec::data_key(&token_kind, token);
+            let value = TokenCodec::encode_data_value(token_id);
             self.db.put_cf(&cf, key, value)?;
         }
         Ok(token_id)
@@ -128,6 +113,17 @@ impl MetaStore {
             TokenKind::RelationshipType => &mut self.reltypes,
             TokenKind::PropertyKey => &mut self.property_keys,
         };
+        // update next id
+        let next_id = match tokens.iter().map(|(_, id)| id).max() {
+            Some(max_id) => max_id + 1,
+            None => 0,
+        };
+        match token_kind {
+            TokenKind::Label => self.next_label_id.store(next_id, Ordering::Relaxed),
+            TokenKind::RelationshipType => self.next_reltype_id.store(next_id, Ordering::Relaxed),
+            TokenKind::PropertyKey => self.next_property_key_id.store(next_id, Ordering::Relaxed),
+        }
+
         let mut dict = dict.write().unwrap();
         dict.clear();
         dict.extend(tokens);
@@ -136,24 +132,16 @@ impl MetaStore {
 
     fn db_get_all_token(&self, token_kind: TokenKind) -> Result<Vec<(String, u16)>, GraphStoreError> {
         let cf = self.db.cf_handle(CF_META).unwrap();
-        let prefix = TokenFormat::data_key_prefix(&token_kind);
+        let prefix = TokenCodec::data_key_prefix(&token_kind);
         let iter = self.db.prefix_iterator_cf(&cf, prefix);
 
         let mut tokens = Vec::new();
         for res in iter {
             let (key, value) = res?;
-            let (_, token) = TokenFormat::decode_data_key(&key);
-            let token_id = TokenFormat::decode_data_value(&value);
+            let (_, token) = TokenCodec::decode_data_key(&key);
+            let token_id = TokenCodec::decode_data_value(&value);
             tokens.push((token, token_id));
         }
         Ok(tokens)
-    }
-
-    fn db_get_token_next_id(&self, token_kind: TokenKind) -> Result<u16, GraphStoreError> {
-        let cf = self.db.cf_handle(CF_META).unwrap();
-        let key = TokenFormat::next_id_key(&token_kind);
-        let res = self.db.get_cf(&cf, key)?;
-        let next_id = res.map_or(0, |v| TokenFormat::decode_next_id(&v));
-        Ok(next_id)
     }
 }

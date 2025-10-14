@@ -2,18 +2,15 @@ const LABEL_KEY_PREFIX: u8 = 0x01;
 const RELTYPE_KEY_PREFIX: u8 = 0x02;
 const PROPERTY_KEY_PREFIX: u8 = 0x03;
 
-const NEXT_LABEL_ID_PREFIX: u8 = 0x04;
-const NEXT_RELTYPE_ID_PREFIX: u8 = 0x05;
-const NEXT_PROPERTY_KEY_ID_PREFIX: u8 = 0x06;
-
 /// Storage
 ///   - key   := <LABEL_PREFIX> <label>
 ///   - value := <label_id>
 ///
-/// NextId
+/// NextId [deleted]
+///   we do not need to record the next id here, since the next id can be recovered from the data part
 ///   - key   := <LABEL_PREFIX> <TOKEN_NEXT_ID>
 ///   - value := <next_id>
-pub struct TokenFormat;
+pub struct TokenCodec;
 
 #[derive(Copy, Clone)]
 pub enum TokenKind {
@@ -21,24 +18,7 @@ pub enum TokenKind {
     RelationshipType,
     PropertyKey,
 }
-impl TokenFormat {
-    pub fn next_id_key(kind: &TokenKind) -> [u8; 1] {
-        match kind {
-            TokenKind::Label => [NEXT_LABEL_ID_PREFIX],
-            TokenKind::RelationshipType => [NEXT_RELTYPE_ID_PREFIX],
-            TokenKind::PropertyKey => [NEXT_PROPERTY_KEY_ID_PREFIX],
-        }
-    }
-
-    #[inline]
-    pub fn next_id_value(next_id: u16) -> [u8; 2] {
-        next_id.to_le_bytes()
-    }
-
-    pub fn decode_next_id(buf: &[u8]) -> u16 {
-        u16::from_le_bytes([buf[0], buf[1]])
-    }
-
+impl TokenCodec {
     pub fn data_key(kind: &TokenKind, token: &str) -> Vec<u8> {
         let mut key = Vec::with_capacity(1 + token.len());
         match kind {
@@ -81,10 +61,10 @@ impl TokenFormat {
     }
 }
 
-impl TokenFormat {
+impl TokenCodec {
     #[inline]
     pub fn read_token(buf: &[u8]) -> u16 {
-        TokenFormat::decode(buf)
+        TokenCodec::decode(buf)
     }
 
     #[inline]
