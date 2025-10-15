@@ -1,87 +1,113 @@
 use derive_more::Display;
 
+use crate::ast::{AstMeta, RawMeta};
+
 #[derive(Debug)]
-pub enum Expr {
-    Literal(Literal),
-    Varaible(String),
-    Parameter(String),
+pub enum Expr<T: AstMeta> {
+    Literal {
+        lit: Literal,
+        typ: T::DataType,
+    },
+    Varaible {
+        name: String,
+        typ: T::DataType,
+    },
+    Parameter {
+        name: String,
+        typ: T::DataType,
+    },
     MapExpression {
         keys: Vec<String>,
-        values: Vec<Expr>,
+        values: Vec<Expr<T>>,
     },
     PropertyAccess {
-        map: Box<Expr>,
+        map: Box<Expr<T>>,
         key: String,
     },
     Unary {
         op: UnaryOperator,
-        oprand: Box<Expr>,
+        oprand: Box<Expr<T>>,
     },
     Binary {
-        left: Box<Expr>,
+        left: Box<Expr<T>>,
         op: BinaryOperator,
-        right: Box<Expr>,
+        right: Box<Expr<T>>,
     },
     FunctionCall {
         name: String,
-        args: Vec<Expr>,
+        args: Vec<Expr<T>>,
     },
 }
 
-impl Expr {
+impl Expr<RawMeta> {
     pub fn new_boolean(value: bool) -> Self {
-        Expr::Literal(Literal::Boolean(value))
+        Expr::Literal {
+            lit: Literal::Boolean(value),
+            typ: (),
+        }
     }
     pub fn new_integer(value: String) -> Self {
-        Expr::Literal(Literal::Integer(value))
+        Expr::Literal {
+            lit: Literal::Integer(value),
+            typ: (),
+        }
     }
     pub fn new_float(value: String) -> Self {
-        Expr::Literal(Literal::Float(value))
+        Expr::Literal {
+            lit: Literal::Float(value),
+            typ: (),
+        }
     }
     pub fn new_string(value: String) -> Self {
-        Expr::Literal(Literal::String(value))
+        Expr::Literal {
+            lit: Literal::String(value),
+            typ: (),
+        }
     }
     pub fn new_null() -> Self {
-        Expr::Literal(Literal::Null)
+        Expr::Literal {
+            lit: Literal::Null,
+            typ: (),
+        }
     }
     pub fn new_variable(name: String) -> Self {
-        Expr::Varaible(name)
+        Expr::Varaible { name, typ: () }
     }
     pub fn new_parameter(name: String) -> Self {
-        Expr::Parameter(name)
+        Expr::Parameter { name, typ: () }
     }
-    pub fn new_map_expression(keys: Vec<String>, values: Vec<Expr>) -> Self {
+    pub fn new_map_expression(keys: Vec<String>, values: Vec<Expr<RawMeta>>) -> Self {
         Expr::MapExpression { keys, values }
     }
-    pub fn new_property_access(map: Expr, key: String) -> Self {
+    pub fn new_property_access(map: Expr<RawMeta>, key: String) -> Self {
         Expr::PropertyAccess {
             map: Box::new(map),
             key,
         }
     }
-    pub fn new_unary(op: UnaryOperator, oprand: Expr) -> Self {
+    pub fn new_unary(op: UnaryOperator, oprand: Expr<RawMeta>) -> Self {
         Expr::Unary {
             op,
             oprand: Box::new(oprand),
         }
     }
-    pub fn new_binary(left: Expr, op: BinaryOperator, right: Expr) -> Self {
+    pub fn new_binary(left: Expr<RawMeta>, op: BinaryOperator, right: Expr<RawMeta>) -> Self {
         Expr::Binary {
             left: Box::new(left),
             op,
             right: Box::new(right),
         }
     }
-    pub fn new_function_call(name: String, args: Vec<Expr>) -> Self {
+    pub fn new_function_call(name: String, args: Vec<Expr<RawMeta>>) -> Self {
         Expr::FunctionCall { name, args }
     }
 }
 
-impl std::fmt::Display for Expr {
+impl std::fmt::Display for Expr<RawMeta> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Expr::Literal(literal) => write!(f, "{literal}"),
-            Expr::Varaible(var) => write!(f, "{var}"),
+            Expr::Literal { lit, typ: _ } => write!(f, "{lit}"),
+            Expr::Varaible { name, typ: _ } => write!(f, "{name}"),
             Expr::MapExpression { keys, values } => {
                 write!(
                     f,
@@ -93,7 +119,7 @@ impl std::fmt::Display for Expr {
                         .join(", ")
                 )
             }
-            Expr::Parameter(param) => write!(f, "${param}"),
+            Expr::Parameter { name, typ: _ } => write!(f, "${name}"),
             Expr::PropertyAccess { map, key } => write!(f, "{map}.{key}"),
             Expr::Unary { op, oprand } => match op.associativity() {
                 Associativity::Prefix => write!(f, "{op}({oprand})"),

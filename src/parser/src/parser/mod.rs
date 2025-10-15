@@ -13,7 +13,7 @@ peg::parser! {
     /// ---------------------
     /// Statement
     /// ---------------------
-    pub rule statement() -> Statement
+    pub rule statement() -> Statement<RawMeta>
         // = _ s:(create_database()/ create_vertex_type() / create_edge_type()) _ {s}
         = _ s:regular_query() _ {s}
 
@@ -85,30 +85,6 @@ peg::parser! {
         = IF() _ NOT() _ EXISTS()   { true }
           / { false }
 
-    rule with_attribute_list() -> Vec<OptionKV>
-        = WITH() _ kvs:attribute_list() { kvs }
-
-    rule column_def_or_constraint() -> Either<ColumnDef,ConstraintSpec>
-        = def:column_def() { Either::Left(def) }
-        / constraint:constraint_spec() { Either::Right(constraint) }
-
-    rule column_def() -> ColumnDef
-        = name:ident() _ typ:data_type() nullable:column_nullable()?  {
-            ColumnDef {
-                name: name.to_string(),
-                typ,
-                nullable: nullable.unwrap_or(true),
-            }
-        }
-
-    rule constraint_spec() -> ConstraintSpec
-        =  "PRIMARY" _ "KEY" _ "(" _ columns:(ident() ** ",") _ ")"  {
-            ConstraintSpec::PrimaryKey{columns: columns.into_iter().map(|c| c.to_string()).collect() }
-        }
-        /  "PRIMARY" _ "KEY" _ ident:ident()  {
-            ConstraintSpec::PrimaryKey{columns: vec![ident.to_string()] }
-        }
-
     rule column_nullable() -> bool
         = _ NOT() _ NULL() { false }
         / _ NULL() { true }
@@ -117,7 +93,7 @@ peg::parser! {
     /// ---------------------
     /// RegularQuery
     /// ---------------------
-    rule regular_query() -> Statement
+    rule regular_query() -> Statement<RawMeta>
         = first:single_query() _ union:(union_query())++ _ {
             let mut queries = vec![first];
             let mut union_all = false;
@@ -131,14 +107,14 @@ peg::parser! {
             }))
         }
 
-    rule single_query() -> SingleQuery
+    rule single_query() -> SingleQuery<RawMeta>
         = clauses:(clause())+ {
             SingleQuery {
                 clauses,
             }
         }
 
-    rule union_query() -> (bool, SingleQuery)
+    rule union_query() -> (bool, SingleQuery<RawMeta>)
         = UNION() _ union_all:ALL()? _ query:single_query() {
             (union_all.is_some(), query)
         }
@@ -147,14 +123,14 @@ peg::parser! {
     /// Clauses
     /// ---------------------
 
-    pub rule clause() -> Clause
+    pub rule clause() -> Clause<RawMeta>
         = create:create_clause() {
             Clause::Create(create)
         }
 
 
     /// Create Clause
-    rule create_clause() -> CreateClause
+    rule create_clause() -> CreateClause<RawMeta>
         = CREATE() _ patterns:pattern() {
             CreateClause {
                 pattern: UpdatePattern{ patterns },
@@ -164,10 +140,10 @@ peg::parser! {
     /// ---------------------
     /// Pattern
     /// ---------------------
-    pub rule pattern() -> Vec<PatternPart>
+    pub rule pattern() -> Vec<PatternPart<RawMeta>>
         = parts:(pattern_part() ** comma_separator()) _ { parts }
 
-    pub rule pattern_part() -> PatternPart
+    pub rule pattern_part() -> PatternPart<RawMeta>
         = variable:variable_declare()? _ selector:selector()? _ factors:anonymous_pattern() {
             PatternPart{
                 variable,
@@ -199,7 +175,7 @@ peg::parser! {
             Selector::CountedShortestPath(count)
         }
 
-    rule anonymous_pattern() -> Vec<PathFactor>
+    rule anonymous_pattern() -> Vec<PathFactor<RawMeta>>
         = head:simple_path_pattern() _ tail:path_facror() ** _ {
             let mut parts = vec![];
             parts.push(PathFactor::Simple(head));
@@ -207,7 +183,7 @@ peg::parser! {
             parts
         }
 
-    rule path_facror() -> PathFactor
+    rule path_facror() -> PathFactor<RawMeta>
         = simple:simple_path_pattern() {
             PathFactor::Simple(simple)
         }
@@ -215,7 +191,7 @@ peg::parser! {
             PathFactor::Quantified(quantified)
         }
 
-    rule simple_path_pattern() -> SimplePathPattern
+    rule simple_path_pattern() -> SimplePathPattern<RawMeta>
         = node:node_pattern() _ chain:pattern_element_chain()* {
             let mut nodes = vec![];
             let mut relationships = vec![];
@@ -230,7 +206,7 @@ peg::parser! {
             }
         }
 
-    rule quantified_path_pattern() -> QuantifiedPathPattern
+    rule quantified_path_pattern() -> QuantifiedPathPattern<RawMeta>
         = "(" _ pattern:pattern_part() _ filter:(where_clause())? _ ")" _ quantifier:quantifier() {
             QuantifiedPathPattern{
                 non_selective_part: Box::new(pattern),
@@ -239,12 +215,12 @@ peg::parser! {
             }
          }
 
-    rule pattern_element_chain() -> (RelationshipPattern, NodePattern)
+    rule pattern_element_chain() -> (RelationshipPattern<RawMeta>, NodePattern<RawMeta>)
         = rel:relationship_pattern() _ node:node_pattern() {
             (rel, node)
         }
 
-    rule node_pattern() -> NodePattern
+    rule node_pattern() -> NodePattern<RawMeta>
         // TODO(pgao): support Where expr in node pattern
         = "(" _ variable:ident()? _ label_expr:label_expr()? _ properties:map_expr()? _ ")" {
             NodePattern {
@@ -255,7 +231,7 @@ peg::parser! {
             }
         }
 
-    rule relationship_pattern() -> RelationshipPattern
+    rule relationship_pattern() -> RelationshipPattern<RawMeta>
         = LEFT_ARROW() _ ARROW_LINE() {
             let mut relationship = RelationshipPattern::new();
             relationship.direction = SemanticDirection::Incoming;
@@ -287,7 +263,7 @@ peg::parser! {
             relationship
         }
 
-    rule relationship_detail() -> RelationshipPattern
+    rule relationship_detail() -> RelationshipPattern<RawMeta>
         = "[" _ variable:ident()? _ label_expr:label_expr()? _ properties:map_expr()? _ "]" {
             RelationshipPattern{
                 variable: variable.map(|v| v.to_string()),
@@ -315,7 +291,7 @@ peg::parser! {
             variable.to_string()
          }
 
-    rule where_clause() -> Box<Expr>
+    rule where_clause() -> Box<Expr<RawMeta>>
          = _:WHERE() _ expr:expr() {
             Box::new(expr)
          }
@@ -323,7 +299,7 @@ peg::parser! {
     /// ---------------------
     /// Expression
     /// ---------------------
-    pub rule expr() -> Expr
+    pub rule expr() -> Expr<RawMeta>
         = precedence! {
             left:(@) _ OR() _ right:@ {Expr::new_binary(left, BinaryOperator::Or, right)}
             --
@@ -391,14 +367,14 @@ peg::parser! {
             a:atom() { a }
         }
 
-    rule atom() -> Expr
+    rule atom() -> Expr<RawMeta>
         = l:literal() { l }
         / "$" v:ident() { Expr::new_parameter(v.to_string()) }
         / "(" _ e:expr() _ ")" { e }
         / f:function_call() { f }
         / v:variable() { v }
 
-    rule literal() -> Expr
+    rule literal() -> Expr<RawMeta>
         = b:(TRUE() / FALSE()) { Expr::new_boolean(b == "TRUE") }
         / f:float_literal() { Expr::new_float(f.to_string()) }
         / i:integer_literal() { Expr::new_integer(i.to_string()) }
@@ -406,13 +382,13 @@ peg::parser! {
         / n:null_literal() { n }
 
 
-    rule function_call() -> Expr
+    rule function_call() -> Expr<RawMeta>
         = name:ident() _ "(" _ args:( expr() ** comma_separator()) _ ")" {
             Expr::new_function_call(name.to_string(), args)
         }
 
-    rule variable() -> Expr
-        = v:ident() { Expr::Varaible(v.to_string()) }
+    rule variable() -> Expr<RawMeta>
+        = v:ident() { Expr::new_variable(v.to_string()) }
 
     rule null_predicate() -> UnaryOperator
         = is_null() / is_not_null()
@@ -428,15 +404,15 @@ peg::parser! {
     rule string_literal() -> &'input str
         = "'" content:$((!['\''] [_])* ) "'" { content }
         / "\"" content:$((!['\"'] [_])* ) "\"" { content }
-    rule null_literal() -> Expr
+    rule null_literal() -> Expr<RawMeta>
         = NULL() { Expr::new_null() }
 
-    rule map_expr() -> Expr
+    rule map_expr() -> Expr<RawMeta>
         = "{" _ items:(map_expr_item() ** comma_separator()) _ "}" {
             let (keys, values) = items.into_iter().unzip();
             Expr::new_map_expression(keys, values)
         }
-    rule map_expr_item() -> (String, Expr)
+    rule map_expr_item() -> (String, Expr<RawMeta>)
         = key:ident() _ ":" _ value:expr() { (key.to_string(), value) }
 
 
@@ -475,11 +451,6 @@ peg::parser! {
 
     rule ident() -> &'input str
         = first:$(['a'..='z' | 'A'..='Z'] ['a'..='z' | 'A'..='Z' | '0'..='9']*) { first }
-
-    rule attribute_list() -> Vec<OptionKV>
-        = "(" _ kvs:(option_kv() ** comma_separator()) _ ")" { kvs }
-    rule option_kv() -> OptionKV
-        =  key:ident() _ ":" _ value:expr() { OptionKV { name: key.to_string(), value: Box::new(value) } }
 
     rule comma_separator() = _ "," _
 

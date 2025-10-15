@@ -1,15 +1,15 @@
 use derive_more::Display;
 use itertools::{self, Itertools};
 
-use crate::ast::pattern::UpdatePattern;
+use crate::ast::{AstMeta, RawMeta, pattern::UpdatePattern};
 
 #[derive(Debug)]
-pub struct RegularQuery {
-    pub queries: Vec<SingleQuery>,
+pub struct RegularQuery<T: AstMeta> {
+    pub queries: Vec<SingleQuery<T>>,
     pub union_all: bool,
 }
 
-impl std::fmt::Display for RegularQuery {
+impl std::fmt::Display for RegularQuery<RawMeta> {
     #[allow(unstable_name_collisions)]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let queries = self.queries.iter().map(|x| x.to_string());
@@ -19,20 +19,25 @@ impl std::fmt::Display for RegularQuery {
     }
 }
 
-#[derive(Debug, Display)]
-#[display("{}", clauses.iter().map(|x| x.to_string()).join(" "))]
-pub struct SingleQuery {
-    pub clauses: Vec<Clause>,
+#[derive(Debug)]
+pub struct SingleQuery<T: AstMeta> {
+    pub clauses: Vec<Clause<T>>,
+}
+
+impl std::fmt::Display for SingleQuery<RawMeta> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.clauses.iter().map(|x| x.to_string()).join(" "))
+    }
 }
 
 #[derive(Debug, Display)]
-pub enum Clause {
+pub enum Clause<T: AstMeta> {
     #[display("CREATE {}", _0)]
-    Create(CreateClause),
+    Create(CreateClause<T>),
 }
 
 #[derive(Debug, Display)]
-pub struct CreateClause {
+pub struct CreateClause<T: AstMeta> {
     // pattern: Pattern,
-    pub pattern: UpdatePattern,
+    pub pattern: UpdatePattern<T>,
 }

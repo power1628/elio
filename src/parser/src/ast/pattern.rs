@@ -3,18 +3,28 @@ use std::ops::Range;
 use derive_more::Display;
 use itertools::{self, Itertools};
 
-use crate::ast::{Expr, LabelExpr};
+use crate::ast::{AstMeta, Expr, LabelExpr, RawMeta};
 
-#[derive(Debug, Display)]
-#[display("{}", patterns.iter().map(|x| x.to_string()).join(", "))]
-pub struct MatchPattern {
-    pub patterns: Vec<PatternPart>,
+#[derive(Debug)]
+pub struct MatchPattern<T: AstMeta> {
+    pub patterns: Vec<PatternPart<T>>,
 }
 
-#[derive(Debug, Display)]
-#[display("{}", patterns.iter().map(|x| x.to_string()).join(", "))]
-pub struct UpdatePattern {
-    pub patterns: Vec<PatternPart>,
+impl std::fmt::Display for MatchPattern<RawMeta> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.patterns.iter().map(|x| x.to_string()).join(", "))
+    }
+}
+
+#[derive(Debug)]
+pub struct UpdatePattern<T: AstMeta> {
+    pub patterns: Vec<PatternPart<T>>,
+}
+
+impl std::fmt::Display for UpdatePattern<RawMeta> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.patterns.iter().map(|x| x.to_string()).join(", "))
+    }
 }
 
 #[derive(Default, Debug, Display, PartialEq, Eq)]
@@ -49,19 +59,19 @@ impl Selector {
 }
 
 #[derive(Debug)]
-pub struct PatternPart {
+pub struct PatternPart<T: AstMeta> {
     pub variable: Option<String>, // pattern part with name
     pub selector: Selector,
-    pub factors: Vec<PathFactor>, // must start with simple and ends with simple
+    pub factors: Vec<PathFactor<T>>, // must start with simple and ends with simple
 }
 
-impl PatternPart {
+impl<T: AstMeta> PatternPart<T> {
     pub fn is_anonymous(&self) -> bool {
         self.variable.is_none()
     }
 }
 
-impl std::fmt::Display for PatternPart {
+impl std::fmt::Display for PatternPart<RawMeta> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(name) = self.variable.as_ref() {
             write!(f, "{name} = ")?;
@@ -80,20 +90,20 @@ impl std::fmt::Display for PatternPart {
 
 #[derive(Debug, Display)]
 #[display("{}", _0)]
-pub enum PathFactor {
+pub enum PathFactor<T: AstMeta> {
     #[display("{}", _0)]
-    Simple(SimplePathPattern),
+    Simple(SimplePathPattern<T>),
     #[display("{}", _0)]
-    Quantified(QuantifiedPathPattern),
+    Quantified(QuantifiedPathPattern<T>),
 }
 
 #[derive(Debug)]
-pub struct SimplePathPattern {
-    pub nodes: Vec<NodePattern>,
-    pub relationships: Vec<RelationshipPattern>,
+pub struct SimplePathPattern<T: AstMeta> {
+    pub nodes: Vec<NodePattern<T>>,
+    pub relationships: Vec<RelationshipPattern<T>>,
 }
 
-impl std::fmt::Display for SimplePathPattern {
+impl std::fmt::Display for SimplePathPattern<RawMeta> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let n = self.nodes.iter().map(|x| x.to_string());
         let e = self.relationships.iter().map(|x| x.to_string());
@@ -105,13 +115,13 @@ impl std::fmt::Display for SimplePathPattern {
 }
 
 #[derive(Debug)]
-pub struct QuantifiedPathPattern {
-    pub non_selective_part: Box<PatternPart>,
+pub struct QuantifiedPathPattern<T: AstMeta> {
+    pub non_selective_part: Box<PatternPart<T>>,
     pub quantifier: PatternQuantifier,
-    pub filter: Option<Box<Expr>>,
+    pub filter: Option<Box<Expr<T>>>,
 }
 
-impl std::fmt::Display for QuantifiedPathPattern {
+impl std::fmt::Display for QuantifiedPathPattern<RawMeta> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, " (")?;
         write!(f, "{}", self.non_selective_part)?;
@@ -137,23 +147,32 @@ pub enum PatternQuantifier {
     Interval { lower: Option<u32>, upper: Option<u32> }, // {n,m}
 }
 
-#[derive(Debug, Display)]
-#[display("({}{}{})", variable.as_ref().map(|x| x.to_string()).unwrap_or_default(),
-    label_expr.as_ref().map(|x| format!(":{x}")).unwrap_or_default(),
-    properties.as_ref().map(|x| x.to_string()).unwrap_or_default())]
-pub struct NodePattern {
+#[derive(Debug)]
+pub struct NodePattern<T: AstMeta> {
     pub variable: Option<String>,
     pub label_expr: Option<LabelExpr>,
-    pub properties: Option<Expr>,
-    pub predicate: Option<Expr>,
+    pub properties: Option<Expr<T>>,
+    pub predicate: Option<Expr<T>>,
+}
+
+impl std::fmt::Display for NodePattern<RawMeta> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "({}{}{})",
+            self.variable.as_ref().map(|x| x.to_string()).unwrap_or_default(),
+            self.label_expr.as_ref().map(|x| format!(":{x}")).unwrap_or_default(),
+            self.properties.as_ref().map(|x| x.to_string()).unwrap_or_default()
+        )
+    }
 }
 
 #[derive(Default, Debug)]
-pub struct RelationshipPattern {
+pub struct RelationshipPattern<T: AstMeta> {
     pub variable: Option<String>,
     pub label_expr: Option<LabelExpr>,
-    pub properties: Option<Expr>,
-    pub predicate: Option<Expr>,
+    pub properties: Option<Expr<T>>,
+    pub predicate: Option<Expr<T>>,
     // (a)-[]->(b): None, no length
     // (a)-[*]->(b): Some(None), any length
     // (a)-[*1..3]->(b): Some(Some(1, 3)), min..max
@@ -163,7 +182,20 @@ pub struct RelationshipPattern {
     pub direction: SemanticDirection,
 }
 
-impl RelationshipPattern {
+impl std::default::Default for RelationshipPattern<RawMeta> {
+    fn default() -> Self {
+        Self {
+            variable: Default::default(),
+            label_expr: Default::default(),
+            properties: Default::default(),
+            predicate: Default::default(),
+            length: Default::default(),
+            direction: Default::default(),
+        }
+    }
+}
+
+impl<T: AstMeta> RelationshipPattern<T> {
     pub fn new() -> Self {
         Self {
             variable: None,
@@ -176,7 +208,7 @@ impl RelationshipPattern {
     }
 }
 
-impl std::fmt::Display for RelationshipPattern {
+impl std::fmt::Display for RelationshipPattern<RawMeta> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.direction {
             SemanticDirection::Outgoing => write!(f, "-[")?,
