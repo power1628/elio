@@ -5,7 +5,6 @@ members = [
     "src/cypher",
     "src/parser",
     "src/storage",
-    "src/storage2",
 ]
 resolver = "2"
 
@@ -19,6 +18,7 @@ mojito_cypher = { path = "src/cypher" }
 mojito_db = { path = "src/core" }
 mojito_parser = { path = "src/parser" }
 mojito_storage = { path = "src/storage" }
+# mojito_storage = { path = "src/storage" }
 
 # other
 bytes = "1.10.1"

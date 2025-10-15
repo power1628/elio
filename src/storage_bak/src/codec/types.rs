@@ -4,7 +4,8 @@
 //! for nested type like list, the inner type should be encoded.
 
 use mojito_common::data_type::DataType;
-use mojito_common::store_types::StoreDataType;
+
+use crate::types::StoreDataType;
 
 const INNER_TYPE_SHIFT: u8 = 4;
 const OUTER_TYPE_MASK: u8 = 0x0F;
@@ -26,9 +27,9 @@ register_type_id!(
     TYPE_ID_LIST = 5,
 );
 
-pub struct DataTypeCodec;
+pub struct DataTypeFormat;
 
-impl DataTypeCodec {
+impl DataTypeFormat {
     // there's an requirment on whether the datatype can be stored as a property value
     pub fn storable(data_type: &DataType) -> bool {
         match data_type {
@@ -53,7 +54,7 @@ impl DataTypeCodec {
     }
 }
 
-impl DataTypeCodec {
+impl DataTypeFormat {
     pub fn decode(data_type: u8) -> DataType {
         let outer_type = data_type & OUTER_TYPE_MASK;
         let inner_type = data_type >> INNER_TYPE_SHIFT;

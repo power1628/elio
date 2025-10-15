@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 pub enum DataType {
     Null,
     Boolean,
@@ -11,6 +13,10 @@ pub enum DataType {
     Node,
     Relationship,
     Path,
+    // closed dynamic union type
+    Union(HashSet<DataType>),
+    // Any type
+    Any,
 }
 
 impl DataType {

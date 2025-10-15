@@ -9,8 +9,8 @@ bytes = { workspace = true }
 mojito_common = { workspace = true }
 thiserror = { workspace = true }
 # local
-redb = "2.6.0"
-rocksdb = "0.24.0"
+bytemuck = { version = "1.24.0", features = ["derive"] }
+rocksdb = { version = "0.24.0", features = ["multi-threaded-cf"] }
 
 [dev-dependencies]
 tempfile = { workspace = true }

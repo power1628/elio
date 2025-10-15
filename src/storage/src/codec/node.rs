@@ -1,49 +1,63 @@
 //！NodeKey ::= <node_id>
 //!
-//! NodeValue ::= <NodeHeader> <LabelBlocks> <PropertyBlock> <RelationshipBlock>
+//! NodeValue ::= <NodeHeader> <LabelBlocks> <PropertyBlock>
 //!
-//! Nodeheader ::= <NumLabels> <PropertySize> <RelationshipSize>
+//! Nodeheader ::= <NumLabels> <PropertySize>
 //!
 //! NumLabels ::= u16
 //!
 //! LabelBlock ::= <LabelId>{NumLabels}
 //!
 //! PropertySize ::= u32 // size of property block
-//!
-//! RelationshipSize ::= u32 // size of relationship block
-//!
-//!
 
 use bytes::{BufMut, Bytes, BytesMut};
-use mojito_common::{LabelId, PropertyKeyId};
+use mojito_common::{LabelId, NodeId, PropertyKeyId, store_types::PropertyValue};
 
-use crate::{codec::PropertyWriter, types::PropertyValue};
+use crate::codec::{NODE_KEY_PREFIX, PropertyWriter};
 
 const NUM_LABELS_SIZE: usize = 2;
 const PROPERTY_SIZE_SIZE: usize = 4;
-const RELATIONSHIP_SIZE_SIZE: usize = 4;
-const NODE_HEADER_SIZE: usize = NUM_LABELS_SIZE + PROPERTY_SIZE_SIZE + RELATIONSHIP_SIZE_SIZE;
+const NODE_HEADER_SIZE: usize = NUM_LABELS_SIZE + PROPERTY_SIZE_SIZE;
 
 pub struct NodeFormat;
 
-#[repr(C, packed(1))]
-pub struct NodeFormatHeader {
-    num_labels: u16,
-    property_size: u32,
-    relationship_size: u32,
-}
+impl NodeFormat {
+    pub fn encode_node_key(node_id: NodeId) -> Bytes {
+        let mut key = BytesMut::new();
+        key.put_u8(NODE_KEY_PREFIX);
+        key.put_u64_le(node_id);
+        key.freeze()
+    }
 
-impl NodeFormatHeader {
-    pub fn set_relationship_size(&mut self, relationship_size: u32) {
-        self.relationship_size = relationship_size;
+    pub fn decode_node_key(buf: &[u8]) -> NodeId {
+        assert_eq!(buf.len(), 9);
+        u64::from_le_bytes(buf[1..9].try_into().unwrap())
     }
 }
 
-pub struct NodeWriter<'a> {
+#[repr(C, packed(1))]
+pub struct NodeFormatHeader {
+    num_labels: u16,    // number of labels
+    property_size: u32, // property size in bytes
+}
+
+impl NodeFormatHeader {
+    pub fn set_property_size(&mut self, property_size: u32) {
+        self.property_size = property_size;
+    }
+
+    pub fn set_num_labels(&mut self, num_labels: u16) {
+        self.num_labels = num_labels;
+    }
+}
+
+/// Node value writer
+pub struct NodeFormatWriter<'a> {
     buf: &'a mut BytesMut,
     offset: usize,
 }
-impl<'a> NodeWriter<'a> {
+
+impl<'a> NodeFormatWriter<'a> {
     pub fn new(buf: &'a mut BytesMut) -> Self {
         let offset = buf.len();
         buf.reserve(NODE_HEADER_SIZE);
@@ -88,39 +102,47 @@ impl<'a> NodeWriter<'a> {
     }
 }
 
-pub struct NodeUpdater {
-    buf: BytesMut, // node value buffer
-}
+// pub struct NodeUpdater {
+//     buf: BytesMut, // node value buffer
+// }
 
-impl NodeUpdater {
-    pub fn new(buf: BytesMut) -> Self {
-        assert!(buf.len() >= NODE_HEADER_SIZE);
-        Self { buf }
-    }
+// impl NodeUpdater {
+//     pub fn new(buf: BytesMut) -> Self {
+//         assert!(buf.len() >= NODE_HEADER_SIZE);
+//         Self { buf }
+//     }
 
-    pub fn add_relationship(&mut self, rel: &[u8]) {
-        let header = self.header_mut();
-        let new_rel_size = header.relationship_size + (rel.len() as u32);
-        header.set_relationship_size(new_rel_size);
-        self.buf.extend_from_slice(rel);
-    }
+//     // pub fn add_relationship(&mut self, rel: &[u8]) {
+//     //     let header = self.header_mut();
+//     //     let new_rel_size = header.relationship_size + (rel.len() as u32);
+//     //     header.set_relationship_size(new_rel_size);
+//     //     self.buf.extend_from_slice(rel);
+//     // }
 
-    fn header_mut(&mut self) -> &mut NodeFormatHeader {
-        unsafe {
-            let ptr = self.buf.as_mut_ptr() as *mut NodeFormatHeader;
-            &mut *ptr
-        }
-    }
+//     pub fn add_property(&mut self, key: PropertyKeyId, value: PropertyValue) {
+//         let header = self.header_mut();
+//         let property_size = header.property_size;
+//         let property_writer = PropertyWriter::new(&mut self.buf, property_size as usize);
+//         property_writer.add_property(key, value);
+//         header.set_property_size(property_size + 1u32);
+//     }
 
-    #[allow(unused)]
-    fn header(&self) -> &NodeFormatHeader {
-        unsafe {
-            let ptr = self.buf.as_ptr() as *const NodeFormatHeader;
-            &*ptr
-        }
-    }
+//     fn header_mut(&mut self) -> &mut NodeFormatHeader {
+//         unsafe {
+//             let ptr = self.buf.as_mut_ptr() as *mut NodeFormatHeader;
+//             &mut *ptr
+//         }
+//     }
 
-    pub fn finish(self) -> Bytes {
-        self.buf.freeze()
-    }
-}
+//     #[allow(unused)]
+//     fn header(&self) -> &NodeFormatHeader {
+//         unsafe {
+//             let ptr = self.buf.as_ptr() as *const NodeFormatHeader;
+//             &*ptr
+//         }
+//     }
+
+//     pub fn finish(self) -> Bytes {
+//         self.buf.freeze()
+//     }
+// }

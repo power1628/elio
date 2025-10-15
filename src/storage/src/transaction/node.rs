@@ -1,45 +1,48 @@
-use bytes::BytesMut;
-use mojito_common::{Label, NodeId, PropertyKey};
+use mojito_common::{LabelId, NodeId, PropertyKeyId, store_types::PropertyValue, value::Value};
 
-use crate::{
-    codec::NodeWriter, error::GraphStoreError, model::node_key, transaction::GraphWrite, types::PropertyValue,
-};
+use crate::{error::GraphStoreError, graph::GraphStore, transaction::Transaction};
 
-impl GraphWrite {
+impl Transaction {
     pub fn node_create(
-        &mut self,
-        labels: Vec<Label>,
-        properties: Vec<(PropertyKey, PropertyValue)>,
+        &self,
+        labels: Vec<LabelId>,
+        props: Vec<(PropertyKeyId, Value)>,
     ) -> Result<NodeId, GraphStoreError> {
-        let node_id = self.alloc_node_id()?;
-        let mut label_ids = vec![];
-        for label in labels {
-            let label_id = self.register_label(&label)?;
-            label_ids.push(label_id);
-        }
+        todo!()
+    }
 
-        let mut property_key_ids = vec![];
-        let mut property_values = vec![];
+    pub fn node_delete(&self, node_id: NodeId) -> Result<bool, GraphStoreError> {
+        todo!()
+    }
 
-        for (key, value) in properties {
-            let property_id = self.register_property_key(&key)?;
-            property_key_ids.push(property_id);
-            property_values.push(value);
-        }
+    /// return number of deleted relationships
+    pub fn node_detach_delete(&self, node_id: NodeId) -> Result<u64, GraphStoreError> {
+        todo!()
+    }
 
-        let mut buf = BytesMut::new();
-        let mut writer = NodeWriter::new(&mut buf);
-        writer.write_labels(&label_ids);
-        writer.write_properties(&property_key_ids, &property_values);
+    /// return true if label added
+    pub fn node_add_label(&self, node_id: NodeId, label: LabelId) -> Result<bool, GraphStoreError> {
+        todo!()
+    }
 
-        writer.finish();
+    pub fn node_remove_label(&self, node_id: NodeId, label: LabelId) -> Result<bool, GraphStoreError> {
+        todo!()
+    }
 
-        // insert
-        let key = node_key(node_id);
-        let value = buf.freeze();
-        self.table_mut()
-            .insert(key.as_slice(), value.as_ref())
-            .map_err(Box::new)?;
-        Ok(node_id)
+    pub fn node_set_property(&self, key: PropertyKeyId, value: PropertyValue) -> Result<(), GraphStoreError> {
+        todo!()
+    }
+
+    pub fn node_remove_property(&self, key: PropertyKeyId) -> Result<(), GraphStoreError> {
+        todo!()
+    }
+
+    pub fn node_apply_changes(
+        &self,
+        added_label: Vec<LabelId>,
+        removed_label: Vec<LabelId>,
+        properties: Vec<(PropertyKeyId, PropertyValue)>,
+    ) -> Result<(), GraphStoreError> {
+        todo!()
     }
 }

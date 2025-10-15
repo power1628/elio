@@ -19,7 +19,7 @@
 //!                | integer_list_data
 //!                | float_list_data
 //!                | string_list_data
-//! TODO(pgao): maybe we should have an StorageDataTypes, to make it easier to extend
+//! TODO(power): maybe we should have an StorageDataTypes, to make it easier to extend
 //! ```text
 //!       2B             12*num_keys B             variable size          
 //!   +-----------++------------------------++--------------------------+
@@ -39,9 +39,9 @@
 //!
 
 use bytes::{BufMut, BytesMut};
-use mojito_common::PropertyKeyId;
+use mojito_common::{PropertyKeyId, store_types::PropertyValue};
 
-use crate::{codec::DataTypeFormat, types::PropertyValue};
+use crate::codec::DataTypeCodec;
 
 const KEY_HEADER_BYTES: usize = 2;
 const KEY_ITEM_BYTES: usize = 12;
@@ -60,9 +60,9 @@ impl PropertyFormat {
     }
 }
 
-pub struct PropertyValueFormat;
+pub struct PropertyValueCodec;
 
-impl PropertyValueFormat {
+impl PropertyValueCodec {
     // if value is fixed sized and able to embed into key, return embeded u64
     // if value can not be embeded, write to buf and return the size
     pub fn write(buf: &mut BytesMut, value: &PropertyValue) -> u64 {
@@ -162,13 +162,13 @@ impl<'a> PropertyWriter<'a> {
         assert!(self.curr_key < self.num_keys);
         let dtype = value.data_type();
         // put value
-        let value_size_or_value = PropertyValueFormat::write(self.buf, value);
+        let value_size_or_value = PropertyValueCodec::write(self.buf, value);
         // put key
         unsafe {
             let ptr = self.keys.add(self.curr_key);
             *ptr = PropertyFormatKey {
                 key_id: *key_id,
-                dtype: DataTypeFormat::encode(&dtype),
+                dtype: DataTypeCodec::encode(&dtype),
                 _padding: 0,
                 value_size_or_value,
             }

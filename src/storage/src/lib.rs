@@ -1,7 +1,17 @@
+use crate::{graph::GraphStore, meta::MetaStore};
+
 pub mod codec;
-pub mod cursor;
+pub mod dict;
 pub mod error;
-pub mod graph_store;
-pub mod model;
+pub mod graph;
+pub mod meta;
 pub mod transaction;
-pub mod types;
+
+pub const CF_META: &str = "cf_meta";
+pub const CF_TOPOLOGY: &str = "cf_topology";
+pub const CF_PROPERTY: &str = "cf_property";
+
+pub struct Store {
+    graph: GraphStore,
+    meta: MetaStore,
+}
