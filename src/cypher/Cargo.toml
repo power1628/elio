@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-thiserror = { workspace = true }
-mojito_storage = { workspace = true }
 mojito_common = { workspace = true }
+mojito_parser = { workspace = true }
+mojito_storage = { workspace = true }
+thiserror = { workspace = true }
