@@ -7,4 +7,5 @@ edition.workspace = true
 mojito_common = { workspace = true }
 mojito_parser = { workspace = true }
 mojito_storage = { workspace = true }
+mojito_expr = { workspace = true }
 thiserror = { workspace = true }

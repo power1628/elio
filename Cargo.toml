@@ -2,7 +2,8 @@
 members = [
     "src/common",
     "src/core",
-    "src/cypher",
+    "src/cypher", 
+    "src/expr",
     "src/parser",
     "src/storage",
 ]
@@ -18,6 +19,7 @@ mojito_cypher = { path = "src/cypher" }
 mojito_db = { path = "src/core" }
 mojito_parser = { path = "src/parser" }
 mojito_storage = { path = "src/storage" }
+mojito_expr = { path = "src/expr" }
 # mojito_storage = { path = "src/storage" }
 
 # other

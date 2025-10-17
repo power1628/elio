@@ -1,0 +1,8 @@
+[package]
+name = "mojito_expr"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+
+mojito_common = { workspace = true }
