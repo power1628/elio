@@ -46,3 +46,9 @@ fn test_label_expr() {
     assert_snapshot!(label_expr!(":a|b"), @"a | b");
     assert_snapshot!(label_expr!(":a"), @"a");
 }
+
+#[test]
+fn test_atom() {
+    assert_snapshot!(expr!("n"), @"n");
+    assert_snapshot!(expr!("n.name"), @"n.name");
+}

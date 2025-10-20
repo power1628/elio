@@ -7,7 +7,7 @@ peg::parser! {
     /// ---------------------
     /// Whitespace
     /// ---------------------
-    rule _() = [' ' | '\t' | '\r' | '\n']*
+    rule _() = [' ' | '\t' | '\r' | '\n']+
 
 
     /// ---------------------
@@ -15,7 +15,7 @@ peg::parser! {
     /// ---------------------
     pub rule statement() -> Statement
         // = _ s:(create_database()/ create_vertex_type() / create_edge_type()) _ {s}
-        = _ s:regular_query() _ {s}
+        = _? s:regular_query() _? {s}
 
     /// create database statement
     // pub rule create_database() -> Statement
@@ -82,7 +82,7 @@ peg::parser! {
     //     }
 
     rule if_not_exists() -> bool
-        = IF() _ NOT() _ EXISTS()   { true }
+        = IF() _ NOT() _ EXISTS() { true }
           / { false }
 
     rule column_nullable() -> bool
@@ -94,10 +94,10 @@ peg::parser! {
     /// RegularQuery
     /// ---------------------
     rule regular_query() -> Statement
-        = first:single_query() _ union:(union_query())++ _ {
+        = first:single_query() _ union_:(union_query() ++ _) {
             let mut queries = vec![first];
             let mut union_all = false;
-            for (is_all, query) in union {
+            for (is_all, query) in union_ {
                 union_all |= is_all;
                 queries.push(query);
             }
@@ -106,17 +106,26 @@ peg::parser! {
                 union_all,
             }))
         }
+        / first:single_query() {
+            Statement::Query(Box::new(RegularQuery{
+                queries: vec![first],
+                union_all: false,
+            }))
+    }
 
     rule single_query() -> SingleQuery
-        = clauses:(clause())+ {
+        = clauses:(clause() ++ _) {
             SingleQuery {
                 clauses,
             }
         }
 
     rule union_query() -> (bool, SingleQuery)
-        = UNION() _ union_all:ALL()? _ query:single_query() {
-            (union_all.is_some(), query)
+        = UNION() _ ALL() _ query:single_query() {
+                (true, query)
+        }
+        / UNION() _ query:single_query() {
+            (false, query)
         }
 
     /// ---------------------
@@ -126,6 +135,18 @@ peg::parser! {
     pub rule clause() -> Clause
         = create:create_clause() {
             Clause::Create(create)
+        }
+        / match_:match_clause() {
+            Clause::Match(match_)
+        }
+        / with:with_clause() {
+            Clause::With(with)
+        }
+        / return_:return_clause() {
+            Clause::Return(return_)
+        }
+        / unwind:unwind_clause() {
+            Clause::Unwind(unwind)
         }
 
 
@@ -137,14 +158,60 @@ peg::parser! {
             }
         }
 
+    rule match_clause() -> MatchClause
+        = optional:optional_match() mode:match_mode()? _ patterns:pattern() where_:where_clause()? {
+            MatchClause {
+                optional,
+                mode: mode.unwrap_or_default(),
+                pattern: MatchPattern { patterns },
+                where_,
+            }
+        }
+
+    rule optional_match() -> bool
+        = OPTIONAL() _ MATCH() { true }
+          / MATCH() { false }
+
+    rule with_clause() -> WithClause
+        = WITH() _ return_body:return_body() where_:where_clause()? {
+            WithClause {
+                distinct: return_body.0,
+                return_items: return_body.1,
+                order_by: return_body.2,
+                skip: return_body.3,
+                limit: return_body.4,
+                where_,
+            }
+        }
+
+    rule return_clause() -> ReturnClause
+        = RETURN() _ return_body:return_body() {
+            ReturnClause {
+                distinct: return_body.0,
+                return_items: return_body.1,
+                order_by: return_body.2,
+                skip: return_body.3,
+                limit: return_body.4,
+            }
+        }
+
+
+    rule unwind_clause() -> UnwindClause
+        = UNWIND() _ expr:expr() alias:alias() {
+            UnwindClause {
+                expr: Box::new(expr),
+                variable: alias.to_string(),
+            }
+        }
+
     /// ---------------------
     /// Pattern
     /// ---------------------
     pub rule pattern() -> Vec<PatternPart>
-        = parts:(pattern_part() ** comma_separator()) _ { parts }
+        = parts:(pattern_part() ** comma_separator()) { parts }
 
     pub rule pattern_part() -> PatternPart
-        = variable:variable_declare()? _ selector:selector()? _ factors:anonymous_pattern() {
+        = variable:variable_declare()? selector:selector()? _? factors:anonymous_pattern() {
             PatternPart{
                 variable,
                 selector: selector.unwrap_or_default(),
@@ -152,35 +219,42 @@ peg::parser! {
             }
         }
 
+    pub(crate) rule match_mode() -> MatchMode
+        = _ WALK() { MatchMode::WALK }
+        / _ TRAIL() { MatchMode::TRAIL }
+
     pub(crate) rule selector() -> Selector
-        = ALL() _ PATH_OR_PATHS() {
+        = _ ALL() _ PATH_OR_PATHS() {
             Selector::AllPaths
         }
-        / ANY() _ count:integer_literal() _ PATH_OR_PATHS() {
+        / _ ANY() _ count:integer_literal() _ PATH_OR_PATHS() {
             let count: u32 = count.parse().unwrap();
             Selector::AnyPath(count)
         }
-        / ALL() _ SHORTEST() _ PATH_OR_PATHS() {
+        / _ ALL() _ SHORTEST() _ PATH_OR_PATHS() {
             Selector::AllShortest
         }
-        / ANY() _ SHORTEST() _ PATH_OR_PATHS() {
+        / _ ANY() _ SHORTEST() _ PATH_OR_PATHS() {
             Selector::AnyShortestPath
         }
-        / SHORTEST() _ count:integer_literal() _ PATH_OR_PATHS() _ GROUP_OR_GROUPS() {
+        / _ SHORTEST() _ count:integer_literal() _ PATH_OR_PATHS() _ GROUP_OR_GROUPS() {
             let count: u32 = count.parse().unwrap();
             Selector::CountedShortestGroup(count)
         }
-        / SHORTEST() _ count:integer_literal() _ PATH_OR_PATHS() {
+        / _ SHORTEST() _ count:integer_literal() _ PATH_OR_PATHS() {
             let count: u32 = count.parse().unwrap();
             Selector::CountedShortestPath(count)
         }
 
-    rule anonymous_pattern() -> Vec<PathFactor>
-        = head:simple_path_pattern() _ tail:path_facror() ** _ {
+    pub rule anonymous_pattern() -> Vec<PathFactor>
+        = head:simple_path_pattern() _ tail:(path_facror() ++ (_?)) {
             let mut parts = vec![];
             parts.push(PathFactor::Simple(head));
             parts.extend(tail);
             parts
+        }
+        / head:simple_path_pattern() {
+            vec![PathFactor::Simple(head)]
         }
 
     rule path_facror() -> PathFactor
@@ -192,7 +266,7 @@ peg::parser! {
         }
 
     rule simple_path_pattern() -> SimplePathPattern
-        = node:node_pattern() _ chain:pattern_element_chain()* {
+        = node:node_pattern() chain:(pattern_element_chain()*) {
             let mut nodes = vec![];
             let mut relationships = vec![];
             nodes.push(node);
@@ -206,8 +280,8 @@ peg::parser! {
             }
         }
 
-    rule quantified_path_pattern() -> QuantifiedPathPattern
-        = "(" _ pattern:pattern_part() _ filter:(where_clause())? _ ")" _ quantifier:quantifier() {
+    pub rule quantified_path_pattern() -> QuantifiedPathPattern
+        = "(" _? pattern:pattern_part() filter:where_clause()? _? ")" _? quantifier:quantifier() {
             QuantifiedPathPattern{
                 non_selective_part: Box::new(pattern),
                 quantifier,
@@ -216,13 +290,13 @@ peg::parser! {
          }
 
     rule pattern_element_chain() -> (RelationshipPattern, NodePattern)
-        = rel:relationship_pattern() _ node:node_pattern() {
+        = rel:relationship_pattern() node:node_pattern() {
             (rel, node)
         }
 
     rule node_pattern() -> NodePattern
         // TODO(pgao): support Where expr in node pattern
-        = "(" _ variable:ident()? _ label_expr:label_expr()? _ properties:map_expr()? _ ")" {
+        = "(" _? variable:ident()? _? label_expr:label_expr()? _? properties:map_expr()? _? ")" {
             NodePattern {
                 variable: variable.map(|v| v.to_string()),
                 label_expr,
@@ -232,39 +306,39 @@ peg::parser! {
         }
 
     rule relationship_pattern() -> RelationshipPattern
-        = LEFT_ARROW() _ ARROW_LINE() {
+        = LEFT_ARROW() ARROW_LINE() {
             let mut relationship = RelationshipPattern::new();
             relationship.direction = SemanticDirection::Incoming;
             relationship
         }
-        / ARROW_LINE() _ RIGHT_ARROW() {
+        / ARROW_LINE() RIGHT_ARROW() {
             let mut relationship = RelationshipPattern::new();
             relationship.direction = SemanticDirection::Outgoing;
             relationship
         }
-        / ARROW_LINE() _ ARROW_LINE() {
+        / ARROW_LINE() ARROW_LINE() {
             let mut relationship = RelationshipPattern::new();
             relationship.direction = SemanticDirection::Both;
             relationship
         }
-        / LEFT_ARROW() _  relationship:relationship_detail() _ ARROW_LINE() {
+        / LEFT_ARROW() relationship:relationship_detail() ARROW_LINE() {
             let mut relationship = relationship;
             relationship.direction = SemanticDirection::Incoming;
             relationship
         }
-        / ARROW_LINE() _ relationship:relationship_detail() _ RIGHT_ARROW() {
+        / ARROW_LINE() relationship:relationship_detail() RIGHT_ARROW() {
             let mut relationship = relationship;
             relationship.direction = SemanticDirection::Outgoing;
             relationship
         }
-        / ARROW_LINE() _ relationship:relationship_detail() _ ARROW_LINE() {
+        / ARROW_LINE() relationship:relationship_detail() ARROW_LINE() {
             let mut relationship = relationship;
             relationship.direction = SemanticDirection::Both;
             relationship
         }
 
     rule relationship_detail() -> RelationshipPattern
-        = "[" _ variable:ident()? _ label_expr:label_expr()? _ properties:map_expr()? _ "]" {
+        = "[" _? variable:ident()? _? label_expr:label_expr()? _? properties:map_expr()? _? "]" {
             RelationshipPattern{
                 variable: variable.map(|v| v.to_string()),
                 label_expr,
@@ -276,25 +350,119 @@ peg::parser! {
     rule quantifier() -> PatternQuantifier
         = "+" { PatternQuantifier::Plus}
         / "*" { PatternQuantifier::Star}
-        / "{" _ count:integer_literal() _ "}" {
+        / "{" _? count:integer_literal() _? "}" {
             let count: u32 = count.parse().unwrap();
             PatternQuantifier::Fixed(count)
         }
-        / "{" _ lower:integer_literal()? _ "," _ upper:integer_literal()? _ "}" {
+        / "{" _? lower:integer_literal()? _? "," _? upper:integer_literal()? _? "}" {
             let lower: Option<u32> = lower.map(|v| v.parse().unwrap());
             let upper: Option<u32> = upper.map(|v| v.parse().unwrap());
             PatternQuantifier::Interval{ lower, upper}
         }
 
     rule variable_declare() -> String
-         = variable:ident() _ "=" {
+         = variable:ident() _? "=" {
             variable.to_string()
          }
 
     rule where_clause() -> Box<Expr>
-         = _:WHERE() _ expr:expr() {
+         = _ WHERE() _ expr:expr() {
             Box::new(expr)
          }
+
+    /// ---------------------
+    /// Return Body
+    /// ---------------------
+
+    // (distinct, return_items, orderby, skip, limit)
+    rule return_body() -> (bool, ReturnItems, Option<OrderBy>, Option<Box<Expr>>, Option<Box<Expr>>)
+         = distinct:distinct()? return_items:return_items() orderby:order_by()? skip:skip()? limit:limit()? {
+            (
+                distinct.unwrap_or(false),
+                return_items,
+                orderby,
+                skip,
+                limit,
+            )
+        }
+
+    pub rule return_items() -> ReturnItems
+        = "*" _? "," _? items:(return_item() ++ comma_separator()) {
+            ReturnItems {
+                projection_kind: ProjectionKind::Additive,
+                items,
+            }
+        }
+        / "*" {
+            ReturnItems {
+                projection_kind: ProjectionKind::Additive,
+                items: vec![],
+            }
+        }
+        / items:(return_item() ++ comma_separator()) {
+            ReturnItems {
+                projection_kind: ProjectionKind::Free,
+                items,
+            }
+        }
+
+    rule distinct() -> bool
+        = DISTINCT() _ { true }
+        / ALL() _ { false }
+
+    pub rule return_item() -> ReturnItem
+        = expr:expr() alias:alias()? {
+            ReturnItem {
+                expr: Box::new(expr),
+                alias,
+            }
+        }
+
+    rule alias() -> String
+        = _ AS() _ alias:variable() {
+            alias.to_string()
+        }
+
+
+    /// ---------------------
+    /// Order By
+    /// ---------------------
+
+    rule order_by() -> OrderBy
+        = _ ORDER() _ BY() _ items:(sort_item() ++ comma_separator()) {
+            OrderBy {
+                items,
+            }
+        }
+
+    rule sort_item() -> SortItem
+        = expr:expr() direction:(sort_direction())? {
+            SortItem {
+                expr: Box::new(expr),
+                direction: direction.unwrap_or_default(),
+            }
+        }
+
+    rule sort_direction() -> SortDirection
+        = _ ASCENDING() { SortDirection::Asc }
+        / _ ASC() { SortDirection::Asc }
+        / _ DESCENDING() { SortDirection::Desc }
+        / _ DESC() { SortDirection::Desc }
+
+
+    /// ---------------------
+    /// Skip / Limit
+    /// ---------------------
+
+    rule skip() -> Box<Expr>
+        = _ SKIP() _ expr:expr() {
+            Box::new(expr)
+        }
+
+    rule limit() -> Box<Expr>
+        = _ LIMIT() _ expr:expr() {
+            Box::new(expr)
+        }
 
     /// ---------------------
     /// Expression
@@ -307,9 +475,9 @@ peg::parser! {
             --
             left:(@) _ AND() _ right:@ {Expr::new_binary(left, BinaryOperator::And, right)}
             --
-                       NOT() _ right:@ {Expr::new_unary(UnaryOperator::Not, right)}
+                    _? NOT() _ right:@ {Expr::new_unary(UnaryOperator::Not, right)}
             --
-            left:(@) _ op:$("=" / "!=" / "<>" / "<" / "<=" / ">" / ">=") _ right:@ {
+            left:(@) _? op:$("=" / "!=" / "<>" / "<" / "<=" / ">" / ">=") _? right:@ {
                 let operator = match op {
                     "=" => BinaryOperator::Eq,
                     "!="  | "<>" => BinaryOperator::NotEq,
@@ -322,11 +490,11 @@ peg::parser! {
                 Expr::new_binary(left, operator, right)
             }
             --
-            left:(@) _ op:null_predicate() _ right:@ {
-                Expr::new_unary(op, right)
+            left:(@) _ op:null_predicate() {
+                Expr::new_unary(op, left)
             }
             --
-            left:(@) _ op:$("+" / "-" / "||" ) _ right:@ {
+            left:(@) _? op:$("+" / "-" / "||" ) _? right:@ {
                 let operator = match op {
                     "+" => BinaryOperator::Add,
                     "-" => BinaryOperator::Subtract,
@@ -336,7 +504,7 @@ peg::parser! {
                 Expr::new_binary(left, operator, right)
             }
             --
-            left:(@) _ op:$("*" / "/" / "%") _ right:@ {
+            left:(@) _? op:$("*" / "/" / "%") _? right:@ {
                 let operator = match op {
                     "*" => BinaryOperator::Multiply,
                     "/" => BinaryOperator::Divide,
@@ -346,11 +514,11 @@ peg::parser! {
                 Expr::new_binary(left, operator, right)
             }
             --
-            left:(@) _ op:$("^") _ right:@ {
+            left:(@) _? op:$("^") _? right:@ {
                 Expr::new_binary(left, BinaryOperator::Pow, right)
             }
             --
-                       op:$("+" / "-") _ right:@ {
+            op:$("+" / "-") _? right:@ {
                 let operator = match op {
                     "+" => UnaryOperator::UnaryAdd,
                     "-" => UnaryOperator::UnarySubtract,
@@ -370,7 +538,7 @@ peg::parser! {
     rule atom() -> Expr
         = l:literal() { l }
         / "$" v:ident() { Expr::new_parameter(v.to_string()) }
-        / "(" _ e:expr() _ ")" { e }
+        / "(" _? e:expr() _? ")" { e }
         / f:function_call() { f }
         / v:variable() { v }
 
@@ -383,7 +551,7 @@ peg::parser! {
 
 
     rule function_call() -> Expr
-        = name:ident() _ "(" _ args:( expr() ** comma_separator()) _ ")" {
+        = name:ident() _? "(" _? args:(expr() ** comma_separator()) _? ")" {
             Expr::new_function_call(name.to_string(), args)
         }
 
@@ -408,25 +576,25 @@ peg::parser! {
         = NULL() { Expr::new_null() }
 
     rule map_expr() -> Expr
-        = "{" _ items:(map_expr_item() ** comma_separator()) _ "}" {
+        = "{" _? items:(map_expr_item() ** comma_separator()) _? "}" {
             let (keys, values) = items.into_iter().unzip();
             Expr::new_map_expression(keys, values)
         }
     rule map_expr_item() -> (String, Expr)
-        = key:ident() _ ":" _ value:expr() { (key.to_string(), value) }
+        = key:ident() _? ":" _? value:expr() { (key.to_string(), value) }
 
 
     /// ---------------------
     /// Label Expression
     /// ---------------------
     pub rule label_expr() -> LabelExpr
-        = ":" _ expr:label_expr_inner() {
+        = ":" _? expr:label_expr_inner() {
             expr
         }
 
     rule label_expr_inner() -> LabelExpr
         = precedence! {
-            left:(@) _ op:$("|") _ right:@ { LabelExpr::new_or(left, right)}
+            left:(@) _? op:$("|") _? right:@ { LabelExpr::new_or(left, right)}
             --
             label:ident() { LabelExpr::new_label(label.to_string()) }
         }
@@ -452,11 +620,13 @@ peg::parser! {
     rule ident() -> &'input str
         = first:$(['a'..='z' | 'A'..='Z'] ['a'..='z' | 'A'..='Z' | '0'..='9']*) { first }
 
-    rule comma_separator() = _ "," _
+    rule comma_separator() = _? "," _?
 
     /// ---------------------
     /// Key Words
     /// ---------------------
+    rule AS() -> &'static str
+        = ['a' | 'A'] ['s' | 'S'] { "AS" }
     rule IS() -> &'static str
         = ['i' | 'I'] ['s' | 'S'] { "IS" }
     rule NULL() -> &'static str
@@ -505,7 +675,36 @@ peg::parser! {
         = GROUPS() / GROUP()
     rule WHERE() -> &'static str
         = ['w' | 'W'] ['h' | 'H'] ['e' | 'E'] ['r' | 'R'] ['e' | 'E'] { "WHERE" }
-
+    rule OPTIONAL() -> &'static str
+        = ['o' | 'O'] ['p' | 'P'] ['t' | 'T'] ['i' | 'I'] ['o' | 'O'] ['n' | 'N'] { "OPTIONAL" }
+    rule MATCH() -> &'static str
+        = ['m' | 'M'] ['a' | 'A'] ['t' | 'T'] ['c' | 'C'] ['h' | 'H'] { "MATCH" }
+    rule WALK() -> &'static str
+        = ['w' | 'W'] ['a' | 'A'] ['l' | 'L'] ['k' | 'K'] { "WALK" }
+    rule TRAIL() -> &'static str
+        = ['t' | 'T'] ['r' | 'R'] ['a' | 'A'] ['i' | 'I'] ['l' | 'L'] { "TRAIL" }
+    rule DISTINCT() -> &'static str
+        = ['d' | 'D'] ['i' | 'I'] ['s' | 'S'] ['t' | 'T'] ['i' | 'I'] ['n' | 'N'] ['c' | 'C'] ['t' | 'T'] { "DISTINCT" }
+    rule ORDER() -> &'static str
+        = ['o' | 'O'] ['r' | 'R'] ['d' | 'D'] ['e' | 'E'] ['r' | 'R'] { "ORDER" }
+    rule BY() -> &'static str
+        = ['b' | 'B'] ['y' | 'Y'] { "BY" }
+    rule ASC() -> &'static str
+        = ['a' | 'A'] ['s' | 'S'] ['c' | 'C'] { "ASC" }
+    rule DESC() -> &'static str
+        = ['d' | 'D'] ['e' | 'E'] ['s' | 'S'] ['c' | 'C'] { "DESC" }
+    rule ASCENDING() -> &'static str
+        = ['a' | 'A'] ['s' | 'S'] ['c' | 'C'] ['e' | 'E'] ['n' | 'N'] ['d' | 'D'] ['i' | 'I'] ['n' | 'N'] { "ASCENDING" }
+    rule DESCENDING() -> &'static str
+        = ['d' | 'D'] ['e' | 'E'] ['s' | 'S'] ['c' | 'C'] ['e' | 'E'] ['n' | 'N'] ['d' | 'D'] ['i' | 'I'] ['n' | 'N'] { "DESCENDING" }
+    rule SKIP() -> &'static str
+        = ['s' | 'S'] ['k' | 'K'] ['i' | 'I'] ['p' | 'P'] { "SKIP" }
+    rule LIMIT() -> &'static str
+        = ['l' | 'L'] ['i' | 'I'] ['m' | 'M'] ['i' | 'I'] ['t' | 'T'] { "LIMIT" }
+    rule RETURN() -> &'static str
+        = ['r' | 'R'] ['e' | 'E'] ['t' | 'T'] ['u' | 'U'] ['r' | 'R'] ['n' | 'N'] { "RETURN" }
+    rule UNWIND() -> &'static str
+        = ['u' | 'U'] ['n' | 'N'] ['w' | 'W'] ['i' | 'I'] ['n' | 'N'] ['d' | 'D'] { "UNWIND" }
 
     rule INTEGER() -> &'static str
         = ['i' | 'I'] ['n' | 'N'] ['t' | 'T'] ['e' | 'E'] ['g' | 'G'] ['e' | 'E'] ['r' | 'R'] { "INTEGER" }

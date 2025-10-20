@@ -1,0 +1,23 @@
+use derive_more::Display;
+
+use crate::ast::Expr;
+
+#[derive(Debug, Display)]
+#[display("{}", self.items.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "))]
+pub struct OrderBy {
+    pub items: Vec<SortItem>,
+}
+
+#[derive(Debug, Display)]
+#[display("{} {}", expr, direction)]
+pub struct SortItem {
+    pub expr: Box<Expr>,
+    pub direction: SortDirection,
+}
+
+#[derive(Debug, Eq, PartialEq, Display, Default)]
+pub enum SortDirection {
+    #[default]
+    Asc,
+    Desc,
+}

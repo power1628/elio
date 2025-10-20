@@ -7,6 +7,12 @@ macro_rules! clause {
     };
 }
 
+macro_rules! return_item {
+    ($input:expr) => {
+        cypher_parser::return_item($input).unwrap().to_string()
+    };
+}
+
 #[test]
 fn test_create() {
     assert_snapshot!(clause!("CREATE (n:Person {name: 'Alice'})"), @"CREATE (n:Person{name: 'Alice'})");
@@ -16,4 +22,35 @@ fn test_create() {
     assert_snapshot!(clause!(
         "CREATE (a:Person{name: 'Alice'}), (b:Person{name: 'Bob'})-[:KNOWS]->(c:Person{name: 'Charlie'})"), 
         @"CREATE (a:Person{name: 'Alice'}), (b:Person{name: 'Bob'})-[:KNOWS]->(c:Person{name: 'Charlie'})");
+}
+
+#[test]
+fn test_match() {
+    assert_snapshot!(clause!("MATCH (n:Person)"), @"MATCH (n:Person)");
+    assert_snapshot!(clause!("MATCH (n:Person) WHERE n.name = 'Alice'"), @"MATCH (n:Person) WHERE (n.name) = ('Alice')");
+    assert_snapshot!(clause!("MATCH (n:Person) WHERE n.name = 'Alice'"), @"MATCH (n:Person) WHERE (n.name) = ('Alice')");
+}
+
+#[test]
+fn test_with() {
+    assert_snapshot!(clause!("WITH n"), @"WITH n");
+    assert_snapshot!(clause!("WITH a.x + b.y AS c"), @"WITH (a.x) + (b.y) AS c");
+    assert_snapshot!(clause!("WITH *"), @"WITH *");
+    assert_snapshot!(clause!("WITH *, a+b AS c"), @"WITH *, (a) + (b) AS c");
+    assert_snapshot!(clause!("WITH *, x AS y"), @"WITH *, x AS y");
+}
+
+#[test]
+fn test_return() {
+    assert_snapshot!(clause!("RETURN n ORDER BY n.name"), @"RETURN n ORDER BY n.name Asc");
+    assert_snapshot!(clause!("RETURN n.name"), @"RETURN n.name");
+    assert_snapshot!(clause!("RETURN n.name AS name"), @"RETURN n.name AS name");
+    assert_snapshot!(clause!("RETURN n.name AS name ORDER BY name"), @"RETURN n.name AS name ORDER BY name Asc");
+    assert_snapshot!(clause!("RETURN n.name AS name ORDER BY name DESC"), @"RETURN n.name AS name ORDER BY name Desc");
+    assert_snapshot!(clause!("RETURN n.name AS name ORDER BY name DESC SKIP 1 LIMIT 1"), @"RETURN n.name AS name ORDER BY name Desc SKIP 1 LIMIT 1");
+}
+
+#[test]
+fn test_return_item() {
+    assert_snapshot!(return_item!("n"), @"n");
 }
