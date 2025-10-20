@@ -9,4 +9,5 @@ pub struct BoundQuery {
 
 pub struct BoundSingleQuery {
     pub query_graph: QueryGraph,
+    // TODO(pgao): other
 }

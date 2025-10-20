@@ -2,6 +2,11 @@ use std::sync::{Arc, atomic::AtomicUsize};
 
 pub type VariableName = Arc<str>;
 
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Variable {
+    pub name: VariableName,
+}
+
 #[derive(Default)]
 pub struct VariableGenerator {
     next_id: AtomicUsize,
