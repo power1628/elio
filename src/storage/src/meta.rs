@@ -6,7 +6,7 @@ use std::{
     },
 };
 
-use mojito_common::{LabelId, PropertyKeyId, RelationshipTypeId};
+use mojito_common::{LabelId, PropertyKeyId, RelationshipTypeId, TokenId};
 
 use crate::{
     CF_META,
@@ -14,7 +14,7 @@ use crate::{
     error::GraphStoreError,
 };
 
-pub struct MetaStore {
+pub struct TokenStore {
     db: Arc<rocksdb::TransactionDB>,
     // in memory cache
     next_label_id: AtomicU16,
@@ -25,7 +25,7 @@ pub struct MetaStore {
     property_keys: RwLock<HashMap<String, PropertyKeyId>>,
 }
 
-impl MetaStore {
+impl TokenStore {
     pub fn new(db: Arc<rocksdb::TransactionDB>) -> Result<Self, GraphStoreError> {
         let mut store = Self {
             db,
@@ -47,6 +47,14 @@ impl MetaStore {
         self.load_token_dict(TokenKind::RelationshipType)?;
         self.load_token_dict(TokenKind::PropertyKey)?;
         Ok(())
+    }
+
+    pub fn get_token_id(&self, token: &str, token_kind: TokenKind) -> Option<TokenId> {
+        match token_kind {
+            TokenKind::Label => self.get_label_id(token),
+            TokenKind::RelationshipType => self.get_reltype_id(token),
+            TokenKind::PropertyKey => self.get_property_key_id(token),
+        }
     }
 
     pub fn get_label_id(&self, label: &str) -> Option<LabelId> {
@@ -77,7 +85,7 @@ impl MetaStore {
     }
 }
 
-impl MetaStore {
+impl TokenStore {
     fn get_or_create_token(&self, token: &str, token_kind: TokenKind) -> Result<u16, GraphStoreError> {
         let mut tokens = match token_kind {
             TokenKind::Label => self.labels.write().unwrap(),

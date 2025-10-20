@@ -3,25 +3,25 @@ use std::ops::Range;
 use derive_more::Display;
 use itertools::{self, Itertools};
 
-use crate::ast::{AstMeta, Expr, LabelExpr, RawMeta};
+use crate::ast::{Expr, LabelExpr};
 
 #[derive(Debug)]
-pub struct MatchPattern<T: AstMeta> {
-    pub patterns: Vec<PatternPart<T>>,
+pub struct MatchPattern {
+    pub patterns: Vec<PatternPart>,
 }
 
-impl std::fmt::Display for MatchPattern<RawMeta> {
+impl std::fmt::Display for MatchPattern {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.patterns.iter().map(|x| x.to_string()).join(", "))
     }
 }
 
 #[derive(Debug)]
-pub struct UpdatePattern<T: AstMeta> {
-    pub patterns: Vec<PatternPart<T>>,
+pub struct UpdatePattern {
+    pub patterns: Vec<PatternPart>,
 }
 
-impl std::fmt::Display for UpdatePattern<RawMeta> {
+impl std::fmt::Display for UpdatePattern {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.patterns.iter().map(|x| x.to_string()).join(", "))
     }
@@ -59,19 +59,19 @@ impl Selector {
 }
 
 #[derive(Debug)]
-pub struct PatternPart<T: AstMeta> {
+pub struct PatternPart {
     pub variable: Option<String>, // pattern part with name
     pub selector: Selector,
-    pub factors: Vec<PathFactor<T>>, // must start with simple and ends with simple
+    pub factors: Vec<PathFactor>, // must start with simple and ends with simple
 }
 
-impl<T: AstMeta> PatternPart<T> {
+impl PatternPart {
     pub fn is_anonymous(&self) -> bool {
         self.variable.is_none()
     }
 }
 
-impl std::fmt::Display for PatternPart<RawMeta> {
+impl std::fmt::Display for PatternPart {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(name) = self.variable.as_ref() {
             write!(f, "{name} = ")?;
@@ -90,20 +90,20 @@ impl std::fmt::Display for PatternPart<RawMeta> {
 
 #[derive(Debug, Display)]
 #[display("{}", _0)]
-pub enum PathFactor<T: AstMeta> {
+pub enum PathFactor {
     #[display("{}", _0)]
-    Simple(SimplePathPattern<T>),
+    Simple(SimplePathPattern),
     #[display("{}", _0)]
-    Quantified(QuantifiedPathPattern<T>),
+    Quantified(QuantifiedPathPattern),
 }
 
 #[derive(Debug)]
-pub struct SimplePathPattern<T: AstMeta> {
-    pub nodes: Vec<NodePattern<T>>,
-    pub relationships: Vec<RelationshipPattern<T>>,
+pub struct SimplePathPattern {
+    pub nodes: Vec<NodePattern>,
+    pub relationships: Vec<RelationshipPattern>,
 }
 
-impl std::fmt::Display for SimplePathPattern<RawMeta> {
+impl std::fmt::Display for SimplePathPattern {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let n = self.nodes.iter().map(|x| x.to_string());
         let e = self.relationships.iter().map(|x| x.to_string());
@@ -115,13 +115,13 @@ impl std::fmt::Display for SimplePathPattern<RawMeta> {
 }
 
 #[derive(Debug)]
-pub struct QuantifiedPathPattern<T: AstMeta> {
-    pub non_selective_part: Box<PatternPart<T>>,
+pub struct QuantifiedPathPattern {
+    pub non_selective_part: Box<PatternPart>,
     pub quantifier: PatternQuantifier,
-    pub filter: Option<Box<Expr<T>>>,
+    pub filter: Option<Box<Expr>>,
 }
 
-impl std::fmt::Display for QuantifiedPathPattern<RawMeta> {
+impl std::fmt::Display for QuantifiedPathPattern {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, " (")?;
         write!(f, "{}", self.non_selective_part)?;
@@ -148,14 +148,14 @@ pub enum PatternQuantifier {
 }
 
 #[derive(Debug)]
-pub struct NodePattern<T: AstMeta> {
+pub struct NodePattern {
     pub variable: Option<String>,
     pub label_expr: Option<LabelExpr>,
-    pub properties: Option<Expr<T>>,
-    pub predicate: Option<Expr<T>>,
+    pub properties: Option<Expr>,
+    pub predicate: Option<Expr>,
 }
 
-impl std::fmt::Display for NodePattern<RawMeta> {
+impl std::fmt::Display for NodePattern {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -168,11 +168,11 @@ impl std::fmt::Display for NodePattern<RawMeta> {
 }
 
 #[derive(Default, Debug)]
-pub struct RelationshipPattern<T: AstMeta> {
+pub struct RelationshipPattern {
     pub variable: Option<String>,
     pub label_expr: Option<LabelExpr>,
-    pub properties: Option<Expr<T>>,
-    pub predicate: Option<Expr<T>>,
+    pub properties: Option<Expr>,
+    pub predicate: Option<Expr>,
     // (a)-[]->(b): None, no length
     // (a)-[*]->(b): Some(None), any length
     // (a)-[*1..3]->(b): Some(Some(1, 3)), min..max
@@ -182,20 +182,7 @@ pub struct RelationshipPattern<T: AstMeta> {
     pub direction: SemanticDirection,
 }
 
-impl std::default::Default for RelationshipPattern<RawMeta> {
-    fn default() -> Self {
-        Self {
-            variable: Default::default(),
-            label_expr: Default::default(),
-            properties: Default::default(),
-            predicate: Default::default(),
-            length: Default::default(),
-            direction: Default::default(),
-        }
-    }
-}
-
-impl<T: AstMeta> RelationshipPattern<T> {
+impl RelationshipPattern {
     pub fn new() -> Self {
         Self {
             variable: None,
@@ -208,7 +195,7 @@ impl<T: AstMeta> RelationshipPattern<T> {
     }
 }
 
-impl std::fmt::Display for RelationshipPattern<RawMeta> {
+impl std::fmt::Display for RelationshipPattern {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.direction {
             SemanticDirection::Outgoing => write!(f, "-[")?,

@@ -5,9 +5,10 @@ pub mod value;
 pub type NodeId = u64;
 pub type RelationshipId = u64;
 
-pub type LabelId = u16;
-pub type RelationshipTypeId = u16;
-pub type PropertyKeyId = u16;
+pub type TokenId = u16;
+pub type LabelId = TokenId;
+pub type RelationshipTypeId = TokenId;
+pub type PropertyKeyId = TokenId;
 
 pub type PropertyKey = String;
 pub type Label = String;

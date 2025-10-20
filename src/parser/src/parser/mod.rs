@@ -1,7 +1,7 @@
 peg::parser! {
   pub grammar cypher_parser() for str {
     use crate::ast::*;
-    use either::Either;
+    // use either::Either;
 
 
     /// ---------------------
@@ -13,7 +13,7 @@ peg::parser! {
     /// ---------------------
     /// Statement
     /// ---------------------
-    pub rule statement() -> Statement<RawMeta>
+    pub rule statement() -> Statement
         // = _ s:(create_database()/ create_vertex_type() / create_edge_type()) _ {s}
         = _ s:regular_query() _ {s}
 
@@ -93,7 +93,7 @@ peg::parser! {
     /// ---------------------
     /// RegularQuery
     /// ---------------------
-    rule regular_query() -> Statement<RawMeta>
+    rule regular_query() -> Statement
         = first:single_query() _ union:(union_query())++ _ {
             let mut queries = vec![first];
             let mut union_all = false;
@@ -107,14 +107,14 @@ peg::parser! {
             }))
         }
 
-    rule single_query() -> SingleQuery<RawMeta>
+    rule single_query() -> SingleQuery
         = clauses:(clause())+ {
             SingleQuery {
                 clauses,
             }
         }
 
-    rule union_query() -> (bool, SingleQuery<RawMeta>)
+    rule union_query() -> (bool, SingleQuery)
         = UNION() _ union_all:ALL()? _ query:single_query() {
             (union_all.is_some(), query)
         }
@@ -123,14 +123,14 @@ peg::parser! {
     /// Clauses
     /// ---------------------
 
-    pub rule clause() -> Clause<RawMeta>
+    pub rule clause() -> Clause
         = create:create_clause() {
             Clause::Create(create)
         }
 
 
     /// Create Clause
-    rule create_clause() -> CreateClause<RawMeta>
+    rule create_clause() -> CreateClause
         = CREATE() _ patterns:pattern() {
             CreateClause {
                 pattern: UpdatePattern{ patterns },
@@ -140,10 +140,10 @@ peg::parser! {
     /// ---------------------
     /// Pattern
     /// ---------------------
-    pub rule pattern() -> Vec<PatternPart<RawMeta>>
+    pub rule pattern() -> Vec<PatternPart>
         = parts:(pattern_part() ** comma_separator()) _ { parts }
 
-    pub rule pattern_part() -> PatternPart<RawMeta>
+    pub rule pattern_part() -> PatternPart
         = variable:variable_declare()? _ selector:selector()? _ factors:anonymous_pattern() {
             PatternPart{
                 variable,
@@ -175,7 +175,7 @@ peg::parser! {
             Selector::CountedShortestPath(count)
         }
 
-    rule anonymous_pattern() -> Vec<PathFactor<RawMeta>>
+    rule anonymous_pattern() -> Vec<PathFactor>
         = head:simple_path_pattern() _ tail:path_facror() ** _ {
             let mut parts = vec![];
             parts.push(PathFactor::Simple(head));
@@ -183,7 +183,7 @@ peg::parser! {
             parts
         }
 
-    rule path_facror() -> PathFactor<RawMeta>
+    rule path_facror() -> PathFactor
         = simple:simple_path_pattern() {
             PathFactor::Simple(simple)
         }
@@ -191,7 +191,7 @@ peg::parser! {
             PathFactor::Quantified(quantified)
         }
 
-    rule simple_path_pattern() -> SimplePathPattern<RawMeta>
+    rule simple_path_pattern() -> SimplePathPattern
         = node:node_pattern() _ chain:pattern_element_chain()* {
             let mut nodes = vec![];
             let mut relationships = vec![];
@@ -206,7 +206,7 @@ peg::parser! {
             }
         }
 
-    rule quantified_path_pattern() -> QuantifiedPathPattern<RawMeta>
+    rule quantified_path_pattern() -> QuantifiedPathPattern
         = "(" _ pattern:pattern_part() _ filter:(where_clause())? _ ")" _ quantifier:quantifier() {
             QuantifiedPathPattern{
                 non_selective_part: Box::new(pattern),
@@ -215,12 +215,12 @@ peg::parser! {
             }
          }
 
-    rule pattern_element_chain() -> (RelationshipPattern<RawMeta>, NodePattern<RawMeta>)
+    rule pattern_element_chain() -> (RelationshipPattern, NodePattern)
         = rel:relationship_pattern() _ node:node_pattern() {
             (rel, node)
         }
 
-    rule node_pattern() -> NodePattern<RawMeta>
+    rule node_pattern() -> NodePattern
         // TODO(pgao): support Where expr in node pattern
         = "(" _ variable:ident()? _ label_expr:label_expr()? _ properties:map_expr()? _ ")" {
             NodePattern {
@@ -231,7 +231,7 @@ peg::parser! {
             }
         }
 
-    rule relationship_pattern() -> RelationshipPattern<RawMeta>
+    rule relationship_pattern() -> RelationshipPattern
         = LEFT_ARROW() _ ARROW_LINE() {
             let mut relationship = RelationshipPattern::new();
             relationship.direction = SemanticDirection::Incoming;
@@ -263,7 +263,7 @@ peg::parser! {
             relationship
         }
 
-    rule relationship_detail() -> RelationshipPattern<RawMeta>
+    rule relationship_detail() -> RelationshipPattern
         = "[" _ variable:ident()? _ label_expr:label_expr()? _ properties:map_expr()? _ "]" {
             RelationshipPattern{
                 variable: variable.map(|v| v.to_string()),
@@ -291,7 +291,7 @@ peg::parser! {
             variable.to_string()
          }
 
-    rule where_clause() -> Box<Expr<RawMeta>>
+    rule where_clause() -> Box<Expr>
          = _:WHERE() _ expr:expr() {
             Box::new(expr)
          }
@@ -299,7 +299,7 @@ peg::parser! {
     /// ---------------------
     /// Expression
     /// ---------------------
-    pub rule expr() -> Expr<RawMeta>
+    pub rule expr() -> Expr
         = precedence! {
             left:(@) _ OR() _ right:@ {Expr::new_binary(left, BinaryOperator::Or, right)}
             --
@@ -367,14 +367,14 @@ peg::parser! {
             a:atom() { a }
         }
 
-    rule atom() -> Expr<RawMeta>
+    rule atom() -> Expr
         = l:literal() { l }
         / "$" v:ident() { Expr::new_parameter(v.to_string()) }
         / "(" _ e:expr() _ ")" { e }
         / f:function_call() { f }
         / v:variable() { v }
 
-    rule literal() -> Expr<RawMeta>
+    rule literal() -> Expr
         = b:(TRUE() / FALSE()) { Expr::new_boolean(b == "TRUE") }
         / f:float_literal() { Expr::new_float(f.to_string()) }
         / i:integer_literal() { Expr::new_integer(i.to_string()) }
@@ -382,12 +382,12 @@ peg::parser! {
         / n:null_literal() { n }
 
 
-    rule function_call() -> Expr<RawMeta>
+    rule function_call() -> Expr
         = name:ident() _ "(" _ args:( expr() ** comma_separator()) _ ")" {
             Expr::new_function_call(name.to_string(), args)
         }
 
-    rule variable() -> Expr<RawMeta>
+    rule variable() -> Expr
         = v:ident() { Expr::new_variable(v.to_string()) }
 
     rule null_predicate() -> UnaryOperator
@@ -404,15 +404,15 @@ peg::parser! {
     rule string_literal() -> &'input str
         = "'" content:$((!['\''] [_])* ) "'" { content }
         / "\"" content:$((!['\"'] [_])* ) "\"" { content }
-    rule null_literal() -> Expr<RawMeta>
+    rule null_literal() -> Expr
         = NULL() { Expr::new_null() }
 
-    rule map_expr() -> Expr<RawMeta>
+    rule map_expr() -> Expr
         = "{" _ items:(map_expr_item() ** comma_separator()) _ "}" {
             let (keys, values) = items.into_iter().unzip();
             Expr::new_map_expression(keys, values)
         }
-    rule map_expr_item() -> (String, Expr<RawMeta>)
+    rule map_expr_item() -> (String, Expr)
         = key:ident() _ ":" _ value:expr() { (key.to_string(), value) }
 
 

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use rocksdb::{self};
 
-use crate::{dict::DictStore, meta::MetaStore, transaction::Transaction};
+use crate::{dict::DictStore, meta::TokenStore, transaction::Transaction};
 
 pub mod graph_cf {
     pub const CF_META: &str = "cf_meta";
@@ -13,7 +13,7 @@ pub mod graph_cf {
 pub struct GraphStore {
     db: Arc<rocksdb::TransactionDB>,
     dict: Arc<DictStore>,
-    meta: Arc<MetaStore>,
+    tokens: Arc<TokenStore>,
 }
 
 impl GraphStore {

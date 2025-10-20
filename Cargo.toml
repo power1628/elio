@@ -1,8 +1,9 @@
 [workspace]
 members = [
+    "src/catalog",
     "src/common",
     "src/core",
-    "src/cypher", 
+    "src/cypher",
     "src/expr",
     "src/parser",
     "src/storage",
@@ -14,12 +15,13 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace.dependencies]
+mojito_catalog = { path = "src/catalog" }
 mojito_common = { path = "src/common" }
 mojito_cypher = { path = "src/cypher" }
 mojito_db = { path = "src/core" }
+mojito_expr = { path = "src/expr" }
 mojito_parser = { path = "src/parser" }
 mojito_storage = { path = "src/storage" }
-mojito_expr = { path = "src/expr" }
 # mojito_storage = { path = "src/storage" }
 
 # other
@@ -27,6 +29,7 @@ bytes = "1.10.1"
 either = "1.15.0"
 itertools = "0.14.0"
 thiserror = "2.0.12"
+tokio = { version = "1.48.0", features = ["full"] }
 
 # dev-depencies
 insta = { version = "1.43.1", features = ["yaml"] }

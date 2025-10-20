@@ -1,4 +1,4 @@
-use crate::{graph::GraphStore, meta::MetaStore};
+use crate::{graph::GraphStore, meta::TokenStore};
 
 pub mod codec;
 pub mod dict;
@@ -13,5 +13,5 @@ pub const CF_PROPERTY: &str = "cf_property";
 
 pub struct Store {
     graph: GraphStore,
-    meta: MetaStore,
+    meta: TokenStore,
 }

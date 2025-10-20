@@ -1,11 +1,11 @@
-use crate::ast::{AstMeta, RegularQuery};
+use crate::ast::RegularQuery;
 
 use derive_more::Display;
 
 #[derive(Debug, Display)]
 #[display("{}", _0)]
-pub enum Statement<T: AstMeta> {
+pub enum Statement {
     // Analyze
     // Explain
-    Query(Box<RegularQuery<T>>),
+    Query(Box<RegularQuery>),
 }
