@@ -7,11 +7,34 @@ use crate::{
 
 pub enum QueryHorizon {
     Unwind(UnwindProjection),
-    Project(RegularProjection),
+    Project(QueryProjection),
+}
+
+impl std::default::Default for QueryHorizon {
+    fn default() -> Self {
+        Self::Project(QueryProjection::empty())
+    }
+}
+
+impl QueryHorizon {
+    pub fn empty() -> Self {
+        Self::default()
+    }
+}
+
+pub enum QueryProjection {
+    Regular(RegularProjection),
     Aggregate(AggregateProjection),
     Distinct(DistinctProjection),
 }
 
+impl QueryProjection {
+    pub fn empty() -> Self {
+        Self::Regular(RegularProjection::default())
+    }
+}
+
+#[derive(Default)]
 pub struct Pagination {
     pub offset: Option<i64>,
     pub limit: Option<i64>,
@@ -22,6 +45,7 @@ pub struct UnwindProjection {
     pub expr: Expr,
 }
 
+#[derive(Default)]
 pub struct RegularProjection {
     pub items: Vec<ProjectItem>,
     pub pagination: Pagination,

@@ -41,6 +41,8 @@ pub enum Selector {
     AnyK(i64),
     // shortest k paths
     ShortestK(i64),
+    // TODO(pgao): Shortest K GROUPS
+    ShortestKGroup(i64),
 }
 
 pub struct SelectivePathPattern {

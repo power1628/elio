@@ -3,12 +3,14 @@ use std::collections::HashMap;
 use mojito_common::data_type::DataType;
 
 /// Function definition
+#[derive(Clone)]
 pub struct FuncDef {
     pub name: String, // function name
     pub impls: Vec<FuncImpl>,
 }
 
 /// Function implementation
+#[derive(Clone)]
 pub struct FuncImpl {
     pub args: Vec<FuncImplArg>,
     pub ret: FuncImplReturn,
@@ -16,6 +18,7 @@ pub struct FuncImpl {
     // maybe we can hack the arrow-udf project
 }
 
+#[derive(Clone)]
 pub enum FuncImplArg {
     /// Exact argument type, e.g. `Int` in `map(Int, [1, 2, 3])`
     Exact(DataType),
@@ -23,6 +26,7 @@ pub enum FuncImplArg {
     Templated(String),
 }
 
+#[derive(Clone)]
 pub enum FuncImplReturn {
     /// Exact return type, e.g. `add(Int, Int) -> Int`
     Exact(DataType),

@@ -1,5 +1,6 @@
 use crate::{expr::Expr, variable::Variable};
 
+#[derive(Default)]
 pub struct FilterExprs {
     exprs: Vec<Expr>,
 }

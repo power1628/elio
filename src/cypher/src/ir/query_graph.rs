@@ -9,14 +9,16 @@ use crate::{
     variable::Variable,
 };
 
+#[derive(Default)]
 pub struct QueryGraph {
-    // relationship patterns
-    rels: HashSet<RelPattern>,
-    quantified_paths: HashSet<QuantifiedPathPattern>,
-    selective_paths: HashSet<SelectivePathPattern>,
     // node patterns
     nodes: HashSet<Variable>,
-    // predicate
+    // node connections
+    rels: HashSet<RelPattern>,
+    quantified_paths: HashSet<QuantifiedPathPattern>,
+    // selective path patterns
+    selective_paths: HashSet<SelectivePathPattern>,
+    // predicate, i.e. post filter
     filter: FilterExprs,
     // optional matches
     optional_matches: Vec<QueryGraph>,
@@ -24,4 +26,11 @@ pub struct QueryGraph {
     mutating_patterns: Vec<MutatingPattern>,
     // arguments
     arguments: HashSet<Variable>,
+    // path projections
+}
+
+impl QueryGraph {
+    pub fn empty() -> Self {
+        Self::default()
+    }
 }

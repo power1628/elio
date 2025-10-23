@@ -5,10 +5,12 @@ use crate::{
     error::PlanError,
 };
 
-pub(crate) fn bind_pattern_part(
+pub(crate) fn bind_match(
     bctx: &BindContext,
+    builder: &mut IrSingleQueryBuilder,
     in_scope: Scope,
-    pattern: &ast::PatternPart,
-) -> Result<(), PlanError> {
+    match_: &ast::MatchClause,
+) -> Result<Scope, PlanError> {
+    // add the pattern graph to builder
     todo!()
 }
