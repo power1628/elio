@@ -4,16 +4,16 @@ use mojito_common::RelationshipType;
 use mojito_parser::ast::SemanticDirection;
 
 use crate::{
-    expr::FilterExprs,
+    expr::{FilterExprs, IrToken},
     variable::{Variable, VariableName},
 };
 
 pub struct RelPattern {
-    variable: VariableName,
-    endpoints: (VariableName, VariableName),
-    dir: SemanticDirection,
-    types: Vec<RelationshipType>,
-    length: PatternLength,
+    pub variable: VariableName,
+    pub endpoints: (VariableName, VariableName),
+    pub dir: SemanticDirection,
+    pub types: Vec<IrToken>,
+    pub length: PatternLength,
 }
 
 pub struct NodeBinding {

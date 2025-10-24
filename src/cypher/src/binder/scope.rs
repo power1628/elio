@@ -18,9 +18,9 @@ pub struct ScopeItem {
 }
 
 impl ScopeItem {
-    pub fn new_variable(variable: VariableName, symbol: Option<String>, typ: DataType) -> Self {
+    pub fn new_variable(variable: VariableName, symbol: Option<&str>, typ: DataType) -> Self {
         Self {
-            symbol,
+            symbol: symbol.map(|s| s.to_string()),
             variable,
             expr: HashSet::new(),
             typ,

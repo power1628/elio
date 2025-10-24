@@ -3,13 +3,13 @@ use std::collections::HashSet;
 use mojito_parser::ast;
 
 use crate::{
-    binder::pattern::ExprContext,
+    binder::pattern::PatternContext,
     error::PlanError,
     expr::{Expr, LabelExpr, LabelOp},
 };
 
 pub(crate) fn bind_label_expr(
-    pctx: &ExprContext,
+    pctx: &PatternContext,
     expr: Box<Expr>,
     label_expr: &ast::LabelExpr,
 ) -> Result<Box<Expr>, PlanError> {

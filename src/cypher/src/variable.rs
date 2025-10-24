@@ -25,8 +25,13 @@ pub struct VariableGenerator {
 }
 
 impl VariableGenerator {
-    pub fn next_name(&self) -> VariableName {
+    pub fn named(&self, hint: &str) -> VariableName {
         let id = self.next_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        format!("v{}", id).into()
+        format!("{hint}_{}", id).into()
+    }
+
+    pub fn unnamed(&self) -> VariableName {
+        let id = self.next_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        format!("anon_{}", id).into()
     }
 }

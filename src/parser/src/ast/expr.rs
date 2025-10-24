@@ -240,6 +240,26 @@ impl LabelExpr {
     pub fn new_or(left: Self, right: Self) -> Self {
         Self::Or(Box::new(left), Box::new(right))
     }
+
+    // for relationship type, label expr should either be single reltype or reltype conjuncted with OR or NONE
+    pub fn contains_only_or(&self) -> bool {
+        match self {
+            Self::Label(_) => true,
+            Self::Or(left, right) => left.contains_only_or() && right.contains_only_or(),
+        }
+    }
+
+    // in the context of relationship pattern, extract all relationship types from label expr
+    pub fn extract_relationship_types(&self) -> Vec<String> {
+        match self {
+            Self::Label(label) => vec![label.clone()],
+            Self::Or(left, right) => {
+                let mut types = left.extract_relationship_types();
+                types.extend(right.extract_relationship_types());
+                types
+            }
+        }
+    }
 }
 
 impl std::fmt::Display for LabelExpr {
