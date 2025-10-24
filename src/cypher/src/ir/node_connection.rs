@@ -1,8 +1,10 @@
-use std::collections::HashSet;
-
+use indexmap::IndexSet;
 use mojito_parser::ast::SemanticDirection;
 
-use crate::{expr::IrToken, variable::VariableName};
+use crate::{
+    expr::{FilterExprs, IrToken},
+    variable::VariableName,
+};
 
 pub struct RelPattern {
     pub variable: VariableName,
@@ -20,9 +22,10 @@ pub struct QuantifiedPathPattern {
     pub left_binding: NodeBinding,
     pub right_binding: NodeBinding,
     pub rels: Vec<RelPattern>,
+    pub filter: FilterExprs,
     pub repetition: Repetition,
-    pub node_grouping: HashSet<VariableGrouping>,
-    pub rel_grouping: HashSet<VariableGrouping>,
+    pub node_grouping: IndexSet<VariableGrouping>,
+    pub rel_grouping: IndexSet<VariableGrouping>,
 }
 
 pub enum ExhaustiveNodeConnection {
@@ -51,6 +54,7 @@ pub struct Repetition {
     pub max: Option<i64>,
 }
 
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct VariableGrouping {
     pub singleton: VariableName,
     pub group: VariableName,

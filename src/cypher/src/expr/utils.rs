@@ -11,6 +11,10 @@ impl FilterExprs {
         Self::default()
     }
 
+    pub fn is_true(&self) -> bool {
+        self.exprs.is_empty()
+    }
+
     pub fn push(&mut self, expr: Expr) {
         self.exprs.push(expr);
     }

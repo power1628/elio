@@ -1,6 +1,7 @@
 use std::{collections::HashSet, i64, ops::Range};
 
-use indexmap::IndexSet;
+use indexmap::{IndexMap, IndexSet};
+use itertools::Itertools;
 use mojito_common::data_type::DataType;
 use mojito_parser::ast::{self, NodePattern, RelationshipPattern};
 use mojito_storage::codec::TokenKind;
@@ -13,9 +14,11 @@ use crate::{
         scope::{Scope, ScopeItem},
     },
     error::PlanError,
-    expr::{Expr, FilterExprs, IrToken, property_access::PropertyAccess},
+    expr::{Expr, ExprNode, FilterExprs, IrToken, property_access::PropertyAccess},
     ir::{
-        node_connection::{NodeBinding, PatternLength, QuantifiedPathPattern, RelPattern, Repetition},
+        node_connection::{
+            NodeBinding, PatternLength, QuantifiedPathPattern, RelPattern, Repetition, VariableGrouping,
+        },
         path_pattern::PathPattern,
     },
     variable::{Variable, VariableName},
@@ -28,6 +31,7 @@ pub struct PatternContext<'a> {
     pub name: &'a str,
     // true on allow update in this contex
     pub allow_update: bool,
+    // TODO(pgao): refactor this, we can have an reject flags according to different pattern context
     // true on quantified path pattern not allowed
     pub reject_qpp: bool,
     // true on reject named path pattern
@@ -63,7 +67,7 @@ pub(crate) fn bind_pattern_part(
     pctx: &PatternContext,
     scope: &mut Scope,
     pattern: &ast::PatternPart,
-) -> Result<(PathPattern, Option<String>), PlanError> {
+) -> Result<(PathPattern, PathPatternExtra), PlanError> {
     let ast::PatternPart {
         variable,
         selector,
@@ -237,15 +241,16 @@ fn bind_quantified_path_pattern(
     }: &ast::QuantifiedPathPattern,
 ) -> Result<(QuantifiedPathPattern, NodeConnectionExtra, Scope), PlanError> {
     let mut inner_pctx = pctx.clone();
+    let mut inner_scope = scope.clone();
     // quantified path pattern not allowed to be nested
     inner_pctx.reject_qpp = true;
     // quantified path pattern not allowed to have named path pattern
     inner_pctx.reject_named_path = true;
     inner_pctx.reject_selective = true;
 
-    let (bound, _) = bind_pattern_part(&inner_pctx, scope, non_selective_part)?;
+    let (path, path_extra) = bind_pattern_part(&inner_pctx, &mut inner_scope, non_selective_part)?;
 
-    let rels = bound
+    let rels = path
         .as_node_connections()
         .ok_or(PlanError::semantic_err("Node connections expected in QPP."))?
         .as_rels()
@@ -271,13 +276,51 @@ fn bind_quantified_path_pattern(
             max: upper.map(|x| x as i64),
         },
     };
+    let node_grouping = {
+        let nodes: IndexSet<VariableName> = rels
+            .iter()
+            .flat_map(|r| vec![r.endpoints.0.clone(), r.endpoints.1.clone()])
+            .collect();
+        nodes
+            .into_iter()
+            .map(|singleton| VariableGrouping {
+                singleton: singleton.clone(),
+                group: pctx.bctx.variable_generator.named(&singleton),
+            })
+            .collect()
+    };
+    let rel_grouping = {
+        let rels: IndexSet<VariableName> = rels.iter().map(|r| r.variable.clone()).collect();
+        rels.into_iter()
+            .map(|singleton| VariableGrouping {
+                singleton: singleton.clone(),
+                group: pctx.bctx.variable_generator.named(&singleton),
+            })
+            .collect()
+    };
+
+    // bind filter
+    // TODO(pgao): support variable grouping filters
+    let mut post_filter = FilterExprs::empty();
+    if let Some(filter) = filter {
+        let ectx = pctx.derive_expr_context(&inner_scope, "QuantifiedPathPattern Filter");
+        let expr = bind_expr(&ectx, filter)?;
+        if expr.typ() != DataType::Boolean {
+            return Err(PlanError::semantic_err(
+                "QuantifiedPathPattern filter must be boolean expression".to_string(),
+            ));
+        }
+        post_filter.push(expr);
+    };
+
     let qpp = QuantifiedPathPattern {
         left_binding,
         right_binding,
         rels,
-        repetition: repetition
-        node_grouping: todo!(),
-        rel_grouping: todo!(),
+        repetition,
+        node_grouping,
+        rel_grouping,
+        filter: post_filter,
     };
 
     todo!()
