@@ -6,14 +6,17 @@ use mojito_expr::func::sig::FuncDef;
 use crate::{binder::scope::Scope, statement::StmtContext, variable::VariableGenerator};
 mod builder;
 pub mod expr;
+pub mod label_expr;
 pub mod match_;
 pub mod pattern;
 pub mod query;
 pub mod scope;
 
 /// Context to bind a query
+#[derive(Debug, Clone)]
 pub struct BindContext<'a> {
     pub sctx: &'a StmtContext<'a>,
+    // TODO(pgao): seems outer_scopes is not needed?
     pub outer_scopes: Vec<Scope>,
     pub variable_generator: Arc<VariableGenerator>,
     // TODO(pgao): semantic context like disable some semantics

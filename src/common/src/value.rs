@@ -1,5 +1,6 @@
 use crate::{LabelId, NodeId, PropertyKeyId, RelationshipId, RelationshipTypeId};
 
+#[derive(Debug, Clone)]
 pub enum Value {
     Null,
     Boolean(bool),
@@ -15,12 +16,14 @@ pub enum Value {
     // Path(Box<PathValue>),
 }
 
+#[derive(Debug, Clone)]
 pub struct NodeValue {
     pub id: NodeId,
     pub labels: Vec<LabelId>,
     pub properties: Vec<(PropertyKeyId, Value)>,
 }
 
+#[derive(Debug, Clone)]
 pub struct RelationshipValue {
     pub id: RelationshipId,
     pub reltype: RelationshipTypeId,

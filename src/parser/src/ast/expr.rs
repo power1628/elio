@@ -1,6 +1,6 @@
 use derive_more::Display;
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Expr {
     Literal {
         lit: Literal,
@@ -128,7 +128,7 @@ impl std::fmt::Display for Expr {
     }
 }
 
-#[derive(Debug, Display, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Display, PartialEq, Eq, Hash)]
 pub enum Literal {
     #[display("{}", if *_0 { "TRUE" } else { "FALSE" })]
     Boolean(bool),
@@ -151,7 +151,7 @@ enum Associativity {
 
 macro_rules! unary_operator {
     ($($variant:ident => $sym:expr, $assoc:expr),* $(,)?) => {
-        #[derive(Debug, PartialEq, Eq, Hash)]
+        #[derive(Debug, Clone, PartialEq, Eq, Hash)]
         pub enum UnaryOperator {
             $($variant),*
         }
@@ -176,7 +176,7 @@ macro_rules! unary_operator {
 
 macro_rules! binary_operator {
     ($($variant:ident => $sym:expr),* $(,)?) => {
-        #[derive(Debug, PartialEq, Eq, Hash)]
+        #[derive(Debug, Clone, PartialEq, Eq, Hash)]
         pub enum BinaryOperator {
             $($variant),*
         }

@@ -2,7 +2,43 @@ use crate::{expr::Expr, variable::Variable};
 
 #[derive(Default)]
 pub struct FilterExprs {
+    // conjuncted by AND
     exprs: Vec<Expr>,
+}
+
+impl FilterExprs {
+    pub fn empty() -> Self {
+        Self::default()
+    }
+
+    pub fn push(&mut self, expr: Expr) {
+        self.exprs.push(expr);
+    }
+
+    pub fn and(mut self, other: Self) -> Self {
+        self.exprs.extend(other.exprs);
+        self.normalize()
+    }
+
+    pub fn or(self, other: Self) -> Self {
+        let lhs: Expr = self.into();
+        let rhs: Expr = other.into();
+        let or = lhs.or(rhs);
+        let mut ret = Self::empty();
+        ret.exprs.push(or);
+        ret.normalize()
+    }
+
+    // TODO(pgao): remove false
+    fn normalize(self) -> Self {
+        self
+    }
+}
+
+impl Into<Expr> for FilterExprs {
+    fn into(self) -> Expr {
+        self.exprs.into_iter().fold(Expr::boolean(true), |acc, e| acc.and(e))
+    }
 }
 
 pub struct ProjectItem {

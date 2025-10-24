@@ -1,6 +1,4 @@
-use std::collections::HashSet;
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum DataType {
     Null,
     Boolean,
@@ -15,7 +13,7 @@ pub enum DataType {
     Relationship,
     Path,
     // closed dynamic union type
-    Union(HashSet<DataType>),
+    Union(Vec<DataType>),
     // Any type
     Any,
 }

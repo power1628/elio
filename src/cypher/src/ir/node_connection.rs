@@ -3,19 +3,22 @@ use std::collections::HashSet;
 use mojito_common::RelationshipType;
 use mojito_parser::ast::SemanticDirection;
 
-use crate::{expr::FilterExprs, variable::Variable};
+use crate::{
+    expr::FilterExprs,
+    variable::{Variable, VariableName},
+};
 
 pub struct RelPattern {
-    variable: Variable,
-    endpoints: (Variable, Variable),
+    variable: VariableName,
+    endpoints: (VariableName, VariableName),
     dir: SemanticDirection,
     types: Vec<RelationshipType>,
     length: PatternLength,
 }
 
 pub struct NodeBinding {
-    pub inner: Variable,
-    pub outer: Variable,
+    pub inner: VariableName,
+    pub outer: VariableName,
 }
 pub struct QuantifiedPathPattern {
     left_binding: NodeBinding,
@@ -63,6 +66,6 @@ pub struct Repetition {
 }
 
 pub struct VariableGrouping {
-    pub singleton: Variable,
-    pub group: Variable,
+    pub singleton: VariableName,
+    pub group: VariableName,
 }

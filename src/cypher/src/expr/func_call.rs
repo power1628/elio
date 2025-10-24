@@ -1,10 +1,18 @@
 use mojito_common::data_type::DataType;
-use mojito_expr::func::sig::FuncImpl;
 
 use crate::expr::Expr;
 
+#[derive(Debug, Clone)]
 pub struct FuncCall {
-    pub func: FuncImpl,
+    // TODO(pgao): We should have an FuncImplName Enum here
+    // Or we should have an FuncName and args types to resolve to the function impl
+    pub func: String,
     pub args: Vec<Expr>,
     typ: DataType,
+}
+
+impl FuncCall {
+    pub fn new(func: String, args: Vec<Expr>, typ: DataType) -> Self {
+        Self { func, args, typ }
+    }
 }

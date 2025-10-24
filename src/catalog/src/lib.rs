@@ -19,6 +19,12 @@ pub struct Catalog {
     functions: HashMap<String, FunctionCatalog>,
 }
 
+impl std::fmt::Debug for Catalog {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Catalog").finish()
+    }
+}
+
 impl Catalog {
     pub fn new(token: Arc<TokenStore>) -> Self {
         Self {

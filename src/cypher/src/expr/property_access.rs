@@ -1,0 +1,27 @@
+use mojito_common::data_type::DataType;
+
+use crate::expr::{Expr, ExprNode, IrToken};
+
+#[derive(Debug, Clone)]
+pub struct PropertyAccess {
+    pub expr: Box<Expr>,
+    pub property: IrToken,
+    // in most cases, the typ should be any, since we do not support constaint for now
+    typ: DataType,
+}
+
+impl PropertyAccess {
+    pub fn new_unchecked(expr: Box<Expr>, property: &IrToken, typ: &DataType) -> Self {
+        Self {
+            expr,
+            property: property.to_owned(),
+            typ: typ.clone(),
+        }
+    }
+}
+
+impl ExprNode for PropertyAccess {
+    fn typ(&self) -> mojito_common::data_type::DataType {
+        self.typ.clone()
+    }
+}

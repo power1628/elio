@@ -7,6 +7,14 @@ pub enum PlanError {
     MetaError(#[from] GraphStoreError),
     #[error("{}", _0.message)]
     SemanticError(#[from] SemanticError),
+    #[error("{}", _0)]
+    NotSupported(String),
+}
+
+impl PlanError {
+    pub fn semantic_err<T: ToString>(msg: T) -> Self {
+        Self::SemanticError(SemanticError::new(msg.to_string()))
+    }
 }
 
 #[derive(Error, Debug)]
@@ -21,4 +29,8 @@ impl std::fmt::Display for SemanticError {
     }
 }
 
-impl SemanticError {}
+impl SemanticError {
+    pub fn new(message: String) -> Self {
+        Self { message }
+    }
+}
