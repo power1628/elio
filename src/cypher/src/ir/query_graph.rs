@@ -4,7 +4,8 @@ use crate::{
     expr::FilterExprs,
     ir::{
         mutating_pattern::MutatingPattern,
-        node_connection::{QuantifiedPathPattern, RelPattern, SelectivePathPattern},
+        node_connection::{QuantifiedPathPattern, RelPattern},
+        path_pattern::SelectivePathPattern,
     },
     variable::Variable,
 };

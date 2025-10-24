@@ -1,12 +1,8 @@
 use std::collections::HashSet;
 
-use mojito_common::RelationshipType;
 use mojito_parser::ast::SemanticDirection;
 
-use crate::{
-    expr::{FilterExprs, IrToken},
-    variable::{Variable, VariableName},
-};
+use crate::{expr::IrToken, variable::VariableName};
 
 pub struct RelPattern {
     pub variable: VariableName,
@@ -21,22 +17,17 @@ pub struct NodeBinding {
     pub outer: VariableName,
 }
 pub struct QuantifiedPathPattern {
-    left_binding: NodeBinding,
-    right_binding: NodeBinding,
-    rels: Vec<RelPattern>,
-    repetition: Repetition,
-    node_grouping: HashSet<VariableGrouping>,
-    rel_grouping: HashSet<VariableGrouping>,
+    pub left_binding: NodeBinding,
+    pub right_binding: NodeBinding,
+    pub rels: Vec<RelPattern>,
+    pub repetition: Repetition,
+    pub node_grouping: HashSet<VariableGrouping>,
+    pub rel_grouping: HashSet<VariableGrouping>,
 }
 
 pub enum ExhaustiveNodeConnection {
     RelPattern(RelPattern),
     QuantifiedPathPattern(QuantifiedPathPattern),
-}
-
-/// Path pattern of length 1 or more
-pub struct NodeConnections {
-    connections: Vec<ExhaustiveNodeConnection>,
 }
 
 pub enum Selector {
@@ -48,12 +39,6 @@ pub enum Selector {
     ShortestKGroup(i64),
 }
 
-pub struct SelectivePathPattern {
-    path_pattern: NodeConnections,
-    filter: FilterExprs,
-    selector: Selector,
-}
-
 pub enum PatternLength {
     Simple,
     Var { min: i64, max: Option<i64> },
@@ -62,6 +47,7 @@ pub enum PatternLength {
 pub struct Repetition {
     pub min: i64,
     // None means infinite
+    // inclusive
     pub max: Option<i64>,
 }
 

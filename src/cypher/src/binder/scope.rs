@@ -7,7 +7,6 @@ use crate::variable::{Variable, VariableName};
 
 #[derive(Debug, Clone)]
 pub struct ScopeItem {
-    // pub is_argument: bool,
     // symbol in original query
     // none for anonymous variable
     pub symbol: Option<String>,

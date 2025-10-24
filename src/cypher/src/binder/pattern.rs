@@ -1,4 +1,4 @@
-use std::{collections::HashSet, ops::Range};
+use std::{collections::HashSet, i64, ops::Range};
 
 use indexmap::IndexSet;
 use mojito_common::data_type::DataType;
@@ -14,7 +14,10 @@ use crate::{
     },
     error::PlanError,
     expr::{Expr, FilterExprs, IrToken, property_access::PropertyAccess},
-    ir::node_connection::{PatternLength, RelPattern},
+    ir::{
+        node_connection::{NodeBinding, PatternLength, QuantifiedPathPattern, RelPattern, Repetition},
+        path_pattern::PathPattern,
+    },
     variable::{Variable, VariableName},
 };
 
@@ -25,6 +28,12 @@ pub struct PatternContext<'a> {
     pub name: &'a str,
     // true on allow update in this contex
     pub allow_update: bool,
+    // true on quantified path pattern not allowed
+    pub reject_qpp: bool,
+    // true on reject named path pattern
+    pub reject_named_path: bool,
+    // true on reject selective path pattenr
+    pub reject_selective: bool,
 }
 
 impl<'a> PatternContext<'a> {
@@ -48,8 +57,13 @@ pub(crate) fn bind_pattern(pctx: &PatternContext, pattern: &[ast::PatternPart]) 
 ///   - PathPattern
 ///   - Filter(post filter)
 ///   - path variable
-///
-pub(crate) fn bind_pattern_part(pctx: &PatternContext, pattern: &ast::PatternPart) -> Result<(), PlanError> {
+
+/// return (PathPattern, PathName)
+pub(crate) fn bind_pattern_part(
+    pctx: &PatternContext,
+    scope: &mut Scope,
+    pattern: &ast::PatternPart,
+) -> Result<(PathPattern, Option<String>), PlanError> {
     let ast::PatternPart {
         variable,
         selector,
@@ -58,25 +72,15 @@ pub(crate) fn bind_pattern_part(pctx: &PatternContext, pattern: &ast::PatternPar
     todo!()
 }
 
-struct BoundSimplePathPattern {
-    pub nodes: Vec<VariableName>,
-    pub rels: Vec<RelPattern>,
+struct NodeConnectionExtra {
+    pub outer: IndexSet<VariableName>,
     pub post_filter: FilterExprs,
-    pub arguments: IndexSet<VariableName>,
 }
 
-impl BoundSimplePathPattern {
-    /// Non repeated relationships in the path pattern
-    /// TODO(pgao): use scope to recover the repated relationship
-    pub fn semantic_check(&self, _scope: &Scope) -> Result<(), PlanError> {
-        let rel_set: HashSet<_> = self.rels.iter().map(|x| x.variable.clone()).collect();
-        if rel_set.len() != self.rels.len() {
-            return Err(PlanError::semantic_err(
-                " repeated relationships not allowed in the path pattern".to_string(),
-            ));
-        }
-        Ok(())
-    }
+pub struct PathPatternExtra {
+    pub name: Option<String>,          // named path or not
+    pub outer: IndexSet<VariableName>, // outer references used by this pattern
+    pub post_filter: FilterExprs,      // post filter after match this pattern
 }
 
 fn bind_simple_pattern(
@@ -84,11 +88,11 @@ fn bind_simple_pattern(
     // current scope only record introduced scope items
     mut scope: Scope,
     _simple @ ast::SimplePathPattern { nodes, relationships }: &ast::SimplePathPattern,
-) -> Result<(BoundSimplePathPattern, Scope), PlanError> {
-    let mut arguments = IndexSet::new();
+) -> Result<(Vec<VariableName>, Vec<RelPattern>, NodeConnectionExtra, Scope), PlanError> {
     let mut ir_nodes = vec![];
     let mut ir_rels = vec![];
     let mut filter = FilterExprs::empty();
+    let mut outer = IndexSet::default();
 
     for NodePattern {
         variable,
@@ -98,9 +102,9 @@ fn bind_simple_pattern(
     } in nodes
     {
         // bind variable
-        let (var, is_argument) = bind_variable(pctx, &mut scope, variable.as_deref(), &VariableKind::Node)?;
-        if is_argument {
-            arguments.insert(var.name.clone());
+        let (var, is_outer) = bind_variable(pctx, &mut scope, variable.as_deref(), &VariableKind::Node)?;
+        if is_outer {
+            outer.insert(var.name.clone());
         }
 
         // pre-filter
@@ -140,9 +144,10 @@ fn bind_simple_pattern(
         },
     ) in relationships.iter().enumerate()
     {
-        let (var, is_argument) = bind_variable(pctx, &mut scope, variable.as_deref(), &VariableKind::Rel)?;
-        if is_argument {
-            arguments.insert(var.name.clone());
+        let (var, is_outer) = bind_variable(pctx, &mut scope, variable.as_deref(), &VariableKind::Rel)?;
+
+        if is_outer {
+            outer.insert(var.name.clone());
         }
         // for relationship type, label expr should either be single reltype or reltype conjuncted with OR or NONE
         // bind label expr
@@ -190,7 +195,7 @@ fn bind_simple_pattern(
         filter = filter.and(rel_filter);
 
         let rel = RelPattern {
-            variable: var.name,
+            variable: var.name.clone(),
             endpoints: (ir_nodes[i].clone(), ir_nodes[i + 1].clone()),
             dir: *direction,
             types: reltypes,
@@ -199,15 +204,83 @@ fn bind_simple_pattern(
         ir_rels.push(rel);
     }
 
-    let bound = BoundSimplePathPattern {
-        nodes: ir_nodes,
-        rels: ir_rels,
-        post_filter: filter,
-        arguments,
-    };
-    bound.semantic_check(&scope)?;
+    // no repeated relationship check
+    {
+        let rel_set: HashSet<_> = ir_rels.iter().map(|x| x.variable.clone()).collect();
+        if rel_set.len() != ir_rels.len() {
+            return Err(PlanError::semantic_err(
+                " repeated relationships not allowed in the path pattern".to_string(),
+            ));
+        }
+    }
 
-    Ok((bound, scope))
+    Ok((
+        ir_nodes,
+        ir_rels,
+        NodeConnectionExtra {
+            outer,
+            post_filter: filter,
+        },
+        scope,
+    ))
+}
+
+fn bind_quantified_path_pattern(
+    pctx: &PatternContext,
+    scope: &mut Scope,
+    left: &VariableName,
+    right: &VariableName,
+    _qpp @ ast::QuantifiedPathPattern {
+        non_selective_part,
+        quantifier,
+        filter,
+    }: &ast::QuantifiedPathPattern,
+) -> Result<(QuantifiedPathPattern, NodeConnectionExtra, Scope), PlanError> {
+    let mut inner_pctx = pctx.clone();
+    // quantified path pattern not allowed to be nested
+    inner_pctx.reject_qpp = true;
+    // quantified path pattern not allowed to have named path pattern
+    inner_pctx.reject_named_path = true;
+    inner_pctx.reject_selective = true;
+
+    let (bound, _) = bind_pattern_part(&inner_pctx, scope, non_selective_part)?;
+
+    let rels = bound
+        .as_node_connections()
+        .ok_or(PlanError::semantic_err("Node connections expected in QPP."))?
+        .as_rels()
+        .ok_or(PlanError::semantic_err("Only simple relationships allowed in QPP."))?;
+
+    let left_binding = NodeBinding {
+        inner: rels.first().unwrap().endpoints.0.clone(),
+        outer: left.clone(),
+    };
+    let right_binding = NodeBinding {
+        inner: rels.last().unwrap().endpoints.1.clone(),
+        outer: right.clone(),
+    };
+    let repetition = match quantifier {
+        ast::PatternQuantifier::Plus => Repetition { min: 1, max: None },
+        ast::PatternQuantifier::Star => Repetition { min: 0, max: None },
+        ast::PatternQuantifier::Fixed(n) => Repetition {
+            min: *n as i64,
+            max: Some(*n as i64),
+        },
+        ast::PatternQuantifier::Interval { lower, upper } => Repetition {
+            min: lower.unwrap_or_default() as i64,
+            max: upper.map(|x| x as i64),
+        },
+    };
+    let qpp = QuantifiedPathPattern {
+        left_binding,
+        right_binding,
+        rels,
+        repetition: repetition
+        node_grouping: todo!(),
+        rel_grouping: todo!(),
+    };
+
+    todo!()
 }
 
 enum VariableKind {
@@ -224,11 +297,8 @@ impl VariableKind {
     }
 }
 
-struct PatternBuilder {
-    pub arguments: IndexSet<Variable>,
-    pub nodes: IndexSet<Variable>,
-}
-
+/// Return (Variable, is_outer)
+/// When is_outer is true, means the pattern works inside an subquery
 fn bind_variable(
     pctx: &PatternContext,
     scope: &mut Scope,
@@ -237,8 +307,8 @@ fn bind_variable(
 ) -> Result<(Variable, bool), PlanError> {
     if let Some(name) = name {
         // named variable
-        if let Some((variable, is_argument)) = resolve_variable(pctx, scope, name)? {
-            return Ok((variable, is_argument));
+        if let Some((variable, is_outer)) = resolve_variable(pctx, scope, name)? {
+            return Ok((variable, is_outer));
         } else {
             // introduce a new named variable
             let var_name = pctx.bctx.variable_generator.named(name);
@@ -257,7 +327,7 @@ fn bind_variable(
     }
 }
 
-// If bound, return (variable, is_argument)
+// If bound, return (variable, is_outer)
 fn resolve_variable(pctx: &PatternContext, scope: &Scope, name: &str) -> Result<Option<(Variable, bool)>, PlanError> {
     // find if variable already defined in in_scope
     // check in pctx for imported variables
