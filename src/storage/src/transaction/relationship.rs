@@ -1,5 +1,5 @@
 use mojito_common::{
-    NodeId, PropertyKey, PropertyKeyId, RelationshipId, RelationshipTypeId, store_types::PropertyValue, value::Value,
+    NodeId, PropertyKeyId, RelationshipId, RelationshipTypeId, store_types::PropertyValue, value::Value,
 };
 
 use crate::{error::GraphStoreError, transaction::Transaction};

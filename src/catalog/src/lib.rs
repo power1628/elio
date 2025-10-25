@@ -1,7 +1,6 @@
 use std::{collections::HashMap, ops::Deref, sync::Arc};
 
-use mojito_common::TokenId;
-use mojito_storage::{codec::TokenKind, meta::TokenStore};
+use mojito_storage::meta::TokenStore;
 
 pub mod func;
 pub use func::FunctionCatalog;

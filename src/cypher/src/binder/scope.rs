@@ -29,6 +29,10 @@ impl ScopeItem {
     pub fn as_variable(&self) -> Variable {
         Variable::new(&self.variable, &self.typ)
     }
+
+    pub fn is_anonymous(&self) -> bool {
+        self.symbol.is_none()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -47,6 +51,10 @@ impl Scope {
 
     pub fn resolve_symbol(&self, name: &str) -> Option<&ScopeItem> {
         self.items.iter().find(|item| item.symbol.as_deref() == Some(name))
+    }
+
+    pub fn resolve_variable(&self, variable: &VariableName) -> Option<&ScopeItem> {
+        self.items.iter().find(|item| &item.variable == variable)
     }
 
     pub fn add_item(&mut self, item: ScopeItem) {

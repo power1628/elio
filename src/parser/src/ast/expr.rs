@@ -227,7 +227,7 @@ binary_operator! {
     In => "IN",
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum LabelExpr {
     Label(String),
     Or(Box<LabelExpr>, Box<LabelExpr>),

@@ -1,6 +1,6 @@
 use crate::{expr::Expr, variable::Variable};
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct FilterExprs {
     // conjuncted by AND
     exprs: Vec<Expr>,

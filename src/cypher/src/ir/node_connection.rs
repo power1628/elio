@@ -6,6 +6,7 @@ use crate::{
     variable::VariableName,
 };
 
+#[derive(Clone)]
 pub struct RelPattern {
     pub variable: VariableName,
     pub endpoints: (VariableName, VariableName),
@@ -22,6 +23,8 @@ pub struct QuantifiedPathPattern {
     pub left_binding: NodeBinding,
     pub right_binding: NodeBinding,
     pub rels: Vec<RelPattern>,
+    // this filter works when expanding each hop
+    // pre-filter
     pub filter: FilterExprs,
     pub repetition: Repetition,
     pub node_grouping: IndexSet<VariableGrouping>,
@@ -42,6 +45,7 @@ pub enum Selector {
     ShortestKGroup(i64),
 }
 
+#[derive(Copy, Clone)]
 pub enum PatternLength {
     Simple,
     Var { min: i64, max: Option<i64> },

@@ -97,7 +97,7 @@ pub enum PathFactor {
     Quantified(QuantifiedPathPattern),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SimplePathPattern {
     pub nodes: Vec<NodePattern>,
     pub relationships: Vec<RelationshipPattern>,
@@ -118,6 +118,7 @@ impl std::fmt::Display for SimplePathPattern {
 pub struct QuantifiedPathPattern {
     pub non_selective_part: Box<PatternPart>,
     pub quantifier: PatternQuantifier,
+    // this filter works inside the quantified path pattern
     pub filter: Option<Box<Expr>>,
 }
 
@@ -147,7 +148,7 @@ pub enum PatternQuantifier {
     Interval { lower: Option<u32>, upper: Option<u32> }, // {n,m}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct NodePattern {
     pub variable: Option<String>,
     pub label_expr: Option<LabelExpr>,
@@ -167,7 +168,7 @@ impl std::fmt::Display for NodePattern {
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct RelationshipPattern {
     pub variable: Option<String>,
     pub label_expr: Option<LabelExpr>,

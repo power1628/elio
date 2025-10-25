@@ -15,6 +15,10 @@ impl PlanError {
     pub fn semantic_err<T: ToString>(msg: T) -> Self {
         Self::SemanticError(SemanticError::new(msg.to_string()))
     }
+
+    pub fn not_supported<T: ToString>(msg: T) -> Self {
+        Self::NotSupported(msg.to_string())
+    }
 }
 
 #[derive(Error, Debug)]

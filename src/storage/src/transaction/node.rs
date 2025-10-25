@@ -1,6 +1,6 @@
 use mojito_common::{LabelId, NodeId, PropertyKeyId, store_types::PropertyValue, value::Value};
 
-use crate::{error::GraphStoreError, graph::GraphStore, transaction::Transaction};
+use crate::{error::GraphStoreError, transaction::Transaction};
 
 impl Transaction {
     pub fn node_create(

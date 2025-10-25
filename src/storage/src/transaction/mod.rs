@@ -6,8 +6,6 @@ use crate::{dict::DictStore, error::GraphStoreError};
 mod node;
 mod relationship;
 
-pub use node::*;
-pub use relationship::*;
 
 pub struct Transaction {
     // NOTE: _db should be dropped at last

@@ -1,6 +1,6 @@
-use std::{collections::HashSet, i64, ops::Range};
+use std::{collections::HashSet, i64, ops::Range, path::Path};
 
-use indexmap::{IndexMap, IndexSet};
+use indexmap::IndexSet;
 use itertools::Itertools;
 use mojito_common::data_type::DataType;
 use mojito_parser::ast::{self, NodePattern, RelationshipPattern};
@@ -17,9 +17,10 @@ use crate::{
     expr::{Expr, ExprNode, FilterExprs, IrToken, property_access::PropertyAccess},
     ir::{
         node_connection::{
-            NodeBinding, PatternLength, QuantifiedPathPattern, RelPattern, Repetition, VariableGrouping,
+            ExhaustiveNodeConnection, NodeBinding, PatternLength, QuantifiedPathPattern, RelPattern, Repetition,
+            VariableGrouping,
         },
-        path_pattern::PathPattern,
+        path_pattern::{NodeConnections, PathPattern, SingleNode},
     },
     variable::{Variable, VariableName},
 };
@@ -65,24 +66,165 @@ pub(crate) fn bind_pattern(pctx: &PatternContext, pattern: &[ast::PatternPart]) 
 /// return (PathPattern, PathName)
 pub(crate) fn bind_pattern_part(
     pctx: &PatternContext,
-    scope: &mut Scope,
+    mut scope: Scope,
     pattern: &ast::PatternPart,
-) -> Result<(PathPattern, PathPatternExtra), PlanError> {
+) -> Result<(PathPattern, PathPatternExtra, Scope), PlanError> {
     let ast::PatternPart {
         variable,
         selector,
         factors,
     } = pattern;
-    todo!()
+
+    // not supported selective path pattern
+    if selector.is_selective() {
+        return Err(PlanError::not_supported("Selective path pattern not supported"));
+    }
+    if variable.is_some() && pctx.reject_named_path {
+        return Err(PlanError::not_supported("Path variable not supported"));
+    }
+
+    // note: quantified path pattern must be conjuncted with simple path patterns
+    // so the factors must be like:
+    // simple - (qpp - simple)*
+
+    let (simple, quantified) = partition_factors(factors)?;
+
+    // bind all simple
+    let mut bound_simple = vec![];
+    let mut bound_quantified = vec![];
+
+    for path_pattern in simple.iter() {
+        let (nodes, rels, extra, new_scope) = bind_simple_pattern(pctx, scope, path_pattern)?;
+        scope = new_scope;
+        bound_simple.push((nodes, rels, extra));
+    }
+
+    // bind all qpp with left and right
+    for (i, qpp) in quantified.iter().enumerate() {
+        let left = bound_simple[i].0.last().unwrap();
+        let right = bound_simple[i + 1].0.first().unwrap();
+        let (bound_qpp, extra, new_scope) = bind_quantified_path_pattern(pctx, scope, left, right, qpp)?;
+        scope = new_scope;
+        bound_quantified.push((bound_qpp, extra));
+    }
+
+    let (path, extra) = if bound_quantified.is_empty() {
+        // simple path pattern only, there should be only one simple pattern
+        assert!(bound_simple.len() == 1);
+        let (nodes, rels, extra) = bound_simple.into_iter().next().unwrap();
+        if rels.is_empty() {
+            // single node path pattern
+            let path = PathPattern::SingleNode(SingleNode {
+                variable: nodes.first().unwrap().clone(),
+            });
+            (path, extra)
+        } else {
+            // connections
+            let connections = rels.into_iter().map(ExhaustiveNodeConnection::RelPattern).collect();
+            let path = PathPattern::NodeConnections(NodeConnections { connections });
+            (path, extra)
+        }
+    } else {
+        // quantified and simple path patterns mixed
+        // simples
+        let mut nodes = vec![];
+        let mut conns = vec![];
+        let mut extra = NodeConnectionExtra::empty();
+        for (ns, rs, simple_extra) in bound_simple {
+            nodes.extend(ns.clone());
+            conns.extend(rs.iter().cloned().map(ExhaustiveNodeConnection::RelPattern));
+            extra = extra.merge(simple_extra);
+        }
+
+        // quantified
+        for (qpp, qpp_extra) in bound_quantified {
+            conns.push(ExhaustiveNodeConnection::QuantifiedPathPattern(qpp));
+            extra = extra.merge(qpp_extra);
+        }
+
+        (
+            PathPattern::NodeConnections(NodeConnections { connections: conns }),
+            extra,
+        )
+    };
+
+    // named path
+    let path_var = if let Some(name) = variable {
+        let (var, is_outer) = bind_variable(pctx, &mut scope, Some(&name), &DataType::Path)?;
+        if is_outer {
+            return Err(PlanError::semantic_err(
+                "Named path pattern cannot reference outer variable".to_string(),
+            ));
+        }
+        Some(var)
+    } else {
+        None
+    };
+
+    // TODO(pgao): bind path expression
+
+    let path_extra = PathPatternExtra {
+        name: path_var,
+        outer: extra.outer,
+        post_filter: extra.post_filter,
+    };
+
+    Ok((path, path_extra, scope))
 }
 
+fn partition_factors(
+    factors: &[ast::PathFactor],
+) -> Result<(Vec<&ast::SimplePathPattern>, Vec<&ast::QuantifiedPathPattern>), PlanError> {
+    let mut simple = vec![];
+    let mut quantified = vec![];
+    for (i, factor) in factors.iter().enumerate() {
+        if i % 2 == 0 {
+            if let ast::PathFactor::Simple(s) = factor {
+                simple.push(s);
+            } else {
+                return Err(PlanError::semantic_err(
+                    "Simple path pattern must be at even position in pattern part".to_string(),
+                ));
+            }
+        } else {
+            if let ast::PathFactor::Quantified(q) = factor {
+                quantified.push(q);
+            } else {
+                return Err(PlanError::semantic_err(
+                    "Quantified path pattern must be at odd position in pattern part".to_string(),
+                ));
+            }
+        }
+    }
+    Ok((simple, quantified))
+}
+
+#[derive(Clone)]
 struct NodeConnectionExtra {
     pub outer: IndexSet<VariableName>,
     pub post_filter: FilterExprs,
 }
 
+impl NodeConnectionExtra {
+    pub fn empty() -> Self {
+        Self {
+            outer: Default::default(),
+            post_filter: FilterExprs::empty(),
+        }
+    }
+
+    pub fn merge(self, other: Self) -> Self {
+        let mut outer = self.outer;
+        for v in other.outer {
+            outer.insert(v);
+        }
+        let post_filter = self.post_filter.and(other.post_filter);
+        Self { outer, post_filter }
+    }
+}
+
 pub struct PathPatternExtra {
-    pub name: Option<String>,          // named path or not
+    pub name: Option<Variable>,        // named path or not
     pub outer: IndexSet<VariableName>, // outer references used by this pattern
     pub post_filter: FilterExprs,      // post filter after match this pattern
 }
@@ -106,7 +248,7 @@ fn bind_simple_pattern(
     } in nodes
     {
         // bind variable
-        let (var, is_outer) = bind_variable(pctx, &mut scope, variable.as_deref(), &VariableKind::Node)?;
+        let (var, is_outer) = bind_variable(pctx, &mut scope, variable.as_deref(), &DataType::Node)?;
         if is_outer {
             outer.insert(var.name.clone());
         }
@@ -127,9 +269,7 @@ fn bind_simple_pattern(
         }
         // TODO(pgao): bind predicate, in parser we do not support predicate right now
         if let Some(_) = predicate {
-            return Err(PlanError::NotSupported(
-                "predicate in pattern not supported".to_string(),
-            ));
+            return Err(PlanError::not_supported("predicate in pattern not supported"));
         }
 
         filter = filter.and(node_filter);
@@ -148,7 +288,7 @@ fn bind_simple_pattern(
         },
     ) in relationships.iter().enumerate()
     {
-        let (var, is_outer) = bind_variable(pctx, &mut scope, variable.as_deref(), &VariableKind::Rel)?;
+        let (var, is_outer) = bind_variable(pctx, &mut scope, variable.as_deref(), &DataType::Relationship)?;
 
         if is_outer {
             outer.insert(var.name.clone());
@@ -181,9 +321,7 @@ fn bind_simple_pattern(
         }
         // TODO(pgao): bind predicate, in parser we do not support predicate right now
         if let Some(_) = predicate {
-            return Err(PlanError::NotSupported(
-                "predicate in pattern not supported".to_string(),
-            ));
+            return Err(PlanError::not_supported("predicate in pattern not supported"));
         }
 
         // bind length
@@ -231,7 +369,7 @@ fn bind_simple_pattern(
 
 fn bind_quantified_path_pattern(
     pctx: &PatternContext,
-    scope: &mut Scope,
+    mut scope: Scope,
     left: &VariableName,
     right: &VariableName,
     _qpp @ ast::QuantifiedPathPattern {
@@ -248,13 +386,24 @@ fn bind_quantified_path_pattern(
     inner_pctx.reject_named_path = true;
     inner_pctx.reject_selective = true;
 
-    let (path, path_extra) = bind_pattern_part(&inner_pctx, &mut inner_scope, non_selective_part)?;
+    let (path, path_extra, inner_scope) = bind_pattern_part(&inner_pctx, inner_scope, non_selective_part)?;
 
     let rels = path
         .as_node_connections()
         .ok_or(PlanError::semantic_err("Node connections expected in QPP."))?
         .as_rels()
         .ok_or(PlanError::semantic_err("Only simple relationships allowed in QPP."))?;
+
+    let PathPatternExtra {
+        name,
+        outer,
+        post_filter: mut inner_filter, // this works as pre-filter in qpp
+    } = path_extra;
+    assert!(name.is_none(), "Named path not allowed in quantified path pattern.");
+    assert!(
+        outer.is_empty(),
+        "Outer reference not allowed in quantified path pattern."
+    );
 
     let left_binding = NodeBinding {
         inner: rels.first().unwrap().endpoints.0.clone(),
@@ -301,7 +450,6 @@ fn bind_quantified_path_pattern(
 
     // bind filter
     // TODO(pgao): support variable grouping filters
-    let mut post_filter = FilterExprs::empty();
     if let Some(filter) = filter {
         let ectx = pctx.derive_expr_context(&inner_scope, "QuantifiedPathPattern Filter");
         let expr = bind_expr(&ectx, filter)?;
@@ -310,7 +458,7 @@ fn bind_quantified_path_pattern(
                 "QuantifiedPathPattern filter must be boolean expression".to_string(),
             ));
         }
-        post_filter.push(expr);
+        inner_filter.push(expr);
     };
 
     let qpp = QuantifiedPathPattern {
@@ -320,33 +468,46 @@ fn bind_quantified_path_pattern(
         repetition,
         node_grouping,
         rel_grouping,
-        filter: post_filter,
+        filter: inner_filter,
     };
 
-    todo!()
-}
+    let extra = NodeConnectionExtra {
+        outer: Default::default(), // quantified path pattern do not allow reference outer variables
+        post_filter: FilterExprs::empty(),
+    };
 
-enum VariableKind {
-    Node,
-    Rel,
-}
-
-impl VariableKind {
-    pub fn typ(&self) -> DataType {
-        match self {
-            VariableKind::Node => DataType::Node,
-            VariableKind::Rel => DataType::Relationship,
-        }
+    // add group variable in current scope
+    for vg in qpp.node_grouping.iter() {
+        let symbol = &inner_scope
+            .resolve_variable(&vg.singleton)
+            // safety: must be resolved, since do not allow implicit join in QPP
+            .unwrap()
+            .symbol;
+        let item = ScopeItem::new_variable(vg.group.clone(), symbol.as_deref(), DataType::Node);
+        scope.add_item(item);
     }
+    for vg in qpp.rel_grouping.iter() {
+        let symbol = &inner_scope
+            .resolve_variable(&vg.singleton)
+            // safety: must be resolved, since do not allow implicit join in QPP
+            .unwrap()
+            .symbol;
+        let item = ScopeItem::new_variable(vg.group.clone(), symbol.as_deref(), DataType::Relationship);
+        scope.add_item(item);
+    }
+
+    Ok((qpp, extra, scope))
 }
 
 /// Return (Variable, is_outer)
 /// When is_outer is true, means the pattern works inside an subquery
+/// bind an symbol to an variable in scope
+/// if symbol is none, create an anonymous variable
 fn bind_variable(
     pctx: &PatternContext,
     scope: &mut Scope,
     name: Option<&str>, // None for anonymous variable
-    kind: &VariableKind,
+    typ: &DataType,     // expected data type
 ) -> Result<(Variable, bool), PlanError> {
     if let Some(name) = name {
         // named variable
@@ -355,7 +516,7 @@ fn bind_variable(
         } else {
             // introduce a new named variable
             let var_name = pctx.bctx.variable_generator.named(name);
-            let item = ScopeItem::new_variable(var_name, Some(name), kind.typ());
+            let item = ScopeItem::new_variable(var_name, Some(name), typ.clone());
             let var = item.as_variable();
             scope.add_item(item);
             return Ok((var, false));
@@ -363,7 +524,7 @@ fn bind_variable(
     } else {
         // introduce an anonymous node variable
         let var_name = pctx.bctx.variable_generator.unnamed();
-        let item = ScopeItem::new_variable(var_name, None, kind.typ());
+        let item = ScopeItem::new_variable(var_name, None, typ.clone());
         let var = item.as_variable();
         scope.add_item(item);
         return Ok((var, false));
