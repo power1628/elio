@@ -1,7 +1,6 @@
-use std::{collections::HashSet, i64, ops::Range, path::Path};
+use std::{collections::HashSet, ops::Range};
 
 use indexmap::IndexSet;
-use itertools::Itertools;
 use mojito_common::data_type::DataType;
 use mojito_parser::ast::{self, NodePattern, RelationshipPattern};
 use mojito_storage::codec::TokenKind;
@@ -42,13 +41,33 @@ pub struct PatternContext<'a> {
 }
 
 impl<'a> PatternContext<'a> {
-    pub fn derive_expr_context(&self, scope: &Scope, name: &str) -> ExprContext<'a> {
-        todo!()
+    pub fn derive_expr_context(&self, scope: &'a Scope, name: &'a str) -> ExprContext<'a> {
+        ExprContext {
+            bctx: self.bctx,
+            scope,
+            name,
+        }
     }
 }
 
-pub(crate) fn bind_pattern(pctx: &PatternContext, pattern: &[ast::PatternPart]) -> Result<(), PlanError> {
-    todo!()
+pub(crate) fn bind_pattern(
+    pctx: &PatternContext,
+    // imported variables should be put in scope
+    mut scope: Scope,
+    pattern: &[ast::PatternPart],
+) -> Result<(Vec<PathPatternWithExtra>, Scope), PlanError> {
+    let mut paths = vec![];
+    for part in pattern {
+        let (path, extra, new_scope) = bind_pattern_part(pctx, scope, part)?;
+        scope = new_scope;
+        paths.push(PathPatternWithExtra { pattern: path, extra });
+    }
+    Ok((paths, scope))
+}
+
+pub struct PathPatternWithExtra {
+    pub pattern: PathPattern,
+    pub extra: PathPatternExtra,
 }
 
 /// - SimplePattern: bind and pull the filter into WHERE clause
@@ -379,7 +398,7 @@ fn bind_quantified_path_pattern(
     }: &ast::QuantifiedPathPattern,
 ) -> Result<(QuantifiedPathPattern, NodeConnectionExtra, Scope), PlanError> {
     let mut inner_pctx = pctx.clone();
-    let mut inner_scope = scope.clone();
+    let inner_scope = scope.clone();
     // quantified path pattern not allowed to be nested
     inner_pctx.reject_qpp = true;
     // quantified path pattern not allowed to have named path pattern
@@ -548,11 +567,14 @@ fn resolve_variable(pctx: &PatternContext, scope: &Scope, name: &str) -> Result<
 }
 
 fn bind_properties(pctx: &PatternContext, var: &Variable, props: &ast::Expr) -> Result<FilterExprs, PlanError> {
+    // use an empty scope here, since the MapExpression should only contain constant keys and values
+    let scope = Scope::empty();
+    let ectx = pctx.derive_expr_context(&scope, "Variable Properties");
     let mut filter = FilterExprs::empty();
     if let ast::Expr::MapExpression { keys, values } = props {
         for (key, value) in keys.iter().zip(values.iter()) {
             let token = pctx.bctx.catalog().get_token_id(key, TokenKind::PropertyKey).into();
-            let value = bind_expr(pctx, value)?;
+            let value = bind_expr(&ectx, value)?;
             // TODO(pgao): maybe we can inference the properties here
             let prop = Expr::PropertyAccess(PropertyAccess::new_unchecked(
                 Box::new(Expr::from_variable(var)),

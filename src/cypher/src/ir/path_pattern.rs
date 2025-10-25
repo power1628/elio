@@ -25,8 +25,19 @@ pub struct SingleNode {
 }
 
 // length 1 or more path pattern made of node connections
+#[derive(Clone)]
 pub struct NodeConnections {
     pub connections: Vec<ExhaustiveNodeConnection>,
+}
+
+impl NodeConnections {
+    pub fn endpoint_nodes(&self) -> Vec<&VariableName> {
+        let mut nodes = Vec::new();
+        for conn in &self.connections {
+            nodes.extend(conn.endpoint_nodes());
+        }
+        nodes
+    }
 }
 
 impl NodeConnections {
@@ -42,12 +53,20 @@ impl NodeConnections {
     }
 }
 
+#[derive(Clone)]
 pub struct SelectivePathPattern {
     path_pattern: NodeConnections,
     filter: FilterExprs,
     selector: Selector,
 }
 
+impl SelectivePathPattern {
+    pub fn endpoint_nodes(&self) -> Vec<&VariableName> {
+        self.path_pattern.endpoint_nodes()
+    }
+}
+
+#[derive(Clone, Eq, PartialEq)]
 pub enum Selector {
     /// Any k paths
     AnyK(i64),

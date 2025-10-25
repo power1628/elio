@@ -19,13 +19,13 @@ impl From<Option<TokenId>> for IrToken {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct LabelExpr {
     pub expr: Box<Expr>,
     pub op: LabelOp,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum LabelOp {
     // at least one label
     HasA,

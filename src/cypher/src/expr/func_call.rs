@@ -2,7 +2,7 @@ use mojito_common::data_type::DataType;
 
 use crate::expr::Expr;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FuncCall {
     // TODO(pgao): We should have an FuncImplName Enum here
     // Or we should have an FuncName and args types to resolve to the function impl

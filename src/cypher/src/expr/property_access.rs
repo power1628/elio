@@ -2,7 +2,7 @@ use mojito_common::data_type::DataType;
 
 use crate::expr::{Expr, ExprNode, IrToken};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct PropertyAccess {
     pub expr: Box<Expr>,
     pub property: IrToken,

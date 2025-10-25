@@ -1,5 +1,3 @@
-use std::f32::consts::E;
-
 use mojito_common::data_type::DataType;
 
 /// Logical expr
@@ -18,9 +16,9 @@ pub use utils::*;
 pub mod label;
 pub use label::*;
 
-use crate::variable::{Variable, VariableName};
+use crate::variable::Variable;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Expr {
     VariableRef(VariableRef),
     PropertyAccess(PropertyAccess),

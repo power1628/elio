@@ -229,7 +229,7 @@ impl std::fmt::Display for RelationshipPattern {
 }
 
 // TODO(pgao): move this to common
-#[derive(Default, Debug, Copy, Clone)]
+#[derive(Default, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum SemanticDirection {
     #[default]
     Outgoing, // ->

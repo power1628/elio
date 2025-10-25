@@ -11,5 +11,6 @@ mojito_common = { workspace = true }
 mojito_expr = { workspace = true }
 mojito_parser = { workspace = true }
 mojito_storage = { workspace = true }
+ordered-float = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

@@ -1,6 +1,7 @@
 use mojito_common::{data_type::DataType, value::Value};
+use ordered_float::OrderedFloat;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Constant {
     data: Value,
     typ: DataType,
@@ -23,7 +24,7 @@ impl Constant {
 
     pub fn float(f: f64) -> Self {
         Self {
-            data: Value::Float(f),
+            data: Value::Float(OrderedFloat(f)),
             typ: DataType::Float,
         }
     }

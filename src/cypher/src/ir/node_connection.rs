@@ -6,7 +6,7 @@ use crate::{
     variable::VariableName,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Hash, Eq, PartialEq)]
 pub struct RelPattern {
     pub variable: VariableName,
     pub endpoints: (VariableName, VariableName),
@@ -15,10 +15,19 @@ pub struct RelPattern {
     pub length: PatternLength,
 }
 
+impl RelPattern {
+    pub fn endpoint_nodes(&self) -> Vec<&VariableName> {
+        vec![&self.endpoints.0, &self.endpoints.1]
+    }
+}
+
+#[derive(Clone, Hash, Eq, PartialEq)]
 pub struct NodeBinding {
     pub inner: VariableName,
     pub outer: VariableName,
 }
+
+#[derive(Clone, Eq, PartialEq)]
 pub struct QuantifiedPathPattern {
     pub left_binding: NodeBinding,
     pub right_binding: NodeBinding,
@@ -31,9 +40,25 @@ pub struct QuantifiedPathPattern {
     pub rel_grouping: IndexSet<VariableGrouping>,
 }
 
+impl QuantifiedPathPattern {
+    pub fn endpoint_nodes(&self) -> Vec<&VariableName> {
+        vec![&self.left_binding.outer, &self.right_binding.outer]
+    }
+}
+
+#[derive(Clone)]
 pub enum ExhaustiveNodeConnection {
     RelPattern(RelPattern),
     QuantifiedPathPattern(QuantifiedPathPattern),
+}
+
+impl ExhaustiveNodeConnection {
+    pub fn endpoint_nodes(&self) -> Vec<&VariableName> {
+        match self {
+            ExhaustiveNodeConnection::RelPattern(rel) => rel.endpoint_nodes(),
+            ExhaustiveNodeConnection::QuantifiedPathPattern(qp) => qp.endpoint_nodes(),
+        }
+    }
 }
 
 pub enum Selector {
@@ -45,12 +70,13 @@ pub enum Selector {
     ShortestKGroup(i64),
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub enum PatternLength {
     Simple,
     Var { min: i64, max: Option<i64> },
 }
 
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Repetition {
     pub min: i64,
     // None means infinite
