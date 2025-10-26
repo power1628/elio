@@ -3,7 +3,11 @@ use std::sync::Arc;
 use mojito_catalog::Catalog;
 use mojito_expr::func::sig::FuncDef;
 
-use crate::{binder::scope::Scope, statement::StmtContext, variable::VariableGenerator};
+use crate::{
+    binder::{expr::ExprContext, scope::Scope},
+    statement::StmtContext,
+    variable::VariableGenerator,
+};
 mod builder;
 pub mod expr;
 pub mod label_expr;
@@ -28,6 +32,14 @@ impl<'a> BindContext<'a> {
             sctx,
             outer_scopes: Vec::new(),
             variable_generator: Arc::new(VariableGenerator::default()),
+        }
+    }
+
+    pub fn derive_expr_context(&'a self, scope: &'a Scope, name: &'a str) -> ExprContext<'a> {
+        ExprContext {
+            bctx: self,
+            scope,
+            name,
         }
     }
 }

@@ -82,4 +82,34 @@ impl QueryGraph {
             }
         }
     }
+
+    pub fn add_optional_qg(&mut self, qg: QueryGraph) {
+        self.optional_matches.push(qg);
+    }
+
+    pub fn merge(&mut self, other: QueryGraph) {
+        other.nodes.iter().for_each(|n| self.add_node(n));
+        other.rels.iter().for_each(|r| self.add_rel(r));
+        other
+            .quantified_paths
+            .iter()
+            .for_each(|qpp| self.add_quantifled_path(qpp));
+        other
+            .selective_paths
+            .iter()
+            .for_each(|spp| self.add_selective_path(spp));
+        self.filter = self.filter.clone().and(other.filter.clone());
+        self.optional_matches.extend(other.optional_matches.into_iter());
+        self.mutating_patterns.extend(other.mutating_patterns.into_iter());
+        other.imported.iter().for_each(|v| {
+            self.imported.insert(v.clone());
+        });
+        other.outer.iter().for_each(|v| {
+            self.outer.insert(v.clone());
+        });
+    }
+
+    pub fn add_filter(&mut self, filter: FilterExprs) {
+        self.filter = self.filter.clone().and(filter);
+    }
 }
