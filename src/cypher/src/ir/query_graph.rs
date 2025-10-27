@@ -50,7 +50,7 @@ impl QueryGraph {
             }
         }
         // add extra
-        self.outer.extend(extra.outer.clone().into_iter());
+        self.outer.extend(extra.outer.clone());
         self.filter = self.filter.clone().and(extra.post_filter.clone());
     }
 
@@ -99,8 +99,8 @@ impl QueryGraph {
             .iter()
             .for_each(|spp| self.add_selective_path(spp));
         self.filter = self.filter.clone().and(other.filter.clone());
-        self.optional_matches.extend(other.optional_matches.into_iter());
-        self.mutating_patterns.extend(other.mutating_patterns.into_iter());
+        self.optional_matches.extend(other.optional_matches);
+        self.mutating_patterns.extend(other.mutating_patterns);
         other.imported.iter().for_each(|v| {
             self.imported.insert(v.clone());
         });

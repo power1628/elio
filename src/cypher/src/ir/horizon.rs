@@ -1,9 +1,8 @@
-use std::collections::HashSet;
 
 use indexmap::IndexMap;
 
 use crate::{
-    expr::{Expr, FilterExprs, ProjectItem},
+    expr::{Expr, FilterExprs},
     ir::order::SortItem,
     variable::{Variable, VariableName},
 };

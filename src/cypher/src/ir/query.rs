@@ -1,7 +1,7 @@
 use indexmap::IndexMap;
 
 use crate::{
-    ir::{horizon::QueryHorizon, order::OrderingChoice, query_graph::QueryGraph},
+    ir::{horizon::QueryHorizon, query_graph::QueryGraph},
     variable::VariableName,
 };
 

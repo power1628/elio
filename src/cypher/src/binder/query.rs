@@ -2,10 +2,10 @@ use mojito_parser::ast;
 
 use crate::{
     binder::{
-        BindContext, builder::IrSingleQueryBuilder, match_::bind_match, project_body::bind_return_items, scope::Scope,
+        BindContext, builder::IrSingleQueryBuilder, match_::bind_match, scope::Scope,
     },
     error::PlanError,
-    ir::query::{IrQuery, IrQueryRoot, IrSingleQuery, IrSingleQueryPart},
+    ir::query::{IrQuery, IrQueryRoot, IrSingleQuery},
     statement::StmtContext,
 };
 

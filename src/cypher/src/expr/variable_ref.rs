@@ -8,7 +8,7 @@ use crate::{
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct VariableRef {
     pub name: VariableName,
-    typ: DataType,
+    pub typ: DataType,
 }
 
 impl VariableRef {

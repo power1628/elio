@@ -8,6 +8,12 @@ pub struct IrSingleQueryBuilder {
     // since when binding variables we need the symbol name, not variablename
 }
 
+impl Default for IrSingleQueryBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl IrSingleQueryBuilder {
     pub fn new() -> Self {
         Self { parts: Vec::new() }

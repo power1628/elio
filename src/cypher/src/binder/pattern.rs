@@ -170,7 +170,7 @@ pub(crate) fn bind_pattern_part(
 
     // named path
     let path_var = if let Some(name) = variable {
-        let (var, is_outer) = bind_variable(pctx, &mut scope, Some(&name), &DataType::Path)?;
+        let (var, is_outer) = bind_variable(pctx, &mut scope, Some(name), &DataType::Path)?;
         if is_outer {
             return Err(PlanError::semantic_err(
                 "Named path pattern cannot reference outer variable".to_string(),
@@ -206,14 +206,12 @@ fn partition_factors(
                     "Simple path pattern must be at even position in pattern part".to_string(),
                 ));
             }
+        } else if let ast::PathFactor::Quantified(q) = factor {
+            quantified.push(q);
         } else {
-            if let ast::PathFactor::Quantified(q) = factor {
-                quantified.push(q);
-            } else {
-                return Err(PlanError::semantic_err(
-                    "Quantified path pattern must be at odd position in pattern part".to_string(),
-                ));
-            }
+            return Err(PlanError::semantic_err(
+                "Quantified path pattern must be at odd position in pattern part".to_string(),
+            ));
         }
     }
     Ok((simple, quantified))
@@ -288,7 +286,7 @@ fn bind_simple_pattern(
             node_filter = node_filter.and(props);
         }
         // TODO(pgao): bind predicate, in parser we do not support predicate right now
-        if let Some(_) = predicate {
+        if predicate.is_some() {
             return Err(PlanError::not_supported("predicate in pattern not supported"));
         }
 
@@ -340,7 +338,7 @@ fn bind_simple_pattern(
             rel_filter = rel_filter.and(props);
         }
         // TODO(pgao): bind predicate, in parser we do not support predicate right now
-        if let Some(_) = predicate {
+        if predicate.is_some() {
             return Err(PlanError::not_supported("predicate in pattern not supported"));
         }
 
@@ -472,7 +470,7 @@ fn bind_quantified_path_pattern(
     // TODO(pgao): support variable grouping filters
     if let Some(filter) = filter {
         let ectx = pctx.derive_expr_context(&inner_scope, "QuantifiedPathPattern Filter");
-        let expr = bind_expr(&ectx, &vec![], filter)?;
+        let expr = bind_expr(&ectx, &[], filter)?;
         if expr.typ() != DataType::Boolean {
             return Err(PlanError::semantic_err(
                 "QuantifiedPathPattern filter must be boolean expression".to_string(),
@@ -532,14 +530,14 @@ fn bind_variable(
     if let Some(name) = name {
         // named variable
         if let Some((variable, is_outer)) = resolve_variable(pctx, scope, name)? {
-            return Ok((variable, is_outer));
+            Ok((variable, is_outer))
         } else {
             // introduce a new named variable
             let var_name = pctx.bctx.variable_generator.named(name);
             let item = ScopeItem::new_variable(var_name, Some(name), typ.clone());
             let var = item.as_variable();
             scope.add_item(item);
-            return Ok((var, false));
+            Ok((var, false))
         }
     } else {
         // introduce an anonymous node variable
@@ -547,7 +545,7 @@ fn bind_variable(
         let item = ScopeItem::new_variable(var_name, None, typ.clone());
         let var = item.as_variable();
         scope.add_item(item);
-        return Ok((var, false));
+        Ok((var, false))
     }
 }
 
@@ -575,7 +573,7 @@ fn bind_properties(pctx: &PatternContext, var: &Variable, props: &ast::Expr) -> 
     if let ast::Expr::MapExpression { keys, values } = props {
         for (key, value) in keys.iter().zip(values.iter()) {
             let token = pctx.bctx.catalog().get_token_id(key, TokenKind::PropertyKey).into();
-            let value = bind_expr(&ectx, &vec![], value)?;
+            let value = bind_expr(&ectx, &[], value)?;
             // TODO(pgao): maybe we can inference the properties here
             let prop = Expr::PropertyAccess(PropertyAccess::new_unchecked(
                 Box::new(Expr::from_variable(var)),

@@ -53,6 +53,10 @@ impl ExprSemanticFlag {
 }
 
 pub fn bind_expr(ectx: &ExprContext, outer_scope: &[Scope], expr: &ast::Expr) -> Result<Expr, PlanError> {
+    // if expr already bound, just return the symbol
+    if let Some(item) = ectx.scope.resolve_expr(expr) {
+        return Ok(item.as_expr());
+    }
     match expr {
         ast::Expr::Literal { lit } => bind_constant(ectx, lit).map(Into::into),
         ast::Expr::Variable { name } => bind_variable(ectx, name, outer_scope).map(Into::into),

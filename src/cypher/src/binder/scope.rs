@@ -3,7 +3,10 @@ use std::collections::HashSet;
 use mojito_common::data_type::DataType;
 use mojito_parser::ast;
 
-use crate::variable::{Variable, VariableName};
+use crate::{
+    expr::{Expr, VariableRef},
+    variable::{Variable, VariableName},
+};
 
 #[derive(Debug, Clone)]
 pub struct ScopeItem {
@@ -28,6 +31,10 @@ impl ScopeItem {
 
     pub fn as_variable(&self) -> Variable {
         Variable::new(&self.variable, &self.typ)
+    }
+
+    pub fn as_expr(&self) -> Expr {
+        VariableRef::new_unchecked(self.variable.clone(), self.typ.clone()).into()
     }
 
     pub fn is_anonymous(&self) -> bool {

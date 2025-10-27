@@ -83,6 +83,10 @@ impl SemanticError {
         let msg = format!("Return item {} must be aliased in {}", expr, ctx);
         Self::new(msg)
     }
+    pub fn at_least_one_return_item(ctx: &str) -> Self {
+        let msg = format!("At least one return item is required in {}", ctx);
+        Self::new(msg)
+    }
 }
 
 #[macro_export]

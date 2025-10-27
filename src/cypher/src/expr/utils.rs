@@ -39,9 +39,9 @@ impl FilterExprs {
     }
 }
 
-impl Into<Expr> for FilterExprs {
-    fn into(self) -> Expr {
-        self.exprs.into_iter().fold(Expr::boolean(true), |acc, e| acc.and(e))
+impl From<FilterExprs> for Expr {
+    fn from(val: FilterExprs) -> Self {
+        val.exprs.into_iter().fold(Expr::boolean(true), |acc, e| acc.and(e))
     }
 }
 
