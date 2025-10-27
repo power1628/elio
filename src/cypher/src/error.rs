@@ -77,6 +77,14 @@ impl SemanticError {
     }
 }
 
+// clause semantics
+impl SemanticError {
+    pub fn return_item_must_be_aliased(expr: &str, ctx: &str) -> Self {
+        let msg = format!("Return item {} must be aliased in {}", expr, ctx);
+        Self::new(msg)
+    }
+}
+
 #[macro_export]
 macro_rules! not_supported {
     ($msg:expr) => {

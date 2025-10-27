@@ -1,7 +1,9 @@
 use mojito_parser::ast;
 
 use crate::{
-    binder::{BindContext, builder::IrSingleQueryBuilder, match_::bind_match, scope::Scope},
+    binder::{
+        BindContext, builder::IrSingleQueryBuilder, match_::bind_match, project_body::bind_return_items, scope::Scope,
+    },
     error::PlanError,
     ir::query::{IrQuery, IrQueryRoot, IrSingleQuery, IrSingleQueryPart},
     statement::StmtContext,
@@ -32,6 +34,15 @@ fn bind_single_query(bctx: &BindContext, query: ast::SingleQuery) -> Result<(IrS
     Ok((builder.build(), in_scope))
 }
 
+/// Execution order of with clause is
+///  - Project/Distinct/Aggregate/Unwind
+///  - OrderBy
+///  - Pagination
+///  - Where
+/// If the projection is an aggregation, the order by and where subclause
+/// only sees variables defined in with clause.
+/// Otherwise, the order by and where subclause sees all variables defined
+/// in previous with clause and all variables defined in incomming scope
 fn bind_with(
     bctx: &BindContext,
     builder: &mut IrSingleQueryBuilder,

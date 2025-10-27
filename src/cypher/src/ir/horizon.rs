@@ -1,8 +1,11 @@
 use std::collections::HashSet;
 
+use indexmap::IndexMap;
+
 use crate::{
     expr::{Expr, FilterExprs, ProjectItem},
-    variable::Variable,
+    ir::order::SortItem,
+    variable::{Variable, VariableName},
 };
 
 pub enum QueryHorizon {
@@ -47,23 +50,26 @@ pub struct UnwindProjection {
 
 #[derive(Default)]
 pub struct RegularProjection {
-    pub items: Vec<ProjectItem>,
+    pub items: IndexMap<VariableName, Expr>,
+    pub order_by: Vec<SortItem>,
     pub pagination: Pagination,
     pub filter: FilterExprs,
-    pub imported_variable: HashSet<Variable>,
+    // pub imported_variable: HashSet<Variable>,
 }
 
 pub struct AggregateProjection {
-    pub group_by: Vec<ProjectItem>,
-    pub aggregate: Vec<ProjectItem>,
+    pub group_by: IndexMap<VariableName, Expr>,
+    pub aggregate: IndexMap<VariableName, Expr>,
+    pub order_by: Vec<SortItem>,
     pub pagination: Pagination,
     // TODO(pgao): others
-    pub imported_variables: HashSet<Variable>,
+    // pub imported_variables: HashSet<Variable>,
 }
 
 pub struct DistinctProjection {
-    pub group_by: Vec<ProjectItem>,
+    pub group_by: IndexMap<VariableName, Expr>,
+    pub order_by: Vec<SortItem>,
     pub pagination: Pagination,
     pub filter: FilterExprs,
-    pub imported_variables: HashSet<Variable>,
+    // pub imported_variables: HashSet<Variable>,
 }

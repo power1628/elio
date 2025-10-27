@@ -41,6 +41,7 @@ impl<'a> BindContext<'a> {
             bctx: self,
             scope,
             name,
+            sema_flags: Default::default(),
         }
     }
 }

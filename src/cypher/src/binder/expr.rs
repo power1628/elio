@@ -15,6 +15,7 @@ use crate::{
     not_supported,
 };
 
+#[derive(Clone)]
 pub struct ExprContext<'a> {
     pub bctx: &'a BindContext<'a>,
     pub scope: &'a Scope,
@@ -23,7 +24,7 @@ pub struct ExprContext<'a> {
 }
 impl<'a> ExprContext<'a> {}
 
-#[derive(Default)]
+#[derive(Default, Copy, Clone)]
 pub struct ExprSemanticFlag(u64);
 
 const EXPR_REJECT_OUTER_REFERENCE: u64 = 0x1;
@@ -96,10 +97,8 @@ fn bind_constant(_ectx: &ExprContext, lit: &ast::Literal) -> Result<Constant, Pl
 
 fn bind_variable(ectx: &ExprContext, name: &str, outer_scope: &[Scope]) -> Result<VariableRef, PlanError> {
     let item = ectx.scope.resolve_symbol(name);
-    if ectx.sema_flags.reject_outer_reference() {
-        if item.is_none() {
-            return Err(SemanticError::variable_not_defined(name, ectx.name).into());
-        }
+    if ectx.sema_flags.reject_outer_reference() && item.is_none() {
+        return Err(SemanticError::variable_not_defined(name, ectx.name).into());
     }
     // bind variable in outer scope
     for scope in outer_scope.iter() {
@@ -152,9 +151,28 @@ fn bind_func_call(
     distinct: bool,
     args: &[ast::Expr],
 ) -> Result<Expr, PlanError> {
+    let FunctionCatalog { name, func } = ectx
+        .bctx
+        .catalog()
+        .get_function_by_name(name)
+        .ok_or(PlanError::from(SemanticError::unknown_function(name, ectx.name)))?;
+
+    if func.is_agg && ectx.sema_flags.reject_aggregate() {
+        return Err(SemanticError::agg_not_allowed(name, ectx.name).into());
+    }
+
+    let inner_ectx = if func.is_agg {
+        let mut inner_ectx = ectx.clone();
+        // aggregation function cannot be nested
+        inner_ectx.sema_flags.set_reject_aggregate(true);
+        inner_ectx
+    } else {
+        ectx.clone()
+    };
+
     let args = args
         .iter()
-        .map(|x| bind_expr(ectx, outer_scope, x))
+        .map(|x| bind_expr(&inner_ectx, outer_scope, x))
         .collect::<Result<Vec<_>, _>>()?;
 
     let (_func_impl, is_agg, typ) = resolve_func(ectx, name, &args)?;

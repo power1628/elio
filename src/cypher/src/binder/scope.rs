@@ -37,7 +37,7 @@ impl ScopeItem {
 
 #[derive(Debug, Clone)]
 pub struct Scope {
-    items: Vec<ScopeItem>,
+    pub items: Vec<ScopeItem>,
 }
 
 impl Scope {
@@ -59,5 +59,9 @@ impl Scope {
 
     pub fn add_item(&mut self, item: ScopeItem) {
         self.items.push(item);
+    }
+
+    pub fn symbol_items(&self) -> impl Iterator<Item = &ScopeItem> {
+        self.items.iter().filter(|item| item.symbol.is_some())
     }
 }
