@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use indexmap::IndexMap;
 use itertools::Itertools;
 use mojito_catalog::FunctionCatalog;
+use mojito_common::value::Value;
 use mojito_parser::ast::{self, ReturnItem};
 
 use crate::{
@@ -13,8 +14,13 @@ use crate::{
         scope::{Scope, ScopeItem},
     },
     error::{PlanError, SemanticError},
-    expr::{Expr, ExprNode, FilterExprs, VariableRef},
-    ir::horizon::{AggregateProjection, DistinctProjection, QueryHorizon, QueryProjection, RegularProjection},
+    expr::{Constant, Expr, ExprNode, FilterExprs, VariableRef},
+    ir::{
+        horizon::{
+            AggregateProjection, DistinctProjection, Pagination, QueryHorizon, QueryProjection, RegularProjection,
+        },
+        order::SortItem,
+    },
     variable::Variable,
 };
 
@@ -269,4 +275,73 @@ fn resolve_function(bctx: &BindContext, name: &str) -> Result<FunctionCatalog, P
         .get_function_by_name(name)
         .cloned()
         .ok_or(PlanError::from(SemanticError::unknown_function(name, "")))
+}
+
+pub fn bind_order_by(
+    bctx: &BindContext,
+    builder: &mut IrSingleQueryBuilder,
+    scope: &Scope,
+    _order_by @ ast::OrderBy { items }: &ast::OrderBy,
+) -> Result<(), PlanError> {
+    let mut bound_items = vec![];
+
+    let ectx = bctx.derive_expr_context(&scope, "OrderBy");
+    ectx.sema_flags.reject_aggregate();
+    ectx.sema_flags.reject_outer_reference();
+
+    for item in items.iter() {
+        let expr = bind_expr(&ectx, &bctx.outer_scopes, &item.expr)?;
+        bound_items.push(SortItem {
+            expr: Box::new(expr),
+            direction: item.direction,
+        });
+    }
+
+    builder.tail_mut().unwrap().horizon.set_order_by(bound_items);
+    Ok(())
+}
+
+pub fn bind_pagination(
+    bctx: &BindContext,
+    builder: &mut IrSingleQueryBuilder,
+    scope: &Scope,
+    skip: Option<&ast::Expr>,
+    limit: Option<&ast::Expr>,
+) -> Result<(), PlanError> {
+    let mut pagination = Pagination::default();
+
+    if let Some(skip) = skip {
+        let ectx = bctx.derive_expr_context(&scope, "Skip");
+        ectx.sema_flags.reject_aggregate();
+        ectx.sema_flags.reject_outer_reference();
+        let expr = bind_expr(&ectx, &bctx.outer_scopes, skip)?;
+        if let Expr::Constant(Constant {
+            data: Value::Integer(i),
+            ..
+        }) = expr
+        {
+            pagination.offset = Some(i);
+        } else {
+            return Err(SemanticError::invalid_pagination_offset_type(&skip.to_string()).into());
+        }
+    }
+
+    if let Some(limit) = limit {
+        let ectx = bctx.derive_expr_context(&scope, "Limit");
+        ectx.sema_flags.reject_aggregate();
+        ectx.sema_flags.reject_outer_reference();
+        let expr = bind_expr(&ectx, &bctx.outer_scopes, limit)?;
+        if let Expr::Constant(Constant {
+            data: Value::Integer(i),
+            ..
+        }) = expr
+        {
+            pagination.limit = Some(i);
+        } else {
+            return Err(SemanticError::invalid_pagination_limit_type(&limit.to_string()).into());
+        }
+    }
+
+    builder.tail_mut().unwrap().horizon.set_pagination(pagination);
+    Ok(())
 }

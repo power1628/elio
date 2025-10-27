@@ -5,8 +5,8 @@ use crate::expr::{Expr, ExprNode};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Constant {
-    data: Value,
-    typ: DataType,
+    pub data: Value,
+    pub typ: DataType,
 }
 
 impl Constant {

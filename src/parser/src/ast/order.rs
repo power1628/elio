@@ -15,7 +15,7 @@ pub struct SortItem {
     pub direction: SortDirection,
 }
 
-#[derive(Debug, Eq, PartialEq, Display, Default)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Display, Default)]
 pub enum SortDirection {
     #[default]
     Asc,

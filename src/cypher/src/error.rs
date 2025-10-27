@@ -75,6 +75,11 @@ impl SemanticError {
         );
         Self::new(msg)
     }
+
+    pub fn invalid_filter_expr_type(typ: &DataType, ctx: &str) -> Self {
+        let msg = format!("Filter expression must be a boolean, got {} in {}", typ, ctx);
+        Self::new(msg)
+    }
 }
 
 // clause semantics
@@ -85,6 +90,16 @@ impl SemanticError {
     }
     pub fn at_least_one_return_item(ctx: &str) -> Self {
         let msg = format!("At least one return item is required in {}", ctx);
+        Self::new(msg)
+    }
+
+    pub fn invalid_pagination_offset_type(ctx: &str) -> Self {
+        let msg = format!("Pagination offset must be an integer in {}", ctx);
+        Self::new(msg)
+    }
+
+    pub fn invalid_pagination_limit_type(ctx: &str) -> Self {
+        let msg = format!("Pagination limit must be an integer in {}", ctx);
         Self::new(msg)
     }
 }

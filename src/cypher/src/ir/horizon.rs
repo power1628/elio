@@ -1,4 +1,3 @@
-
 use indexmap::IndexMap;
 
 use crate::{
@@ -10,6 +9,29 @@ use crate::{
 pub enum QueryHorizon {
     Unwind(UnwindProjection),
     Project(QueryProjection),
+}
+
+impl QueryHorizon {
+    pub fn set_order_by(&mut self, order_by: Vec<SortItem>) {
+        match self {
+            QueryHorizon::Unwind(_) => unreachable!(),
+            QueryHorizon::Project(q) => q.set_order_by(order_by),
+        }
+    }
+
+    pub fn set_pagination(&mut self, pagination: Pagination) {
+        match self {
+            QueryHorizon::Unwind(_) => unreachable!(),
+            QueryHorizon::Project(q) => q.set_pagination(pagination),
+        }
+    }
+
+    pub fn set_filter(&mut self, filter: FilterExprs) {
+        match self {
+            QueryHorizon::Unwind(_) => unreachable!(),
+            QueryHorizon::Project(q) => q.set_filter(filter),
+        }
+    }
 }
 
 impl std::default::Default for QueryHorizon {
@@ -33,6 +55,30 @@ pub enum QueryProjection {
 impl QueryProjection {
     pub fn empty() -> Self {
         Self::Regular(RegularProjection::default())
+    }
+
+    pub fn set_order_by(&mut self, order_by: Vec<SortItem>) {
+        match self {
+            QueryProjection::Regular(r) => r.order_by = order_by,
+            QueryProjection::Aggregate(a) => a.order_by = order_by,
+            QueryProjection::Distinct(d) => d.order_by = order_by,
+        }
+    }
+
+    pub fn set_pagination(&mut self, pagination: Pagination) {
+        match self {
+            QueryProjection::Regular(r) => r.pagination = pagination,
+            QueryProjection::Aggregate(a) => a.pagination = pagination,
+            QueryProjection::Distinct(d) => d.pagination = pagination,
+        }
+    }
+
+    pub fn set_filter(&mut self, filter: FilterExprs) {
+        match self {
+            QueryProjection::Regular(r) => r.filter = filter,
+            QueryProjection::Aggregate(a) => a.filter = filter,
+            QueryProjection::Distinct(d) => d.filter = filter,
+        }
     }
 }
 
@@ -61,6 +107,7 @@ pub struct AggregateProjection {
     pub aggregate: IndexMap<VariableName, Expr>,
     pub order_by: Vec<SortItem>,
     pub pagination: Pagination,
+    pub filter: FilterExprs,
     // TODO(pgao): others
     // pub imported_variables: HashSet<Variable>,
 }

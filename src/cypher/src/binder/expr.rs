@@ -11,7 +11,7 @@ use mojito_storage::codec::TokenKind;
 use crate::{
     binder::{BindContext, scope::Scope},
     error::{PlanError, SemanticError},
-    expr::{AggCall, Expr, ExprNode, FuncCall, IrToken, PropertyAccess, VariableRef, value::Constant},
+    expr::{AggCall, Expr, ExprNode, FilterExprs, FuncCall, IrToken, PropertyAccess, VariableRef, value::Constant},
     not_supported,
 };
 
@@ -211,4 +211,14 @@ fn resolve_func(ectx: &ExprContext, name: &str, args: &[Expr]) -> Result<(FuncIm
 
     // found no function matches the signature
     Err(SemanticError::invalid_function_arg_types(name, &args_types, ectx.name).into())
+}
+
+pub fn bind_where(bctx: &BindContext, scope: &Scope, where_: &ast::Expr) -> Result<FilterExprs, PlanError> {
+    let ctx = where_.to_string();
+    let ectx = bctx.derive_expr_context(scope, &ctx);
+    let expr = bind_expr(&ectx, &bctx.outer_scopes, where_)?;
+    if expr.typ() != DataType::Boolean {
+        return Err(SemanticError::invalid_filter_expr_type(&expr.typ(), ectx.name).into());
+    }
+    Ok(expr.into())
 }

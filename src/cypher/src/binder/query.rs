@@ -2,7 +2,12 @@ use mojito_parser::ast;
 
 use crate::{
     binder::{
-        BindContext, builder::IrSingleQueryBuilder, match_::bind_match, scope::Scope,
+        BindContext,
+        builder::IrSingleQueryBuilder,
+        expr::{bind_expr, bind_where},
+        match_::bind_match,
+        project_body::{ClauseKind, bind_order_by, bind_pagination, bind_return_items},
+        scope::Scope,
     },
     error::PlanError,
     ir::query::{IrQuery, IrQueryRoot, IrSingleQuery},
@@ -46,7 +51,7 @@ fn bind_single_query(bctx: &BindContext, query: ast::SingleQuery) -> Result<(IrS
 fn bind_with(
     bctx: &BindContext,
     builder: &mut IrSingleQueryBuilder,
-    in_scope: Scope,
+    mut in_scope: Scope,
     _with @ ast::WithClause {
         distinct,
         return_items,
@@ -56,7 +61,22 @@ fn bind_with(
         where_,
     }: &ast::WithClause,
 ) -> Result<Scope, PlanError> {
-    todo!()
+    // remove anonymous variables in in_scope
+    in_scope.remove_anonymous();
+    // bind projection
+    let scope = bind_return_items(bctx, builder, in_scope, *distinct, &ClauseKind::With, return_items)?;
+    // bind order by
+    if let Some(order_by) = order_by {
+        bind_order_by(bctx, builder, &scope, order_by)?;
+    }
+    // bind pagination
+    bind_pagination(bctx, builder, &scope, skip.as_deref(), limit.as_deref())?;
+    // bind where_
+    if let Some(where_) = where_ {
+        let filter = bind_where(bctx, &scope, where_)?;
+        builder.tail_mut().unwrap().horizon.set_filter(filter);
+    }
+    Ok(scope)
 }
 
 fn bind_return(

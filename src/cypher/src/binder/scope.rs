@@ -71,4 +71,8 @@ impl Scope {
     pub fn symbol_items(&self) -> impl Iterator<Item = &ScopeItem> {
         self.items.iter().filter(|item| item.symbol.is_some())
     }
+
+    pub fn remove_anonymous(&mut self) {
+        self.items.retain(|x| !x.is_anonymous());
+    }
 }

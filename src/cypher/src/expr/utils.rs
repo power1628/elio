@@ -45,6 +45,14 @@ impl From<FilterExprs> for Expr {
     }
 }
 
+impl From<Expr> for FilterExprs {
+    fn from(val: Expr) -> Self {
+        let mut ret = Self::empty();
+        ret.exprs.push(val);
+        ret
+    }
+}
+
 pub struct ProjectItem {
     pub variable: Variable,
     pub expr: Box<Expr>,
