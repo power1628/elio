@@ -56,7 +56,7 @@ pub(crate) fn bind_match(
         let mut filter = FilterExprs::empty();
         if let Some(expr) = where_ {
             let ectx = bctx.derive_expr_context(&scope, "MATCH WHERE");
-            let expr = bind_expr(&ectx, expr)?;
+            let expr = bind_expr(&ectx, &vec![], expr)?;
             filter.push(expr);
         }
         filter

@@ -1,6 +1,6 @@
 use mojito_common::data_type::DataType;
 
-use crate::expr::Expr;
+use crate::expr::{Expr, ExprNode};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct FuncCall {
@@ -12,7 +12,19 @@ pub struct FuncCall {
 }
 
 impl FuncCall {
-    pub fn new(func: String, args: Vec<Expr>, typ: DataType) -> Self {
+    pub fn new_unchecked(func: String, args: Vec<Expr>, typ: DataType) -> Self {
         Self { func, args, typ }
+    }
+}
+
+impl ExprNode for FuncCall {
+    fn typ(&self) -> DataType {
+        self.typ.clone()
+    }
+}
+
+impl From<FuncCall> for Expr {
+    fn from(val: FuncCall) -> Self {
+        Expr::FuncCall(val)
     }
 }

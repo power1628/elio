@@ -13,6 +13,7 @@ pub mod expr;
 pub mod label_expr;
 pub mod match_;
 pub mod pattern;
+pub mod project_body;
 pub mod query;
 pub mod scope;
 

@@ -5,7 +5,7 @@ use mojito_parser::ast;
 use crate::{
     binder::pattern::PatternContext,
     error::PlanError,
-    expr::{Expr, LabelExpr, LabelOp},
+    expr::{Expr, label::LabelExpr, label::LabelOp},
 };
 
 pub(crate) fn bind_label_expr(

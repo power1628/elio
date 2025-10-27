@@ -1,6 +1,8 @@
 use mojito_common::{data_type::DataType, value::Value};
 use ordered_float::OrderedFloat;
 
+use crate::expr::{Expr, ExprNode};
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Constant {
     data: Value,
@@ -34,5 +36,24 @@ impl Constant {
             data: Value::String(s),
             typ: DataType::String,
         }
+    }
+
+    pub fn null() -> Self {
+        Self {
+            data: Value::Null,
+            typ: DataType::Null,
+        }
+    }
+}
+
+impl ExprNode for Constant {
+    fn typ(&self) -> DataType {
+        self.typ.clone()
+    }
+}
+
+impl From<Constant> for Expr {
+    fn from(val: Constant) -> Self {
+        Expr::Constant(val)
     }
 }

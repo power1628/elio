@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+use derive_more::Display;
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, Display)]
 pub enum DataType {
     Null,
     Boolean,
@@ -6,6 +8,7 @@ pub enum DataType {
     Float,
     String,
     // composite
+    #[display("List({})", _0)]
     List(Box<DataType>),
     // map
     // structural
@@ -13,6 +16,7 @@ pub enum DataType {
     Relationship,
     Path,
     // closed dynamic union type
+    #[display("Union({})", _0.iter().map(|t| t.to_string()).collect::<Vec<_>>().join(", "))]
     Union(Vec<DataType>),
     // Any type
     Any,

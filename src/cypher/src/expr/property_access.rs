@@ -25,3 +25,9 @@ impl ExprNode for PropertyAccess {
         self.typ.clone()
     }
 }
+
+impl From<PropertyAccess> for Expr {
+    fn from(val: PropertyAccess) -> Self {
+        Expr::PropertyAccess(val)
+    }
+}

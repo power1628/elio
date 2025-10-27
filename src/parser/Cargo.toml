@@ -4,7 +4,7 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-derive_more = { version = "2", features = ["display"] }
+derive_more = { workspace = true, features = ["display"] }
 peg = "0.8.5"
 # workspace
 either = { workspace = true }

@@ -46,6 +46,7 @@ impl<'a> PatternContext<'a> {
             bctx: self.bctx,
             scope,
             name,
+            sema_flags: Default::default(),
         }
     }
 }
@@ -471,7 +472,7 @@ fn bind_quantified_path_pattern(
     // TODO(pgao): support variable grouping filters
     if let Some(filter) = filter {
         let ectx = pctx.derive_expr_context(&inner_scope, "QuantifiedPathPattern Filter");
-        let expr = bind_expr(&ectx, filter)?;
+        let expr = bind_expr(&ectx, &vec![], filter)?;
         if expr.typ() != DataType::Boolean {
             return Err(PlanError::semantic_err(
                 "QuantifiedPathPattern filter must be boolean expression".to_string(),
@@ -574,7 +575,7 @@ fn bind_properties(pctx: &PatternContext, var: &Variable, props: &ast::Expr) -> 
     if let ast::Expr::MapExpression { keys, values } = props {
         for (key, value) in keys.iter().zip(values.iter()) {
             let token = pctx.bctx.catalog().get_token_id(key, TokenKind::PropertyKey).into();
-            let value = bind_expr(&ectx, value)?;
+            let value = bind_expr(&ectx, &vec![], value)?;
             // TODO(pgao): maybe we can inference the properties here
             let prop = Expr::PropertyAccess(PropertyAccess::new_unchecked(
                 Box::new(Expr::from_variable(var)),

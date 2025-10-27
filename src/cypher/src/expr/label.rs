@@ -40,3 +40,9 @@ impl ExprNode for LabelExpr {
         DataType::Boolean
     }
 }
+
+impl From<LabelExpr> for Expr {
+    fn from(val: LabelExpr) -> Self {
+        Expr::Label(val)
+    }
+}

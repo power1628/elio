@@ -36,7 +36,14 @@ fn bind_with(
     bctx: &BindContext,
     builder: &mut IrSingleQueryBuilder,
     in_scope: Scope,
-    with: &ast::WithClause,
+    _with @ ast::WithClause {
+        distinct,
+        return_items,
+        order_by,
+        skip,
+        limit,
+        where_,
+    }: &ast::WithClause,
 ) -> Result<Scope, PlanError> {
     todo!()
 }

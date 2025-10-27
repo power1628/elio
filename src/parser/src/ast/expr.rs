@@ -5,7 +5,7 @@ pub enum Expr {
     Literal {
         lit: Literal,
     },
-    Varaible {
+    Variable {
         name: String,
     },
     Parameter {
@@ -30,6 +30,7 @@ pub enum Expr {
     },
     FunctionCall {
         name: String,
+        distinct: bool,
         args: Vec<Expr>,
     },
 }
@@ -59,7 +60,7 @@ impl Expr {
         Expr::Literal { lit: Literal::Null }
     }
     pub fn new_variable(name: String) -> Self {
-        Expr::Varaible { name }
+        Expr::Variable { name }
     }
     pub fn new_parameter(name: String) -> Self {
         Expr::Parameter { name }
@@ -86,8 +87,8 @@ impl Expr {
             right: Box::new(right),
         }
     }
-    pub fn new_function_call(name: String, args: Vec<Expr>) -> Self {
-        Expr::FunctionCall { name, args }
+    pub fn new_function_call(name: String, distinct: bool, args: Vec<Expr>) -> Self {
+        Expr::FunctionCall { name, distinct, args }
     }
 }
 
@@ -95,7 +96,7 @@ impl std::fmt::Display for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Expr::Literal { lit } => write!(f, "{lit}"),
-            Expr::Varaible { name } => write!(f, "{name}"),
+            Expr::Variable { name } => write!(f, "{name}"),
             Expr::MapExpression { keys, values } => {
                 write!(
                     f,
@@ -116,11 +117,12 @@ impl std::fmt::Display for Expr {
             Expr::Binary { left, op, right } => {
                 write!(f, "({left}) {op} ({right})")
             }
-            Expr::FunctionCall { name, args } => {
+            Expr::FunctionCall { name, distinct, args } => {
                 write!(
                     f,
-                    "{}({})",
+                    "{}({}{})",
                     name,
+                    if *distinct { "DISTINCT " } else { "" },
                     args.iter().map(|arg| arg.to_string()).collect::<Vec<_>>().join(", ")
                 )
             }
@@ -150,7 +152,7 @@ enum Associativity {
 }
 
 macro_rules! unary_operator {
-    ($($variant:ident => $sym:expr, $assoc:expr),* $(,)?) => {
+    ($($variant:ident => $sym:expr, $assoc:expr, $func_name:expr),* $(,)?) => {
         #[derive(Debug, Clone, PartialEq, Eq, Hash)]
         pub enum UnaryOperator {
             $($variant),*
@@ -162,7 +164,14 @@ macro_rules! unary_operator {
                     $(Self::$variant => $assoc),*
                 }
             }
+
+            pub fn as_func_name(&self) -> &'static str {
+                match self {
+                    $(Self::$variant => $func_name),*
+                }
+            }
         }
+
 
         impl std::fmt::Display for UnaryOperator {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -175,10 +184,18 @@ macro_rules! unary_operator {
 }
 
 macro_rules! binary_operator {
-    ($($variant:ident => $sym:expr),* $(,)?) => {
+    ($($variant:ident => $sym:expr, $func_name:expr),* $(,)?) => {
         #[derive(Debug, Clone, PartialEq, Eq, Hash)]
         pub enum BinaryOperator {
             $($variant),*
+        }
+
+        impl BinaryOperator {
+            pub fn as_func_name(&self) -> &'static str {
+                match self {
+                    $(Self::$variant => $func_name),*
+                }
+            }
         }
 
         impl std::fmt::Display for BinaryOperator {
@@ -192,39 +209,39 @@ macro_rules! binary_operator {
 }
 
 unary_operator! {
-    UnaryAdd => "+", Associativity::Prefix,
-    UnarySubtract => "-", Associativity::Prefix,
-    Not => "NOT", Associativity::Prefix,
-    IsNull => "IS NULL",   Associativity::Postfix,
-    IsNotNull => "IS NOT NULL",   Associativity::Postfix,
+    UnaryAdd => "+", Associativity::Prefix, "unary_add",
+    UnarySubtract => "-", Associativity::Prefix, "unary_substract",
+    Not => "NOT", Associativity::Prefix, "not",
+    IsNull => "IS NULL",   Associativity::Postfix, "is_null",
+    IsNotNull => "IS NOT NULL",   Associativity::Postfix, "is_not_null",
 }
 
 binary_operator! {
     // artimetic
-    Add => "+",
-    Subtract => "-",
-    Multiply => "*",
-    Divide => "/",
-    Modulo => "%",
-    Pow => "^",
+    Add => "+", "add",
+    Subtract => "-", "subtract",
+    Multiply => "*", "multiply",
+    Divide => "/", "divide",
+    Modulo => "%", "modulo",
+    Pow => "^", "pow",
     // list
-    Concat => "||",
+    Concat => "||", "concat",
     // logical
-    Or => "OR",
-    Xor => "XOR",
-    And => "AND",
+    Or => "OR", "or",
+    Xor => "XOR", "xor",
+    And => "AND", "and",
     // comparison
-    Eq => "=",
-    NotEq => "<>",
-    Gt => ">",
-    GtEq => ">=",
-    Lt => "<",
-    LtEq => "<=",
+    Eq => "=", "eq",
+    NotEq => "<>", "not_eq",
+    Gt => ">", "gt",
+    GtEq => ">=", "gt_eq",
+    Lt => "<", "lt",
+    LtEq => "<=", "lt_eq",
     // comparasion2
-    StartsWith => "STARTS WITH",
-    EndsWith => "ENDS WITH",
-    Contains => "CONTAINS",
-    In => "IN",
+    StartsWith => "STARTS WITH", "starts_with",
+    EndsWith => "ENDS WITH", "ends_with",
+    Contains => "CONTAINS", "contains",
+    In => "IN", "in",
 }
 
 #[derive(Debug, Clone)]
