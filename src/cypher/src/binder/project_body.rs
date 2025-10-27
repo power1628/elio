@@ -205,6 +205,7 @@ pub fn bind_return_items(
             aggregate: agg_expr,
             order_by: Default::default(),
             pagination: Default::default(),
+            filter: Default::default(),
         };
         builder.tail_mut().unwrap().horizon = QueryHorizon::Project(QueryProjection::Aggregate(agg_proj));
     }
@@ -285,7 +286,7 @@ pub fn bind_order_by(
 ) -> Result<(), PlanError> {
     let mut bound_items = vec![];
 
-    let ectx = bctx.derive_expr_context(&scope, "OrderBy");
+    let ectx = bctx.derive_expr_context(scope, "OrderBy");
     ectx.sema_flags.reject_aggregate();
     ectx.sema_flags.reject_outer_reference();
 
@@ -311,7 +312,7 @@ pub fn bind_pagination(
     let mut pagination = Pagination::default();
 
     if let Some(skip) = skip {
-        let ectx = bctx.derive_expr_context(&scope, "Skip");
+        let ectx = bctx.derive_expr_context(scope, "Skip");
         ectx.sema_flags.reject_aggregate();
         ectx.sema_flags.reject_outer_reference();
         let expr = bind_expr(&ectx, &bctx.outer_scopes, skip)?;
@@ -327,7 +328,7 @@ pub fn bind_pagination(
     }
 
     if let Some(limit) = limit {
-        let ectx = bctx.derive_expr_context(&scope, "Limit");
+        let ectx = bctx.derive_expr_context(scope, "Limit");
         ectx.sema_flags.reject_aggregate();
         ectx.sema_flags.reject_outer_reference();
         let expr = bind_expr(&ectx, &bctx.outer_scopes, limit)?;

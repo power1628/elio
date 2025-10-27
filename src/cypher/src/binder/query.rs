@@ -4,7 +4,7 @@ use crate::{
     binder::{
         BindContext,
         builder::IrSingleQueryBuilder,
-        expr::{bind_expr, bind_where},
+        expr::bind_where,
         match_::bind_match,
         project_body::{ClauseKind, bind_order_by, bind_pagination, bind_return_items},
         scope::Scope,
@@ -82,8 +82,24 @@ fn bind_with(
 fn bind_return(
     bctx: &BindContext,
     builder: &mut IrSingleQueryBuilder,
-    in_scope: Scope,
-    return_: &ast::ReturnClause,
+    mut in_scope: Scope,
+    _return @ ast::ReturnClause {
+        distinct,
+        return_items,
+        order_by,
+        skip,
+        limit,
+    }: &ast::ReturnClause,
 ) -> Result<Scope, PlanError> {
-    todo!()
+    // remove anonymous variables in in_scope
+    in_scope.remove_anonymous();
+    // bind projection
+    let scope = bind_return_items(bctx, builder, in_scope, *distinct, &ClauseKind::Return, return_items)?;
+    // bind order by
+    if let Some(order_by) = order_by {
+        bind_order_by(bctx, builder, &scope, order_by)?;
+    }
+    // bind pagination
+    bind_pagination(bctx, builder, &scope, skip.as_deref(), limit.as_deref())?;
+    Ok(scope)
 }
