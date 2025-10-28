@@ -11,6 +11,7 @@ pub enum Value {
     // composite
     List(Vec<Value>),
     // map
+    Map(Vec<(String, Value)>),
     // structural
     Node(Box<NodeValue>),
     Relationship(Box<RelationshipValue>),

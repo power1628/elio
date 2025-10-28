@@ -61,7 +61,9 @@ pub fn bind_expr(ectx: &ExprContext, outer_scope: &[Scope], expr: &ast::Expr) ->
         ast::Expr::Literal { lit } => bind_constant(ectx, lit).map(Into::into),
         ast::Expr::Variable { name } => bind_variable(ectx, name, outer_scope).map(Into::into),
         ast::Expr::Parameter { .. } => not_supported!("parameter binding"),
-        ast::Expr::MapExpression { .. } => not_supported!("map projection"),
+        ast::Expr::MapExpression { .. } => {
+            unreachable!("map expr should not be bind directly, must be in some context")
+        }
         ast::Expr::PropertyAccess { map, key } => {
             let expr = bind_expr(ectx, outer_scope, map)?;
             // resolve property keys
@@ -221,4 +223,26 @@ pub fn bind_where(bctx: &BindContext, scope: &Scope, where_: &ast::Expr) -> Resu
         return Err(SemanticError::invalid_filter_expr_type(&expr.typ(), ectx.name).into());
     }
     Ok(expr.into())
+}
+
+/// Bind map expression to property map.
+pub fn bind_map_expr_to_property_map(
+    ectx: &ExprContext,
+    outer_scope: &[Scope],
+    keys: &[String],
+    values: &[ast::Expr],
+) -> Result<Vec<(IrToken, Expr)>, PlanError> {
+    assert_eq!(keys.len(), values.len());
+
+    let tokens: Vec<IrToken> = keys
+        .iter()
+        .map(|x| ectx.bctx.catalog().get_token_id(x, TokenKind::PropertyKey).into())
+        .collect_vec();
+
+    let exprs = values
+        .iter()
+        .map(|x| bind_expr(ectx, outer_scope, x))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(tokens.into_iter().zip(exprs).collect())
 }

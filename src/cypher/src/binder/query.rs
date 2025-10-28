@@ -39,6 +39,15 @@ fn bind_single_query(bctx: &BindContext, query: ast::SingleQuery) -> Result<(IrS
     Ok((builder.build(), in_scope))
 }
 
+fn bind_create(
+    bctx: &BindContext,
+    builder: &mut IrSingleQueryBuilder,
+    mut in_scope: Scope,
+    _create @ ast::CreateClause { pattern }: &ast::CreateClause,
+) -> Result<Scope, PlanError> {
+    todo!()
+}
+
 /// Execution order of with clause is
 ///  - Project/Distinct/Aggregate/Unwind
 ///  - OrderBy
