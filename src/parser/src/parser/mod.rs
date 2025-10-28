@@ -596,6 +596,7 @@ peg::parser! {
         = precedence! {
             left:(@) _? op:$("|") _? right:@ { LabelExpr::new_or(left, right)}
             --
+            left:(@) _? op:$("&") _? right:@ { LabelExpr::new_and(left, right)}
             label:ident() { LabelExpr::new_label(label.to_string()) }
         }
 

@@ -247,7 +247,10 @@ binary_operator! {
 #[derive(Debug, Clone)]
 pub enum LabelExpr {
     Label(String),
+    // (n:A|B)
     Or(Box<LabelExpr>, Box<LabelExpr>),
+    // (n:A&B)
+    And(Box<LabelExpr>, Box<LabelExpr>),
 }
 
 impl LabelExpr {
@@ -258,22 +261,60 @@ impl LabelExpr {
         Self::Or(Box::new(left), Box::new(right))
     }
 
+    pub fn new_and(left: Self, right: Self) -> Self {
+        Self::And(Box::new(left), Box::new(right))
+    }
+
     // for relationship type, label expr should either be single reltype or reltype conjuncted with OR or NONE
     pub fn contains_only_or(&self) -> bool {
         match self {
             Self::Label(_) => true,
             Self::Or(left, right) => left.contains_only_or() && right.contains_only_or(),
+            Self::And(_, _) => false,
+        }
+    }
+
+    pub fn contains_only_and(&self) -> bool {
+        match self {
+            Self::Label(_) => true,
+            Self::Or(_, _) => false,
+            Self::And(left, right) => left.contains_only_and() && right.contains_only_and(),
+        }
+    }
+
+    pub fn leafs(&self) -> Vec<String> {
+        match self {
+            Self::Label(label) => vec![label.clone()],
+            Self::Or(left, right) => {
+                let mut leafs = left.leafs();
+                leafs.extend(right.leafs());
+                leafs
+            }
+            Self::And(left, right) => {
+                let mut leafs = left.leafs();
+                leafs.extend(right.leafs());
+                leafs
+            }
         }
     }
 
     // in the context of relationship pattern, extract all relationship types from label expr
-    pub fn extract_relationship_types(&self) -> Vec<String> {
+    // return None if label expr contains AND
+    pub fn extract_relationship_types(&self) -> Option<Vec<String>> {
         match self {
-            Self::Label(label) => vec![label.clone()],
+            Self::Label(label) => Some(vec![label.clone()]),
             Self::Or(left, right) => {
-                let mut types = left.extract_relationship_types();
-                types.extend(right.extract_relationship_types());
-                types
+                if let Some(mut ltypes) = left.extract_relationship_types()
+                    && let Some(rtypes) = right.extract_relationship_types()
+                {
+                    ltypes.extend(rtypes);
+                    return Some(ltypes);
+                }
+                None
+            }
+            Self::And(..) => {
+                // relationship types should not contain AND
+                None
             }
         }
     }
@@ -283,7 +324,8 @@ impl std::fmt::Display for LabelExpr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Label(label) => write!(f, "{label}"),
-            Self::Or(left, right) => write!(f, "{left} | {right}"),
+            Self::Or(left, right) => write!(f, "({left}|{right})"),
+            Self::And(left, right) => write!(f, "({left}&{right})"),
         }
     }
 }

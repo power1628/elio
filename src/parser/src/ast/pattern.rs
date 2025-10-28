@@ -69,6 +69,23 @@ impl PatternPart {
     pub fn is_anonymous(&self) -> bool {
         self.variable.is_none()
     }
+
+    pub fn contains_qpp(&self) -> bool {
+        self.factors.iter().any(|x| x.is_qpp())
+    }
+
+    pub fn simple_patterns(&self) -> Vec<&SimplePathPattern> {
+        self.factors.iter().filter_map(|x| x.as_simple_pattern()).collect()
+    }
+
+    pub fn as_simple_patterns(&self) -> Option<&SimplePathPattern> {
+        if self.contains_qpp() {
+            None
+        } else {
+            // if does not contain qpp, the part should exactly contain only one simple pattern
+            self.simple_patterns().first().copied()
+        }
+    }
 }
 
 impl std::fmt::Display for PatternPart {
@@ -95,6 +112,19 @@ pub enum PathFactor {
     Simple(SimplePathPattern),
     #[display("{}", _0)]
     Quantified(QuantifiedPathPattern),
+}
+
+impl PathFactor {
+    pub fn is_qpp(&self) -> bool {
+        matches!(self, Self::Quantified(_))
+    }
+
+    pub fn as_simple_pattern(&self) -> Option<&SimplePathPattern> {
+        match self {
+            Self::Simple(p) => Some(p),
+            Self::Quantified(_) => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -235,4 +265,10 @@ pub enum SemanticDirection {
     Outgoing, // ->
     Incoming, // <-
     Both,     // -
+}
+
+impl SemanticDirection {
+    pub fn is_both(&self) -> bool {
+        matches!(self, Self::Both)
+    }
 }

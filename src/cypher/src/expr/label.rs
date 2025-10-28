@@ -21,15 +21,17 @@ impl From<Option<TokenId>> for IrToken {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct LabelExpr {
-    pub expr: Box<Expr>,
+    pub entity: Box<Expr>,
     pub op: LabelOp,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum LabelOp {
     // at least one label
+    // unreachable
     HasA,
     // has any label contained
+    // unreachable
     HasAny(HashSet<IrToken>),
     // has exact given labels
     HasAll(HashSet<IrToken>),

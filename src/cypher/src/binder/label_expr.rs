@@ -18,12 +18,17 @@ pub(crate) fn bind_label_expr(
             // resolve label
             let label = pctx.bctx.catalog().get_label_id(label).into();
             Ok(Expr::Label(LabelExpr {
-                expr: expr.clone(),
+                entity: expr.clone(),
                 op: LabelOp::HasAll(HashSet::from_iter(vec![label])),
             })
             .boxed())
         }
         ast::LabelExpr::Or(lhs, rhs) => {
+            let lhs = bind_label_expr(pctx, expr.clone(), lhs)?;
+            let rhs = bind_label_expr(pctx, expr.clone(), rhs)?;
+            Ok(lhs.and(*rhs).boxed())
+        }
+        ast::LabelExpr::And(lhs, rhs) => {
             let lhs = bind_label_expr(pctx, expr.clone(), lhs)?;
             let rhs = bind_label_expr(pctx, expr.clone(), rhs)?;
             Ok(lhs.and(*rhs).boxed())

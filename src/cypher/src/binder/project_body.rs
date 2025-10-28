@@ -11,6 +11,7 @@ use crate::{
         BindContext,
         builder::IrSingleQueryBuilder,
         expr::bind_expr,
+        query::ClauseKind,
         scope::{Scope, ScopeItem},
     },
     error::{PlanError, SemanticError},
@@ -23,11 +24,6 @@ use crate::{
     },
     variable::Variable,
 };
-
-pub enum ClauseKind {
-    With,
-    Return,
-}
 
 pub enum BoundReturnItems {
     Project(Vec<(Variable, Expr)>),

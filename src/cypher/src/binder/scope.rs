@@ -75,4 +75,10 @@ impl Scope {
     pub fn remove_anonymous(&mut self) {
         self.items.retain(|x| !x.is_anonymous());
     }
+
+    pub fn product(self, other: Self) -> Self {
+        let mut items = self.items;
+        items.extend(other.items);
+        Self { items }
+    }
 }

@@ -13,3 +13,8 @@ pub type PropertyKeyId = TokenId;
 pub type PropertyKey = String;
 pub type Label = String;
 pub type RelationshipType = String;
+
+pub enum EntityKind {
+    Node,
+    Rel,
+}

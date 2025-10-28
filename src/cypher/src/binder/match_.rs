@@ -6,6 +6,7 @@ use crate::{
         builder::IrSingleQueryBuilder,
         expr::bind_expr,
         pattern::{PatternContext, bind_pattern},
+        query::ClauseKind,
         scope::Scope,
     },
     error::PlanError,
@@ -31,6 +32,7 @@ pub(crate) fn bind_match(
     // add the pattern graph to builder
     let pctx = PatternContext {
         bctx,
+        clause: ClauseKind::Match,
         name: &match_.to_string(),
         allow_update: false,
         reject_qpp: false,

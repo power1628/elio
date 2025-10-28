@@ -104,6 +104,19 @@ impl SemanticError {
     }
 }
 
+// pattern semantics
+impl SemanticError {
+    pub fn qpp_not_allowed(clause: &str, ctx: &str) -> Self {
+        let msg = format!("Quantified path patterns cannot be used in {} at {}", clause, ctx);
+        Self::new(msg)
+    }
+
+    pub fn invalid_create_entity(ctx: &str) -> Self {
+        let msg = format!("Invalid CREATE entity in {}", ctx);
+        Self::new(msg)
+    }
+}
+
 #[macro_export]
 macro_rules! not_supported {
     ($msg:expr) => {

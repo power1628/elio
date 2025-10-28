@@ -4,7 +4,7 @@ use crate::{
     binder::pattern::PathPatternWithExtra,
     expr::FilterExprs,
     ir::{
-        mutating_pattern::MutatingPattern,
+        mutating_pattern::{CreatePattern, MutatingPattern},
         node_connection::{ExhaustiveNodeConnection, QuantifiedPathPattern, RelPattern},
         path_pattern::{PathPattern, SelectivePathPattern, SingleNode},
     },
@@ -111,5 +111,9 @@ impl QueryGraph {
 
     pub fn add_filter(&mut self, filter: FilterExprs) {
         self.filter = self.filter.clone().and(filter);
+    }
+
+    pub fn add_create_pattern(&mut self, c: CreatePattern) {
+        self.mutating_patterns.push(MutatingPattern::Create(c));
     }
 }

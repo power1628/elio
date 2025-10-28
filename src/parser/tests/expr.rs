@@ -43,8 +43,10 @@ fn test_operator() {
 
 #[test]
 fn test_label_expr() {
-    assert_snapshot!(label_expr!(":a|b"), @"a | b");
+    assert_snapshot!(label_expr!(":a|b"), @"(a|b)");
     assert_snapshot!(label_expr!(":a"), @"a");
+    assert_snapshot!(label_expr!(":a&b"), @"(a&b)");
+    assert_snapshot!(label_expr!(":a&b|c&d"), @"((a&b)|(c&d))");
 }
 
 #[test]

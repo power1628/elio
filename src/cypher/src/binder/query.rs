@@ -4,15 +4,24 @@ use crate::{
     binder::{
         BindContext,
         builder::IrSingleQueryBuilder,
+        create::bind_create,
         expr::bind_where,
         match_::bind_match,
-        project_body::{ClauseKind, bind_order_by, bind_pagination, bind_return_items},
+        project_body::{bind_order_by, bind_pagination, bind_return_items},
         scope::Scope,
     },
     error::PlanError,
     ir::query::{IrQuery, IrQueryRoot, IrSingleQuery},
     statement::StmtContext,
 };
+
+#[derive(Debug, Clone)]
+pub enum ClauseKind {
+    Create,
+    Match,
+    With,
+    Return,
+}
 
 pub fn bind_root_query(sctx: &StmtContext, query: ast::RegularQuery) -> Result<IrQueryRoot, PlanError> {
     let bctx = BindContext::new(sctx);
@@ -29,7 +38,7 @@ fn bind_single_query(bctx: &BindContext, query: ast::SingleQuery) -> Result<(IrS
     let mut in_scope = Scope::empty();
     for clause in clauses.iter() {
         in_scope = match clause {
-            ast::Clause::Create(create_clause) => todo!(),
+            ast::Clause::Create(create_clause) => bind_create(bctx, &mut builder, in_scope, create_clause)?,
             ast::Clause::Match(match_clause) => bind_match(bctx, &mut builder, in_scope, match_clause)?,
             ast::Clause::With(with_clause) => bind_with(bctx, &mut builder, in_scope, with_clause)?,
             ast::Clause::Return(return_clause) => bind_return(bctx, &mut builder, in_scope, return_clause)?,
@@ -37,15 +46,6 @@ fn bind_single_query(bctx: &BindContext, query: ast::SingleQuery) -> Result<(IrS
         };
     }
     Ok((builder.build(), in_scope))
-}
-
-fn bind_create(
-    bctx: &BindContext,
-    builder: &mut IrSingleQueryBuilder,
-    mut in_scope: Scope,
-    _create @ ast::CreateClause { pattern }: &ast::CreateClause,
-) -> Result<Scope, PlanError> {
-    todo!()
 }
 
 /// Execution order of with clause is

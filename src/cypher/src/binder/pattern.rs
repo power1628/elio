@@ -10,6 +10,7 @@ use crate::{
         BindContext,
         expr::{ExprContext, bind_expr},
         label_expr::bind_label_expr,
+        query::ClauseKind,
         scope::{Scope, ScopeItem},
     },
     error::PlanError,
@@ -27,6 +28,7 @@ use crate::{
 #[derive(Debug, Clone)]
 pub struct PatternContext<'a> {
     pub bctx: &'a BindContext<'a>,
+    pub clause: ClauseKind,
     // context name, used for error messages
     pub name: &'a str,
     // true on allow update in this contex
@@ -315,12 +317,9 @@ fn bind_simple_pattern(
         // bind label expr
         let mut reltypes: Vec<IrToken> = vec![];
         if let Some(label_expr) = label_expr {
-            if !label_expr.contains_only_or() {
-                return Err(PlanError::semantic_err(
-                    "relationship type can only be conjuncted with OR",
-                ));
-            }
-            let rel_types = label_expr.extract_relationship_types();
+            let rel_types = label_expr.extract_relationship_types().ok_or_else(|| {
+                PlanError::semantic_err("relationship type must be a single reltype or reltype conjuncted with OR")
+            })?;
             for rtype in rel_types {
                 let token = pctx
                     .bctx
