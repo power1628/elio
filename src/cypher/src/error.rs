@@ -102,6 +102,11 @@ impl SemanticError {
         let msg = format!("Pagination limit must be an integer in {}", ctx);
         Self::new(msg)
     }
+
+    pub fn invalid_union(ctx: &str) -> Self {
+        let msg = format!("All subqueries in UNION should return same colum names {}", ctx);
+        Self::new(msg)
+    }
 }
 
 // pattern semantics

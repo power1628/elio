@@ -8,6 +8,7 @@ use crate::{
 pub struct IrQueryRoot {
     pub inner: IrQuery,
     // mapping from variable name to output names
+    // TODO(pgao): should we record the datatype here?
     pub names: IndexMap<VariableName, String>,
 }
 

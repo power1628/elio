@@ -1,3 +1,4 @@
+use indexmap::IndexMap;
 use mojito_parser::ast;
 
 use crate::{
@@ -10,9 +11,10 @@ use crate::{
         project_body::{bind_order_by, bind_pagination, bind_return_items},
         scope::Scope,
     },
-    error::PlanError,
+    error::{PlanError, SemanticError},
     ir::query::{IrQuery, IrQueryRoot, IrSingleQuery},
     statement::StmtContext,
+    variable::VariableName,
 };
 
 #[derive(Debug, Clone)]
@@ -25,14 +27,55 @@ pub enum ClauseKind {
 
 pub fn bind_root_query(sctx: &StmtContext, query: ast::RegularQuery) -> Result<IrQueryRoot, PlanError> {
     let bctx = BindContext::new(sctx);
-    todo!()
+
+    let (ir, scope) = bind_query(&bctx, &query)?;
+
+    let names: IndexMap<VariableName, String> = scope
+        .items
+        .iter()
+        .map(|x| (x.variable.clone(), x.symbol.clone().unwrap()))
+        .collect();
+
+    let root = IrQueryRoot { inner: ir, names };
+
+    Ok(root)
 }
 
-fn bind_query(bctx: &BindContext, query: ast::RegularQuery) -> Result<(IrQuery, Scope), PlanError> {
-    todo!()
+fn bind_query(
+    bctx: &BindContext,
+    _query @ ast::RegularQuery { queries, union_all }: &ast::RegularQuery,
+) -> Result<(IrQuery, Scope), PlanError> {
+    let mut singles = vec![];
+    let mut head_scope: Option<Scope> = None;
+    // TODO(pgao): output type should be union of given types
+    for q in queries {
+        let (single, scope) = bind_single_query(bctx, q)?;
+        singles.push(single);
+        if let Some(head) = &head_scope {
+            // sema check: all column names should be the same
+            if head.items.len() != scope.items.len() {
+                return Err(SemanticError::invalid_union(&_query.to_string()).into());
+            }
+
+            for (lhs, rhs) in head.items.iter().zip(scope.items.iter()) {
+                if lhs.symbol != rhs.symbol {
+                    return Err(SemanticError::invalid_union(&_query.to_string()).into());
+                }
+            }
+        } else {
+            head_scope = Some(scope)
+        }
+    }
+
+    let ir = IrQuery {
+        queries: singles,
+        union_all: *union_all,
+    };
+
+    Ok((ir, head_scope.unwrap()))
 }
 
-fn bind_single_query(bctx: &BindContext, query: ast::SingleQuery) -> Result<(IrSingleQuery, Scope), PlanError> {
+fn bind_single_query(bctx: &BindContext, query: &ast::SingleQuery) -> Result<(IrSingleQuery, Scope), PlanError> {
     let ast::SingleQuery { clauses } = query;
     let mut builder = IrSingleQueryBuilder::new();
     let mut in_scope = Scope::empty();
