@@ -2,7 +2,7 @@ use mojito_common::schema::Variable;
 
 use crate::expr::Expr;
 
-#[derive(Default, Clone, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, Eq, PartialEq)]
 pub struct FilterExprs {
     // conjuncted by AND
     exprs: Vec<Expr>,

@@ -4,7 +4,7 @@ use crate::plan_node::plan_base::PlanBase;
 
 #[derive(Debug, Clone)]
 pub struct AllNodeScan {
-    base: PlanBase,
+    pub base: PlanBase,
     pub variable: VariableName,
     pub arguments: Vec<Variable>,
 }
