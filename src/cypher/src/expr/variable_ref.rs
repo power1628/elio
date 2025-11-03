@@ -1,9 +1,6 @@
-use mojito_common::data_type::DataType;
+use mojito_common::{data_type::DataType, schema::Variable, variable::VariableName};
 
-use crate::{
-    expr::{Expr, ExprNode},
-    variable::{Variable, VariableName},
-};
+use crate::expr::{Expr, ExprNode};
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct VariableRef {

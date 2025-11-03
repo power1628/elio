@@ -1,9 +1,9 @@
 use indexmap::IndexMap;
+use mojito_common::{schema::Variable, variable::VariableName};
 
 use crate::{
     expr::{Expr, FilterExprs},
     ir::order::SortItem,
-    variable::{Variable, VariableName},
 };
 
 pub enum QueryHorizon {

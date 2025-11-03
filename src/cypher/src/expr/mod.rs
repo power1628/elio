@@ -1,4 +1,4 @@
-use mojito_common::data_type::DataType;
+use mojito_common::{data_type::DataType, schema::Variable};
 
 pub mod agg_call;
 /// Logical expr
@@ -17,8 +17,6 @@ pub use subquery::*;
 pub use utils::*;
 pub use value::*;
 pub use variable_ref::*;
-
-use crate::variable::Variable;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Expr {

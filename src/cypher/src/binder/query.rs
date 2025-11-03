@@ -1,4 +1,5 @@
 use indexmap::IndexMap;
+use mojito_common::variable::VariableName;
 use mojito_parser::ast;
 
 use crate::{
@@ -14,7 +15,6 @@ use crate::{
     error::{PlanError, SemanticError},
     ir::query::{IrQuery, IrQueryRoot, IrSingleQuery},
     statement::StmtContext,
-    variable::VariableName,
 };
 
 #[derive(Debug, Clone)]

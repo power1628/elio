@@ -1,23 +1,6 @@
-use std::sync::{Arc, atomic::AtomicUsize};
+use std::sync::atomic::AtomicUsize;
 
-use mojito_common::data_type::DataType;
-
-pub type VariableName = Arc<str>;
-
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct Variable {
-    pub name: VariableName,
-    pub typ: DataType,
-}
-
-impl Variable {
-    pub fn new(name: &VariableName, typ: &DataType) -> Self {
-        Self {
-            name: name.clone(),
-            typ: typ.clone(),
-        }
-    }
-}
+use mojito_common::variable::VariableName;
 
 #[derive(Debug, Default)]
 pub struct VariableGenerator {

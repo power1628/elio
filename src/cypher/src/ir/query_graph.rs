@@ -1,4 +1,5 @@
 use indexmap::IndexSet;
+use mojito_common::{schema::Variable, variable::VariableName};
 
 use crate::{
     binder::pattern::PathPatternWithExtra,
@@ -8,7 +9,6 @@ use crate::{
         node_connection::{ExhaustiveNodeConnection, QuantifiedPathPattern, RelPattern},
         path_pattern::{PathPattern, SelectivePathPattern, SingleNode},
     },
-    variable::{Variable, VariableName},
 };
 
 #[derive(Default)]

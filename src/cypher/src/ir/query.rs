@@ -1,9 +1,7 @@
 use indexmap::IndexMap;
+use mojito_common::variable::VariableName;
 
-use crate::{
-    ir::{horizon::QueryHorizon, query_graph::QueryGraph},
-    variable::VariableName,
-};
+use crate::ir::{horizon::QueryHorizon, query_graph::QueryGraph};
 
 pub struct IrQueryRoot {
     pub inner: IrQuery,

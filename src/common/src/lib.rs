@@ -1,6 +1,9 @@
 pub mod data_type;
+pub mod order;
+pub mod schema;
 pub mod store_types;
 pub mod value;
+pub mod variable;
 
 pub type NodeId = u64;
 pub type RelationshipId = u64;

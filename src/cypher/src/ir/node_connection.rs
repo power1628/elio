@@ -1,10 +1,8 @@
 use indexmap::IndexSet;
+use mojito_common::variable::VariableName;
 use mojito_parser::ast::SemanticDirection;
 
-use crate::{
-    expr::{FilterExprs, IrToken},
-    variable::VariableName,
-};
+use crate::expr::{FilterExprs, IrToken};
 
 #[derive(Clone, Hash, Eq, PartialEq)]
 pub struct RelPattern {

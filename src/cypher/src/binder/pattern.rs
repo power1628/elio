@@ -1,7 +1,7 @@
 use std::{collections::HashSet, ops::Range};
 
 use indexmap::IndexSet;
-use mojito_common::data_type::DataType;
+use mojito_common::{data_type::DataType, schema::Variable, variable::VariableName};
 use mojito_parser::ast::{self, NodePattern, RelationshipPattern};
 use mojito_storage::codec::TokenKind;
 
@@ -22,7 +22,6 @@ use crate::{
         },
         path_pattern::{NodeConnections, PathPattern, SingleNode},
     },
-    variable::{Variable, VariableName},
 };
 
 #[derive(Debug, Clone)]

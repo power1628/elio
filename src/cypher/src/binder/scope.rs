@@ -1,12 +1,9 @@
 use std::collections::HashSet;
 
-use mojito_common::data_type::DataType;
+use mojito_common::{data_type::DataType, schema::Variable, variable::VariableName};
 use mojito_parser::ast;
 
-use crate::{
-    expr::{Expr, VariableRef},
-    variable::{Variable, VariableName},
-};
+use crate::expr::{Expr, VariableRef};
 
 #[derive(Debug, Clone)]
 pub struct ScopeItem {

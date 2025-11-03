@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use indexmap::IndexMap;
 use itertools::Itertools;
 use mojito_catalog::FunctionCatalog;
-use mojito_common::value::Value;
+use mojito_common::{schema::Variable, value::Value};
 use mojito_parser::ast::{self, ReturnItem};
 
 use crate::{
@@ -22,7 +22,6 @@ use crate::{
         },
         order::SortItem,
     },
-    variable::Variable,
 };
 
 pub enum BoundReturnItems {

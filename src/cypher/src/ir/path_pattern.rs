@@ -1,7 +1,8 @@
+use mojito_common::variable::VariableName;
+
 use crate::{
     expr::FilterExprs,
     ir::node_connection::{ExhaustiveNodeConnection, RelPattern},
-    variable::VariableName,
 };
 
 pub enum PathPattern {

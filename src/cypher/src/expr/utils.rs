@@ -1,4 +1,6 @@
-use crate::{expr::Expr, variable::Variable};
+use mojito_common::schema::Variable;
+
+use crate::expr::Expr;
 
 #[derive(Default, Clone, Eq, PartialEq)]
 pub struct FilterExprs {

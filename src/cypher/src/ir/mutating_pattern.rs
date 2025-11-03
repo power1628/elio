@@ -1,11 +1,9 @@
 use std::collections::HashSet;
 
+use mojito_common::variable::VariableName;
 use mojito_parser::ast::SemanticDirection;
 
-use crate::{
-    expr::{Expr, IrToken},
-    variable::VariableName,
-};
+use crate::expr::{Expr, IrToken};
 
 pub enum MutatingPattern {
     Create(CreatePattern),
