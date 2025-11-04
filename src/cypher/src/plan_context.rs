@@ -4,7 +4,7 @@ use crate::{plan_node::plan_base::PlanNodeId, statement::StmtContext};
 
 pub struct PlanContext<'a> {
     pub sctx: StmtContext<'a>,
-    pub next_plan_node_id: AtomicUsize,
+    next_plan_node_id: AtomicUsize,
 }
 
 impl<'a> PlanContext<'a> {
