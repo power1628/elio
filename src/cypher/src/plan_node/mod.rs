@@ -44,11 +44,11 @@ macro_rules! impl_plan_node {
         $(
             impl PlanNode for $plan_node {
                 fn id(&self) -> PlanNodeId {
-                    self.base.id
+                    self.base.id()
                 }
 
                 fn schema(&self) -> Arc<Schema> {
-                    self.base.schema.clone()
+                    self.base.schema().clone()
                 }
 
                 fn attrs(&self) -> PlanNodeAttrs {
