@@ -1,11 +1,33 @@
-use mojito_common::variable::VariableName;
+use std::sync::Arc;
 
-use crate::plan_node::{PlanExpr, plan_base::PlanBase};
+use mojito_common::{schema::Schema, variable::VariableName};
+
+use crate::plan_node::PlanNode;
+use crate::plan_node::{InnerNode, PlanExpr, plan_base::PlanBase};
 
 /// Fetch all properties of given entity
+/// This should be an enforce operator
 #[derive(Clone, Debug)]
-pub struct FetchAllProperties {
+pub struct MaterializeEntity {
     pub base: PlanBase,
-    pub input: Box<PlanExpr>,
-    pub entities: Vec<VariableName>,
+    inner: MaterializeEntityInner,
+}
+
+#[derive(Clone, Debug)]
+pub struct MaterializeEntityInner {
+    input: Box<PlanExpr>,
+    entities: Vec<VariableName>,
+}
+
+impl MaterializeEntityInner {
+    fn build_schema(&self) -> Arc<Schema> {
+        self.input.schema()
+    }
+}
+
+impl InnerNode for MaterializeEntityInner {
+    fn build_base(&self) -> PlanBase {
+        let schema = self.build_schema();
+        PlanBase::new(schema, self.input.ctx())
+    }
 }

@@ -1,11 +1,30 @@
-use mojito_common::variable::VariableName;
-
-use crate::{expr::Expr, plan_node::plan_base::PlanBase};
+use super::*;
 
 #[derive(Debug, Clone)]
 pub struct Project {
     pub base: PlanBase,
-    pub projections: Vec<(VariableName, Expr)>,
-    // private
-    // TODO(pgao): internal func deps
+    inner: ProjectInner,
+}
+
+#[derive(Debug, Clone)]
+pub struct ProjectInner {
+    input: Box<PlanExpr>,
+    projections: Vec<(VariableName, Expr)>,
+    // TODO(pgao): func deps
+}
+
+impl ProjectInner {
+    fn build_schema(&self) -> Arc<Schema> {
+        let mut schema = Schema::from_arc(self.input.schema());
+        for (var, expr) in &self.projections {
+            schema.fields.push(Variable::new(var, &expr.typ()));
+        }
+        schema.into()
+    }
+}
+
+impl InnerNode for ProjectInner {
+    fn build_base(&self) -> PlanBase {
+        PlanBase::new(self.build_schema(), self.input.ctx())
+    }
 }

@@ -1,22 +1,33 @@
-use std::sync::atomic::AtomicUsize;
+use std::sync::{Arc, atomic::AtomicUsize};
 
-use crate::{plan_node::plan_base::PlanNodeId, statement::StmtContext};
+use mojito_catalog::Catalog;
 
-pub struct PlanContext<'a> {
-    pub sctx: StmtContext<'a>,
-    next_plan_node_id: AtomicUsize,
+use crate::{plan_node::plan_base::PlanNodeId, session::SessionContext, variable::VariableGenerator};
+
+pub struct PlanContext {
+    pub sctx: Arc<SessionContext>,
+    plan_node_gen: AtomicUsize,
+    var_gen: Arc<VariableGenerator>,
 }
 
-impl<'a> PlanContext<'a> {
-    pub fn new(sctx: StmtContext<'a>) -> Self {
+impl PlanContext {
+    pub fn new(sctx: Arc<SessionContext>) -> Self {
         Self {
             sctx,
-            next_plan_node_id: AtomicUsize::new(0),
+            plan_node_gen: AtomicUsize::new(0),
+            var_gen: Arc::new(VariableGenerator::default()),
         }
     }
 
-    pub fn plan_id(&self) -> PlanNodeId {
-        self.next_plan_node_id
-            .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    pub fn plan_node_id(&self) -> PlanNodeId {
+        self.plan_node_gen.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    }
+
+    pub fn var_gen(&self) -> &Arc<VariableGenerator> {
+        &self.var_gen
+    }
+
+    pub fn catalog(&self) -> &Arc<Catalog> {
+        &self.sctx.catalog
     }
 }
