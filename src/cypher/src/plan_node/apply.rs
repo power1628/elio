@@ -25,11 +25,11 @@ pub struct ApplyInner {
 impl ApplyInner {
     fn build_schema(&self) -> Arc<Schema> {
         let mut schema = Schema::from_arc(self.left.schema());
-        let right = self.right.schema();
-        for item in right.fields.iter() {
-            if schema.fields.iter().any(|x| x.name == item.name) {
-                continue;
-            } else {
+        let right_schema = self.right.schema();
+        let left_vars: std::collections::HashSet<_> = schema.fields.iter().map(|f| f.name.clone()).collect();
+
+        for item in right_schema.fields.iter() {
+            if !left_vars.contains(&item.name) {
                 schema.fields.push(item.clone());
             }
         }

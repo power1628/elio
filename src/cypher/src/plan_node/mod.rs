@@ -15,7 +15,7 @@ pub mod all_node_scan;
 pub mod apply;
 pub mod expand;
 pub mod filter;
-pub mod get_property;
+pub mod get_prop;
 pub mod plan_base;
 pub mod project;
 pub mod sort;
@@ -23,7 +23,7 @@ pub use all_node_scan::*;
 pub use apply::*;
 pub use expand::*;
 pub use filter::*;
-pub use get_property::*;
+pub use get_prop::*;
 pub use project::*;
 pub use sort::*;
 
@@ -31,7 +31,7 @@ pub use sort::*;
 pub enum PlanExpr {
     // graph
     AllNodeScan(AllNodeScan),
-    MaterializeEntity(MaterializeEntity),
+    MaterializeEntity(GetProperty),
     Expand(Expand),
     Apply(Apply),
     // relational
@@ -70,7 +70,7 @@ macro_rules! impl_plan_node {
     };
 }
 
-impl_plan_node!(AllNodeScan, MaterializeEntity, Expand, Apply, Project, Sort, Filter);
+impl_plan_node!(AllNodeScan, GetProperty, Expand, Apply, Project, Sort, Filter);
 
 macro_rules! impl_plan_node_for_expr {
     ($($plan_node:ident),*) => {
