@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+educe = { workspace = true, features = ["full"] }
 indexmap = { workspace = true }
 itertools = { workspace = true }
 mojito_catalog = { workspace = true }

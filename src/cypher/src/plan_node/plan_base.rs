@@ -1,27 +1,37 @@
 use std::sync::Arc;
 
+use educe;
+use educe::Educe;
 use mojito_common::schema::Schema;
 
-use crate::props::order::Ordering;
+use crate::{plan_context::PlanContext, props::order::Ordering};
 
 pub type PlanNodeId = usize;
 
-// plan base structure and properties
-#[derive(Debug, Clone)]
+// Plan logical properties
+#[derive(Educe)]
+#[educe(Debug, Clone)]
 pub struct PlanBase {
+    // logical properties
     id: PlanNodeId,
     schema: Arc<Schema>,
     // pub func_deps: FuncDepSet,
-    // plan node properties
-    pub attrs: PlanNodeAttrs,
+    // physical properties
+    attrs: PlanNodeAttrs,
+    // TODO(pgao): properties enforcer
+    // context
+    #[educe(Debug(ignore))]
+    ctx: Arc<PlanContext>,
 }
 
 impl PlanBase {
-    pub fn new(id: PlanNodeId, schema: Arc<Schema>) -> Self {
+    pub fn new(schema: Arc<Schema>, ctx: Arc<PlanContext>) -> Self {
+        let id = ctx.plan_node_id();
         Self {
             id,
             schema,
             attrs: PlanNodeAttrs::empty(),
+            ctx,
         }
     }
 
@@ -31,6 +41,10 @@ impl PlanBase {
 
     pub fn schema(&self) -> &Arc<Schema> {
         &self.schema
+    }
+
+    pub fn ctx(&self) -> Arc<PlanContext> {
+        self.ctx.clone()
     }
 }
 

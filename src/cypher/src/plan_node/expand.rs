@@ -1,10 +1,7 @@
-use mojito_common::variable::VariableName;
 use mojito_parser::ast::SemanticDirection;
 
-use crate::{
-    expr::IrToken,
-    plan_node::{PlanExpr, plan_base::PlanBase},
-};
+use super::*;
+use crate::expr::IrToken;
 
 #[derive(Debug, Clone, Copy)]
 pub enum ExpandKind {
@@ -17,10 +14,50 @@ pub enum ExpandKind {
 #[derive(Clone, Debug)]
 pub struct Expand {
     pub base: PlanBase,
-    pub input: Box<PlanExpr>,
-    pub from: VariableName,
-    pub to: Option<VariableName>,
-    pub direction: SemanticDirection,
-    pub types: Vec<IrToken>,
-    pub kind: ExpandKind,
+    inner: ExpandInner,
+}
+
+impl Expand {
+    pub fn new(inner: ExpandInner) -> Self {
+        Self {
+            base: inner.build_base(),
+            inner,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct ExpandInner {
+    input: Box<PlanExpr>,
+    from: VariableName,
+    // some on ExpandAll
+    to: Option<VariableName>,
+    rel: VariableName,
+    direction: SemanticDirection,
+    types: Vec<IrToken>,
+    kind: ExpandKind,
+}
+
+impl ExpandInner {
+    fn build_schema(&self) -> Arc<Schema> {
+        let mut schema = Schema::from_arc(self.input.schema());
+        match self.kind {
+            ExpandKind::All => {
+                schema.fields.push(Variable::new(&self.rel, &DataType::Relationship));
+                schema
+                    .fields
+                    .push(Variable::new(self.to.as_ref().unwrap(), &DataType::Node));
+            }
+
+            ExpandKind::Into => schema.fields.push(Variable::new(&self.rel, &DataType::Node)),
+        }
+        schema.into()
+    }
+}
+
+impl InnerNode for ExpandInner {
+    fn build_base(&self) -> PlanBase {
+        let schema = self.build_schema();
+        PlanBase::new(schema, self.input.ctx())
+    }
 }
