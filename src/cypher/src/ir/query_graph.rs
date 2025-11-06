@@ -203,12 +203,9 @@ impl QueryGraph {
             let mut qg = self.component_for_node(node, &mut visited);
             qg.add_imported_set(&self.imported);
             let qg_vars = qg.match_pattern_variables();
-            let (solved, remaining): (Vec<_>, Vec<_>) = other_filter
-                .clone()
-                .into_iter()
-                .partition(|e| e.depend_only_on(&qg_vars));
-            other_filter = FilterExprs::from_iter(remaining);
-            qg.add_filter(FilterExprs::from_iter(solved));
+            let (solved, remaining) = std::mem::take(&mut other_filter).partition_by(|e| e.depend_only_on(&qg_vars));
+            other_filter = remaining;
+            qg.add_filter(solved);
             components.push(qg);
         }
 
