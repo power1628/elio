@@ -2,10 +2,7 @@ use std::collections::VecDeque;
 
 use indexmap::IndexSet;
 use itertools::Itertools;
-use mojito_common::{
-    schema::Variable,
-    variable::VariableName,
-};
+use mojito_common::{schema::Variable, variable::VariableName};
 
 use crate::{
     binder::pattern::PathPatternWithExtra,
@@ -136,7 +133,7 @@ impl QueryGraph {
 }
 
 impl QueryGraph {
-    pub fn imported_varaibles(&self) -> IndexSet<VariableName> {
+    pub fn imported_variables(&self) -> IndexSet<VariableName> {
         self.imported.iter().map(|v| v.name.clone()).collect()
     }
 
@@ -167,7 +164,7 @@ impl QueryGraph {
 
     // partition the filter by argument only filter and non-argument only filter
     pub fn partition_filter_by_argument_only(&self) -> (FilterExprs, FilterExprs) {
-        let imported = self.imported_varaibles();
+        let imported = self.imported_variables();
         let (argument_only, non_argument_only) = self.filter.clone().partition_by(|e| e.depend_only_on(&imported));
         (argument_only, non_argument_only)
     }
@@ -226,7 +223,7 @@ impl QueryGraph {
         let mut qg = QueryGraph::empty();
         let mut to_visit = VecDeque::new();
         to_visit.push_back(node.clone());
-        let imported = self.imported_varaibles();
+        let imported = self.imported_variables();
 
         while let Some(node) = to_visit.pop_front() {
             if visited.contains(&node) {
@@ -246,15 +243,16 @@ impl QueryGraph {
                 // - qg contains node/rel works as imported variables in original one
                 // - in original qg's filter, (any of imported variable) and current node act as input to filter expr
                 // in either case, we should add argument to qg
-                if !qg.imported.is_empty() && qg.match_pattern_variables().intersection(&imported).next().is_some()
+                if qg.imported.is_empty() && qg.match_pattern_variables().intersection(&imported).next().is_some()
                     || self.filter.iter().any(|e| {
                         let used_vars = e.collect_variables();
                         used_vars.contains(&nb) && used_vars.intersection(&imported).next().is_some()
                     })
                 {
                     qg.add_imported_set(&self.imported);
-                    // add argument to to_visit
-                    imported.iter().for_each(|i| to_visit.push_back(i.clone()));
+                    // add node solved by argument to to_visit
+                    let solved_nodes: IndexSet<_> = self.nodes.intersection(&imported).collect();
+                    solved_nodes.into_iter().for_each(|i| to_visit.push_back(i.clone()));
                 }
             }
         }
