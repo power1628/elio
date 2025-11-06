@@ -1,5 +1,11 @@
+use std::collections::VecDeque;
+
 use indexmap::IndexSet;
-use mojito_common::{schema::Variable, variable::VariableName};
+use itertools::Itertools;
+use mojito_common::{
+    schema::Variable,
+    variable::VariableName,
+};
 
 use crate::{
     binder::pattern::PathPatternWithExtra,
@@ -27,6 +33,9 @@ pub struct QueryGraph {
     // mutating patterns
     mutating_patterns: Vec<MutatingPattern>,
     // imported variables as query graph inputs
+    // imported may contain node/rels that does not exists in current qg's nodes and resl
+    // TODO(pgao): just use variable name?
+    // when the datatype is needed?
     imported: IndexSet<Variable>,
     // outer referenced variables,
     outer: IndexSet<VariableName>,
@@ -87,6 +96,14 @@ impl QueryGraph {
         self.optional_matches.push(qg);
     }
 
+    pub fn add_imported(&mut self, var: &Variable) {
+        self.imported.insert(var.clone());
+    }
+
+    pub fn add_imported_set(&mut self, vars: &IndexSet<Variable>) {
+        self.imported.extend(vars.clone());
+    }
+
     pub fn merge(&mut self, other: QueryGraph) {
         other.nodes.iter().for_each(|n| self.add_node(n));
         other.rels.iter().for_each(|r| self.add_rel(r));
@@ -115,5 +132,147 @@ impl QueryGraph {
 
     pub fn add_create_pattern(&mut self, c: CreatePattern) {
         self.mutating_patterns.push(MutatingPattern::Create(c));
+    }
+}
+
+impl QueryGraph {
+    pub fn imported_varaibles(&self) -> IndexSet<VariableName> {
+        self.imported.iter().map(|v| v.name.clone()).collect()
+    }
+
+    // used for planing pattern without optional and update
+    pub fn match_pattern_variables(&self) -> IndexSet<VariableName> {
+        let mut vars = IndexSet::default();
+        self.nodes.iter().for_each(|n| {
+            vars.insert(n.clone());
+        });
+        self.rels.iter().for_each(|r| {
+            r.path_elements().iter().for_each(|e| {
+                vars.insert(e.variable().clone());
+            })
+        });
+        // including imported variables
+        vars.extend(self.imported.iter().map(|v| v.name.clone()));
+        vars
+    }
+
+    pub fn contains_node_connection(&self, nc: &ExhaustiveNodeConnection) -> bool {
+        match nc {
+            ExhaustiveNodeConnection::RelPattern(rel_pattern) => self.rels.contains(rel_pattern),
+            ExhaustiveNodeConnection::QuantifiedPathPattern(quantified_path_pattern) => {
+                self.quantified_paths.contains(quantified_path_pattern)
+            }
+        }
+    }
+
+    // partition the filter by argument only filter and non-argument only filter
+    pub fn partition_filter_by_argument_only(&self) -> (FilterExprs, FilterExprs) {
+        let imported = self.imported_varaibles();
+        let (argument_only, non_argument_only) = self.filter.clone().partition_by(|e| e.depend_only_on(&imported));
+        (argument_only, non_argument_only)
+    }
+}
+
+impl QueryGraph {
+    // partition the query graph by connected component
+    // also partition the filter into component if it only depends on the solved variables.
+    pub fn connected_component(&self) -> Vec<QueryGraph> {
+        let (argument_only_filter, mut other_filter) = self.partition_filter_by_argument_only();
+        let mut visited = IndexSet::new();
+        let mut components = vec![];
+
+        // solve argument first
+        if !self.imported.is_empty() {
+            // SAFETY: if imported is empty, then argument only filter will be empty
+            // get qg
+            // argument only filter and other filters may be solved by qg
+            let arg = self.imported.first().unwrap();
+            let mut qg = self.component_for_node(&arg.name, &mut visited);
+            qg.add_imported_set(&self.imported);
+            qg.add_filter(argument_only_filter);
+            let qg_vars = qg.match_pattern_variables();
+            let (solved, remaining): (Vec<_>, Vec<_>) =
+                other_filter.into_iter().partition(|e| e.depend_only_on(&qg_vars));
+            other_filter = FilterExprs::from_iter(remaining);
+            qg.add_filter(FilterExprs::from_iter(solved));
+            components.push(qg);
+        }
+
+        // solve rest
+        for node in self.nodes.iter() {
+            if visited.contains(node) {
+                continue;
+            }
+            let mut qg = self.component_for_node(node, &mut visited);
+            qg.add_imported_set(&self.imported);
+            let qg_vars = qg.match_pattern_variables();
+            let (solved, remaining): (Vec<_>, Vec<_>) = other_filter
+                .clone()
+                .into_iter()
+                .partition(|e| e.depend_only_on(&qg_vars));
+            other_filter = FilterExprs::from_iter(remaining);
+            qg.add_filter(FilterExprs::from_iter(solved));
+            components.push(qg);
+        }
+
+        // other_filter must be empty
+
+        components
+    }
+
+    // find the connected component for the given node, and also populate visited
+    fn component_for_node(&self, node: &VariableName, visited: &mut IndexSet<VariableName>) -> QueryGraph {
+        assert!(!visited.contains(node));
+        let mut qg = QueryGraph::empty();
+        let mut to_visit = VecDeque::new();
+        to_visit.push_back(node.clone());
+        let imported = self.imported_varaibles();
+
+        while let Some(node) = to_visit.pop_front() {
+            if visited.contains(&node) {
+                continue;
+            }
+            visited.insert(node.clone());
+            let (ncs, nbrs) = self.connected_entities(&node);
+            for nc in ncs {
+                qg.add_node_connection(&nc);
+            }
+            for nb in nbrs {
+                qg.add_node(&nb);
+                to_visit.push_back(nb.clone());
+                // handle argument, which considered virtual node connections.
+                // first of all, all arguments are connected
+                // and in the following cases, we consider node and imported variables connected
+                // - qg contains node/rel works as imported variables in original one
+                // - in original qg's filter, (any of imported variable) and current node act as input to filter expr
+                // in either case, we should add argument to qg
+                if !qg.imported.is_empty() && qg.match_pattern_variables().intersection(&imported).next().is_some()
+                    || self.filter.iter().any(|e| {
+                        let used_vars = e.collect_variables();
+                        used_vars.contains(&nb) && used_vars.intersection(&imported).next().is_some()
+                    })
+                {
+                    qg.add_imported_set(&self.imported);
+                    // add argument to to_visit
+                    imported.iter().for_each(|i| to_visit.push_back(i.clone()));
+                }
+            }
+        }
+        qg
+    }
+
+    // find the reachable entities(node connection and nodes) from the given node
+    fn connected_entities(&self, node: &VariableName) -> (IndexSet<ExhaustiveNodeConnection>, IndexSet<VariableName>) {
+        // connected by rel
+        let mut ncs = IndexSet::new();
+        let mut nodes = IndexSet::new();
+        for rel in self.rels.iter() {
+            if rel.endpoint_nodes().contains(&node) {
+                ncs.insert(ExhaustiveNodeConnection::RelPattern(rel.clone()));
+                nodes.insert(rel.other_node(node).clone());
+            }
+        }
+        // TODO(pgao): maybe we should move connected by filter condition of arguments here?
+        (ncs, nodes)
     }
 }
