@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 
+use educe::Educe;
 use mojito_common::{TokenId, data_type::DataType};
 
 use crate::expr::{Expr, ExprNode};
@@ -19,22 +20,23 @@ impl From<Option<TokenId>> for IrToken {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Hash, Clone, Eq, PartialEq)]
 pub struct LabelExpr {
     pub entity: Box<Expr>,
     pub op: LabelOp,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Educe)]
+#[educe(Debug, Hash, Clone, Eq, PartialEq)]
 pub enum LabelOp {
     // at least one label
     // unreachable
     HasA,
     // has any label contained
     // unreachable
-    HasAny(HashSet<IrToken>),
+    HasAny(#[educe(Hash(ignore))] HashSet<IrToken>),
     // has exact given labels
-    HasAll(HashSet<IrToken>),
+    HasAll(#[educe(Hash(ignore))] HashSet<IrToken>),
 }
 
 impl ExprNode for LabelExpr {

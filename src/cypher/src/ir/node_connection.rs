@@ -1,8 +1,9 @@
 use indexmap::IndexSet;
-use mojito_common::variable::VariableName;
+use mojito_common::variable::{PathElement, VariableName};
 use mojito_parser::ast::SemanticDirection;
 
 use crate::expr::{FilterExprs, IrToken};
+use educe::{self, Educe};
 
 #[derive(Clone, Hash, Eq, PartialEq)]
 pub struct RelPattern {
@@ -17,15 +18,41 @@ impl RelPattern {
     pub fn endpoint_nodes(&self) -> Vec<&VariableName> {
         vec![&self.endpoints.0, &self.endpoints.1]
     }
+
+    pub fn left(&self) -> &VariableName {
+        &self.endpoints.0
+    }
+
+    pub fn right(&self) -> &VariableName {
+        &self.endpoints.1
+    }
+
+    pub fn other_node(&self, node: &VariableName) -> &VariableName {
+        if node == self.left() { self.right() } else { self.left() }
+    }
+
+    // variables that consturct to the path
+    pub fn path_elements(&self) -> Vec<PathElement> {
+        vec![
+            PathElement::Node(self.left().clone()),
+            PathElement::Rel(self.variable.clone()),
+            PathElement::Node(self.right().clone()),
+        ]
+    }
 }
 
+// For Quantified path pattern
+// (x) ( (a)--(b)--(c) ){1,3} (y)
+// left node biding is inner(a) --> outer(x)
+// right node binding is inner(c) --> outer(y)
 #[derive(Clone, Hash, Eq, PartialEq)]
 pub struct NodeBinding {
     pub inner: VariableName,
     pub outer: VariableName,
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Educe)]
+#[educe(Clone, Hash, Eq, PartialEq)]
 pub struct QuantifiedPathPattern {
     pub left_binding: NodeBinding,
     pub right_binding: NodeBinding,
@@ -34,7 +61,9 @@ pub struct QuantifiedPathPattern {
     // pre-filter
     pub filter: FilterExprs,
     pub repetition: Repetition,
+    #[educe(Hash(ignore))]
     pub node_grouping: IndexSet<VariableGrouping>,
+    #[educe(Hash(ignore))]
     pub rel_grouping: IndexSet<VariableGrouping>,
 }
 
@@ -44,7 +73,7 @@ impl QuantifiedPathPattern {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub enum ExhaustiveNodeConnection {
     RelPattern(RelPattern),
     QuantifiedPathPattern(QuantifiedPathPattern),
@@ -56,6 +85,25 @@ impl ExhaustiveNodeConnection {
             ExhaustiveNodeConnection::RelPattern(rel) => rel.endpoint_nodes(),
             ExhaustiveNodeConnection::QuantifiedPathPattern(qp) => qp.endpoint_nodes(),
         }
+    }
+
+    pub fn path_elements(&self) -> Vec<PathElement> {
+        match self {
+            ExhaustiveNodeConnection::RelPattern(rel) => rel.path_elements(),
+            ExhaustiveNodeConnection::QuantifiedPathPattern(_) => todo!("qpp support"),
+        }
+    }
+}
+
+impl From<RelPattern> for ExhaustiveNodeConnection {
+    fn from(value: RelPattern) -> Self {
+        ExhaustiveNodeConnection::RelPattern(value)
+    }
+}
+
+impl From<QuantifiedPathPattern> for ExhaustiveNodeConnection {
+    fn from(value: QuantifiedPathPattern) -> Self {
+        ExhaustiveNodeConnection::QuantifiedPathPattern(value)
     }
 }
 
@@ -81,7 +129,8 @@ pub struct Repetition {
     // inclusive
     pub max: Option<i64>,
 }
-
+// For Quantified path pattern
+// (x) ( (a)--(b)--(c) ){1,3} (y)
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct VariableGrouping {
     pub singleton: VariableName,

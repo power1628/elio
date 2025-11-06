@@ -3,7 +3,7 @@ use ordered_float::OrderedFloat;
 
 use crate::expr::{Expr, ExprNode};
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Hash, Clone, Eq, PartialEq)]
 pub struct Constant {
     pub data: Value,
     pub typ: DataType,

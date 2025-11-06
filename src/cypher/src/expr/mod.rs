@@ -1,6 +1,7 @@
 use mojito_common::{data_type::DataType, schema::Variable};
 
 pub mod agg_call;
+pub mod filters;
 /// Logical expr
 pub mod func_call;
 pub mod label;
@@ -10,15 +11,15 @@ pub mod utils;
 pub mod value;
 pub mod variable_ref;
 pub use agg_call::*;
+pub use filters::*;
 pub use func_call::*;
 pub use label::*;
 pub use property_access::*;
 pub use subquery::*;
-pub use utils::*;
 pub use value::*;
 pub use variable_ref::*;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Hash, Clone, Eq, PartialEq)]
 pub enum Expr {
     VariableRef(VariableRef),
     PropertyAccess(PropertyAccess),
