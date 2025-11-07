@@ -1,7 +1,6 @@
 use std::collections::VecDeque;
 
 use indexmap::IndexSet;
-use itertools::Itertools;
 use mojito_common::{schema::Variable, variable::VariableName};
 
 use crate::{
@@ -44,15 +43,15 @@ impl QueryGraph {
         Self::default()
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.nodes.is_empty()
-            && self.rels.is_empty()
-            && self.quantified_paths.is_empty()
-            && self.selective_paths.is_empty()
-            && self.optional_matches.is_empty()
-            && self.mutating_patterns.is_empty()
-            && self.imported.is_empty()
-    }
+    // pub fn is_empty(&self) -> bool {
+    //     self.nodes.is_empty()
+    //         && self.rels.is_empty()
+    //         && self.quantified_paths.is_empty()
+    //         && self.selective_paths.is_empty()
+    //         && self.optional_matches.is_empty()
+    //         && self.mutating_patterns.is_empty()
+    //         && self.imported.is_empty()
+    // }
 
     pub fn add_path_pattern(&mut self, path: &PathPatternWithExtra) {
         let PathPatternWithExtra { pattern, extra } = path;
@@ -290,6 +289,6 @@ impl QueryGraph {
     pub fn connections(&self, node: &VariableName) -> impl Iterator<Item = &RelPattern> {
         self.rels
             .iter()
-            .filter(|rel| rel.endpoint_nodes().iter().any(|x| **x == *node))
+            .filter(move |rel| rel.endpoints.0 == *node || rel.endpoints.1 == *node)
     }
 }

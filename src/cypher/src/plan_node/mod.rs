@@ -1,4 +1,3 @@
-use std::default;
 use std::sync::Arc;
 
 use crate::expr::Expr;

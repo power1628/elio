@@ -17,7 +17,13 @@ use crate::{
 use super::*;
 
 // This is an simple implementation of planning an query graph.
+// we do not handle optionl match and update pattern in qg here.
+// So, if qg's node and imported is both empty, then qg is empty.
 pub(crate) fn plan_simple(ctx: &mut PlannerContext, qg: &QueryGraph) -> Result<Box<PlanExpr>, PlanError> {
+    if qg.nodes.is_empty() && qg.imported().is_empty() {
+        return Ok(PlanExpr::empty(ctx.ctx.clone()).boxed());
+    }
+
     let mut solver = TraversalSolver::new(ctx, qg);
     solver.solve()?;
     let mut root = solver.root;
@@ -55,7 +61,7 @@ struct TraversalSolver<'a> {
 impl<'a> TraversalSolver<'a> {
     // initialize with generated leaf plan
     fn new(ctx: &'a mut PlannerContext, qg: &'a QueryGraph) -> Self {
-        assert!(!qg.is_empty());
+        assert!(!qg.nodes.is_empty() || !qg.imported().is_empty());
         let imported = qg.imported().iter().cloned().collect_vec();
         let mut solved = IndexSet::new();
         let mut stack = VecDeque::new();
@@ -140,7 +146,7 @@ impl<'a> TraversalSolver<'a> {
                 "variable length relationship is not supported yet".to_string(),
             ));
         }
-        let (kind, from, to, direction, expanded_noded) = {
+        let (kind, from, to, direction, expanded_node) = {
             match (self.solved.contains(left), self.solved.contains(right)) {
                 (true, true) => (ExpandKind::Into, left, right, *dir, None),
                 (true, false) => (ExpandKind::All, left, right, *dir, Some(right.clone())),
@@ -164,7 +170,7 @@ impl<'a> TraversalSolver<'a> {
         self.solved.insert(variable.clone());
 
         // push new expanded vertex's connections into stack
-        if let Some(expanded) = expanded_noded {
+        if let Some(expanded) = expanded_node {
             self.solved.insert(expanded.clone());
             self.qg
                 .connections(&expanded)

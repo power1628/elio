@@ -32,6 +32,6 @@ impl FilterInner {
 impl InnerNode for FilterInner {
     fn build_base(&self) -> PlanBase {
         let schema = self.build_schema();
-        PlanBase::new(schema, self.ctx.clone())
+        PlanBase::new(schema, self.input.ctx())
     }
 }
