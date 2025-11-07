@@ -92,7 +92,7 @@ impl<'a> TraversalSolver<'a> {
             None
         };
 
-        if stack.is_empty() {
+        if stack.is_empty() && !qg.nodes.is_empty() {
             // if argument does not have connections, select node and plan an node scan with argument
             // SAFETY: the qg must have at least on node
             let first = qg_nodes.next().unwrap();

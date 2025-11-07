@@ -43,16 +43,6 @@ impl QueryGraph {
         Self::default()
     }
 
-    // pub fn is_empty(&self) -> bool {
-    //     self.nodes.is_empty()
-    //         && self.rels.is_empty()
-    //         && self.quantified_paths.is_empty()
-    //         && self.selective_paths.is_empty()
-    //         && self.optional_matches.is_empty()
-    //         && self.mutating_patterns.is_empty()
-    //         && self.imported.is_empty()
-    // }
-
     pub fn add_path_pattern(&mut self, path: &PathPatternWithExtra) {
         let PathPatternWithExtra { pattern, extra } = path;
         match pattern {
