@@ -122,6 +122,12 @@ pub enum PatternLength {
     Var { min: i64, max: Option<i64> },
 }
 
+impl PatternLength {
+    pub fn is_simple(&self) -> bool {
+        matches!(self, PatternLength::Simple)
+    }
+}
+
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Repetition {
     pub min: i64,

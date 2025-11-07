@@ -28,14 +28,13 @@ impl Expand {
 
 #[derive(Clone, Debug)]
 pub struct ExpandInner {
-    input: Box<PlanExpr>,
-    from: VariableName,
-    // some on ExpandAll
-    to: Option<VariableName>,
-    rel: VariableName,
-    direction: SemanticDirection,
-    types: Vec<IrToken>,
-    kind: ExpandKind,
+    pub input: Box<PlanExpr>,
+    pub from: VariableName,
+    pub to: VariableName,
+    pub rel: VariableName,
+    pub direction: SemanticDirection,
+    pub types: Vec<IrToken>,
+    pub kind: ExpandKind,
 }
 
 impl ExpandInner {
@@ -43,13 +42,12 @@ impl ExpandInner {
         let mut schema = Schema::from_arc(self.input.schema());
         match self.kind {
             ExpandKind::All => {
+                // add [r, to] to output
                 schema.fields.push(Variable::new(&self.rel, &DataType::Relationship));
-                schema
-                    .fields
-                    .push(Variable::new(self.to.as_ref().unwrap(), &DataType::Node));
+                schema.fields.push(Variable::new(&self.to, &DataType::Node));
             }
-
-            ExpandKind::Into => schema.fields.push(Variable::new(&self.rel, &DataType::Node)),
+            // add [r] to output
+            ExpandKind::Into => schema.fields.push(Variable::new(&self.rel, &DataType::Relationship)),
         }
         schema.into()
     }

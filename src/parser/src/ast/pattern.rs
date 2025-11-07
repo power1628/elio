@@ -271,4 +271,12 @@ impl SemanticDirection {
     pub fn is_both(&self) -> bool {
         matches!(self, Self::Both)
     }
+
+    pub fn rev(&self) -> Self {
+        match self {
+            Self::Outgoing => Self::Incoming,
+            Self::Incoming => Self::Outgoing,
+            Self::Both => Self::Both,
+        }
+    }
 }
