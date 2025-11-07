@@ -28,11 +28,13 @@ pub(crate) fn plan_simple(ctx: &mut PlannerContext, qg: &QueryGraph) -> Result<B
     solver.solve()?;
     let mut root = solver.root;
     // solve filter
-    root = Filter::new(FilterInner {
-        input: root,
-        condition: qg.filter.clone(),
-    })
-    .into();
+    if !qg.filter.is_true() {
+        root = Filter::new(FilterInner {
+            input: root,
+            condition: qg.filter.clone(),
+        })
+        .into();
+    }
 
     Ok(root)
 }
@@ -78,7 +80,7 @@ impl<'a> TraversalSolver<'a> {
             // if arguments have node connections, push the connection on stack
             for arg in imported.iter().filter(|i| i.is_node()).map(|x| &x.name) {
                 // push in reverse order, since it's stack
-                for conn in qg.connections(arg).collect_vec().into_iter().rev() {
+                for conn in qg.connections(arg).rev() {
                     stack.push_back(conn);
                 }
             }
@@ -104,7 +106,7 @@ impl<'a> TraversalSolver<'a> {
             root = Some(AllNodeScan::new(inner).into());
             solved.insert(first.clone());
             // push connections on stack
-            for conn in qg.connections(first).collect_vec().into_iter().rev() {
+            for conn in qg.connections(first).rev() {
                 stack.push_back(conn);
             }
         }
@@ -174,8 +176,6 @@ impl<'a> TraversalSolver<'a> {
             self.solved.insert(expanded.clone());
             self.qg
                 .connections(&expanded)
-                .collect_vec()
-                .into_iter()
                 .rev()
                 .for_each(|rel| self.stack.push_back(rel));
         }

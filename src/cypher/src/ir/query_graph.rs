@@ -276,7 +276,7 @@ impl QueryGraph {
 
     // one hop node connections
 
-    pub fn connections(&self, node: &VariableName) -> impl Iterator<Item = &RelPattern> {
+    pub fn connections(&self, node: &VariableName) -> impl DoubleEndedIterator<Item = &RelPattern> {
         self.rels
             .iter()
             .filter(move |rel| rel.endpoints.0 == *node || rel.endpoints.1 == *node)

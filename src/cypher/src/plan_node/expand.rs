@@ -47,7 +47,7 @@ impl ExpandInner {
                 schema.fields.push(Variable::new(&self.to, &DataType::Node));
             }
             // add [r] to output
-            ExpandKind::Into => schema.fields.push(Variable::new(&self.rel, &DataType::Node)),
+            ExpandKind::Into => schema.fields.push(Variable::new(&self.rel, &DataType::Relationship)),
         }
         schema.into()
     }
