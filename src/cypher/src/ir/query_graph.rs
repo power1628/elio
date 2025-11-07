@@ -17,18 +17,18 @@ use crate::{
 #[derive(Default)]
 pub struct QueryGraph {
     // node patterns
-    nodes: IndexSet<VariableName>,
+    pub nodes: IndexSet<VariableName>,
     // node connections
-    rels: IndexSet<RelPattern>,
+    pub rels: IndexSet<RelPattern>,
     quantified_paths: Vec<QuantifiedPathPattern>,
     // selective path patterns
     selective_paths: Vec<SelectivePathPattern>,
     // predicate, i.e. post filter
-    filter: FilterExprs,
+    pub filter: FilterExprs,
     // optional matches
-    optional_matches: Vec<QueryGraph>,
+    pub optional_matches: Vec<QueryGraph>,
     // mutating patterns
-    mutating_patterns: Vec<MutatingPattern>,
+    pub mutating_patterns: Vec<MutatingPattern>,
     // imported variables as query graph inputs
     // imported may contain node/rels that does not exists in current qg's nodes and resl
     // TODO(pgao): just use variable name?
@@ -42,6 +42,16 @@ pub struct QueryGraph {
 impl QueryGraph {
     pub fn empty() -> Self {
         Self::default()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
+            && self.rels.is_empty()
+            && self.quantified_paths.is_empty()
+            && self.selective_paths.is_empty()
+            && self.optional_matches.is_empty()
+            && self.mutating_patterns.is_empty()
+            && self.imported.is_empty()
     }
 
     pub fn add_path_pattern(&mut self, path: &PathPatternWithExtra) {
@@ -135,6 +145,10 @@ impl QueryGraph {
 impl QueryGraph {
     pub fn imported_variables(&self) -> IndexSet<VariableName> {
         self.imported.iter().map(|v| v.name.clone()).collect()
+    }
+
+    pub fn imported(&self) -> &IndexSet<Variable> {
+        &self.imported
     }
 
     // used for planing pattern without optional and update
@@ -269,5 +283,13 @@ impl QueryGraph {
         }
         // TODO(pgao): maybe we should move connected by filter condition of arguments here?
         (ncs, nodes)
+    }
+
+    // one hop node connections
+    pub fn connections(&self, node: &VariableName) -> Vec<&RelPattern> {
+        self.rels
+            .iter()
+            .filter(|rel| rel.endpoint_nodes().contains(&node))
+            .collect_vec()
     }
 }

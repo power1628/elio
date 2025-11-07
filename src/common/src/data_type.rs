@@ -29,4 +29,14 @@ impl DataType {
             DataType::Null | DataType::Boolean | DataType::Integer | DataType::Float | DataType::String
         )
     }
+
+    pub fn is_node(&self) -> bool {
+        matches!(self, DataType::Node)
+    }
+    pub fn is_rel(&self) -> bool {
+        matches!(self, DataType::Relationship)
+    }
+    pub fn is_entity(&self) -> bool {
+        self.is_node() || self.is_rel()
+    }
 }

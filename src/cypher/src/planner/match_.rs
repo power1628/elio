@@ -12,10 +12,14 @@ pub fn plan_match(
 
 fn plan_query_graph(ctx: &mut PlannerContext, qg: &QueryGraph) -> Result<PlanExpr, PlanError> {
     // get connected component
+    let qgs = qg.connected_component();
+    if qgs.len() > 1 {
+        return Err(PlanError::not_supported("mutliple query graph not supported."));
+    }
 
     // plan component
 
-    // connect component
+    // connect component by cartisen product
     todo!()
 }
 

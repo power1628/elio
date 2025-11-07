@@ -1,3 +1,4 @@
+use std::default;
 use std::sync::Arc;
 
 use crate::expr::Expr;
@@ -13,6 +14,8 @@ use crate::{
 
 pub mod all_node_scan;
 pub mod apply;
+pub mod argument;
+pub mod empty;
 pub mod expand;
 pub mod filter;
 pub mod get_prop;
@@ -21,6 +24,8 @@ pub mod project;
 pub mod sort;
 pub use all_node_scan::*;
 pub use apply::*;
+pub use argument::*;
+pub use empty::*;
 pub use expand::*;
 pub use filter::*;
 pub use get_prop::*;
@@ -31,13 +36,25 @@ pub use sort::*;
 pub enum PlanExpr {
     // graph
     AllNodeScan(AllNodeScan),
-    MaterializeEntity(GetProperty),
+    GetProperty(GetProperty),
     Expand(Expand),
     Apply(Apply),
+    Argument(Argument),
     // relational
     Project(Project),
     Sort(Sort),
     Filter(Filter),
+    Empty(Empty),
+}
+
+impl PlanExpr {
+    pub fn empty(ctx: Arc<PlanContext>) -> Self {
+        Self::Empty(Empty::new(ctx))
+    }
+
+    pub fn boxed(self) -> Box<Self> {
+        Box::new(self)
+    }
 }
 
 pub trait PlanNode {
@@ -66,11 +83,34 @@ macro_rules! impl_plan_node {
                     self.base.ctx()
                 }
             }
+
+            // impl To for plan_node
+            impl From<$plan_node> for PlanExpr {
+                fn from(value: $plan_node) -> Self {
+                    Self::$plan_node(value)
+                }
+            }
+
+            impl From<$plan_node> for Box<PlanExpr> {
+                fn from(value: $plan_node) -> Self {
+                    Box::new(PlanExpr::$plan_node(value))
+                }
+            }
         )*
     };
 }
 
-impl_plan_node!(AllNodeScan, GetProperty, Expand, Apply, Project, Sort, Filter);
+impl_plan_node!(
+    AllNodeScan,
+    GetProperty,
+    Expand,
+    Apply,
+    Argument,
+    Project,
+    Sort,
+    Filter,
+    Empty
+);
 
 macro_rules! impl_plan_node_for_expr {
     ($($plan_node:ident),*) => {
@@ -96,4 +136,14 @@ macro_rules! impl_plan_node_for_expr {
     };
 }
 
-impl_plan_node_for_expr!(AllNodeScan, MaterializeEntity, Expand, Apply, Project, Sort, Filter);
+impl_plan_node_for_expr!(
+    AllNodeScan,
+    GetProperty,
+    Expand,
+    Apply,
+    Argument,
+    Project,
+    Sort,
+    Filter,
+    Empty
+);

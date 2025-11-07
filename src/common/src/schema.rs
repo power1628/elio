@@ -17,6 +17,14 @@ impl Schema {
     }
 }
 
+impl FromIterator<Variable> for Schema {
+    fn from_iter<T: IntoIterator<Item = Variable>>(iter: T) -> Self {
+        Self {
+            fields: iter.into_iter().collect(),
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Variable {
     pub name: VariableName,
@@ -29,5 +37,20 @@ impl Variable {
             name: name.clone(),
             typ: typ.clone(),
         }
+    }
+
+    #[inline]
+    pub fn is_node(&self) -> bool {
+        self.typ.is_node()
+    }
+
+    #[inline]
+    pub fn is_rel(&self) -> bool {
+        self.typ.is_rel()
+    }
+
+    #[inline]
+    pub fn is_entity(&self) -> bool {
+        self.typ.is_entity()
     }
 }
