@@ -286,10 +286,10 @@ impl QueryGraph {
     }
 
     // one hop node connections
-    pub fn connections(&self, node: &VariableName) -> Vec<&RelPattern> {
+
+    pub fn connections(&self, node: &VariableName) -> impl Iterator<Item = &RelPattern> {
         self.rels
             .iter()
-            .filter(|rel| rel.endpoint_nodes().contains(&node))
-            .collect_vec()
+            .filter(|rel| rel.endpoint_nodes().iter().any(|x| **x == *node))
     }
 }

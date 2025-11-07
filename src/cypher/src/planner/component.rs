@@ -56,7 +56,7 @@ impl<'a> TraversalSolver<'a> {
     // initialize with generated leaf plan
     fn new(ctx: &'a mut PlannerContext, qg: &'a QueryGraph) -> Self {
         assert!(!qg.is_empty());
-        let imported = qg.imported();
+        let imported = qg.imported().iter().cloned().collect_vec();
         let mut solved = IndexSet::new();
         let mut stack = VecDeque::new();
 
@@ -65,14 +65,14 @@ impl<'a> TraversalSolver<'a> {
         let mut root = if !imported.is_empty() {
             // imported as argument as plan leaf
             let inner = ArgumentInner {
-                variables: imported.iter().cloned().collect_vec(),
+                variables: imported.clone(),
                 ctx: ctx.ctx.clone(),
             };
             let root: PlanExpr = Argument::new(inner).into();
             // if arguments have node connections, push the connection on stack
             for arg in imported.iter().filter(|i| i.is_node()).map(|x| &x.name) {
                 // push in reverse order, since it's stack
-                for conn in qg.connections(arg).into_iter().rev() {
+                for conn in qg.connections(arg).collect_vec().into_iter().rev() {
                     stack.push_back(conn);
                 }
             }
@@ -92,13 +92,13 @@ impl<'a> TraversalSolver<'a> {
             let first = qg_nodes.next().unwrap();
             let inner = AllNodeScanInner {
                 variable: first.clone(),
-                arguments: imported.iter().cloned().collect_vec(),
+                arguments: imported,
                 ctx: ctx.ctx.clone(),
             };
             root = Some(AllNodeScan::new(inner).into());
             solved.insert(first.clone());
             // push connections on stack
-            for conn in qg.connections(first).into_iter().rev() {
+            for conn in qg.connections(first).collect_vec().into_iter().rev() {
                 stack.push_back(conn);
             }
         }
@@ -168,6 +168,7 @@ impl<'a> TraversalSolver<'a> {
             self.solved.insert(expanded.clone());
             self.qg
                 .connections(&expanded)
+                .collect_vec()
                 .into_iter()
                 .rev()
                 .for_each(|rel| self.stack.push_back(rel));
