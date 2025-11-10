@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use itertools::Itertools;
 use mojito_common::order::ColumnOrder;
 
@@ -44,16 +46,16 @@ fn plan_project(
     };
     let mut root: Box<PlanExpr> = Project::new(inner).into();
 
+    if !filter.is_true() {
+        root = plan_selection(ctx, root, filter)?;
+    }
+
     if !order_by.is_empty() {
         root = plan_sort(ctx, root, order_by)?;
     }
 
     if !pagination.is_empty() {
         root = plan_pagination(ctx, root, pagination)?;
-    }
-
-    if !filter.is_true() {
-        root = plan_selection(ctx, root, filter)?;
     }
 
     Ok(root)
@@ -103,25 +105,31 @@ fn plan_sort(
     mut root: Box<PlanExpr>,
     order_by: &[SortItem],
 ) -> Result<Box<PlanExpr>, PlanError> {
-    let mut extra = vec![];
-    let mut column_order = vec![];
+    let mut extra_projections = vec![];
+    let mut column_orders = vec![];
     for item in order_by {
         if item.needs_extra_project() {
-            let var = ctx.ctx.var_gen().named(&item.expr.as_variable_ref().unwrap().name);
-            extra.push((var, item.expr.clone()));
-            column_order.push(ColumnOrder {
+            // TODO(pgao): we can have named once the expr have display trait
+            let var = ctx.ctx.var_gen().unnamed();
+            extra_projections.push((var, item.expr.clone()));
+            column_orders.push(ColumnOrder {
                 column: var,
+                direction: item.direction,
+            });
+        } else {
+            column_orders.push(ColumnOrder {
+                column: item.expr.as_variable_ref().unwrap().name.clone(),
                 direction: item.direction,
             });
         }
     }
 
     // extra project
-    if !extra.is_empty() {
+    if !extra_projections.is_empty() {
         // add extra project
         let empty = PlanExpr::empty(root.ctx());
         let mut inner = ProjectInner::new_from_input(std::mem::replace(&mut root, Box::new(empty)));
-        extra
+        extra_projections
             .iter()
             .for_each(|(name, expr)| inner.add_unchecked(name.clone(), *expr.clone()));
         root = Project::new(inner).into();
@@ -131,17 +139,19 @@ fn plan_sort(
     {
         let inner = SortInner {
             input: root,
-            items: column_order,
+            items: column_orders,
         };
         root = Sort::new(inner).into();
     }
 
     // remove extra project
     // TODO(pgao): maybe we can use the opt rule to remove unnecessary project
-    if !extra.is_empty() {
+    if !extra_projections.is_empty() {
         let empty = PlanExpr::empty(root.ctx());
         let mut inner = ProjectInner::new_from_input(std::mem::replace(&mut root, Box::new(empty)));
-        inner.retain(|(name, expr)| !extra.iter().any(|(n, _)| name == n));
+        // inner.retain(|(name, expr)| !extra_projections.iter().any(|(n, _)| name == n));
+        let extra_names: HashSet<_> = extra_projections.iter().map(|(n, _)| n).collect();
+        inner.retain(|(name, expr)| !extra_names.contains(name));
         root = Project::new(inner).into();
     }
     Ok(root)
