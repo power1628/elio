@@ -117,6 +117,7 @@ fn plan_sort(
                 direction: item.direction,
             });
         } else {
+            // SAFETY: its a simple variable, safe to unwrap
             column_orders.push(ColumnOrder {
                 column: item.expr.as_variable_ref().unwrap().name.clone(),
                 direction: item.direction,
@@ -149,9 +150,8 @@ fn plan_sort(
     if !extra_projections.is_empty() {
         let empty = PlanExpr::empty(root.ctx());
         let mut inner = ProjectInner::new_from_input(std::mem::replace(&mut root, Box::new(empty)));
-        // inner.retain(|(name, expr)| !extra_projections.iter().any(|(n, _)| name == n));
         let extra_names: HashSet<_> = extra_projections.iter().map(|(n, _)| n).collect();
-        inner.retain(|(name, expr)| !extra_names.contains(name));
+        inner.retain(|(name, _expr)| !extra_names.contains(name));
         root = Project::new(inner).into();
     }
     Ok(root)
