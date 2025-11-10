@@ -1,7 +1,8 @@
 use crate::variable::VariableName;
+use derive_more;
 
-#[derive(Clone, Debug, Copy, Default, PartialEq, Eq)]
-pub enum Direction {
+#[derive(Clone, Debug, Copy, Default, PartialEq, Eq, derive_more::Display)]
+pub enum SortDirection {
     #[default]
     Asc,
     Desc,
@@ -10,5 +11,5 @@ pub enum Direction {
 #[derive(Debug, Clone)]
 pub struct ColumnOrder {
     pub column: VariableName,
-    pub direction: Direction,
+    pub direction: SortDirection,
 }

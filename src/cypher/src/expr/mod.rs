@@ -1,3 +1,4 @@
+use enum_as_inner::EnumAsInner;
 use mojito_common::{data_type::DataType, schema::Variable};
 
 pub mod agg_call;
@@ -19,7 +20,7 @@ pub use subquery::*;
 pub use value::*;
 pub use variable_ref::*;
 
-#[derive(Debug, Hash, Clone, Eq, PartialEq)]
+#[derive(Debug, Hash, Clone, Eq, PartialEq, EnumAsInner)]
 pub enum Expr {
     VariableRef(VariableRef),
     PropertyAccess(PropertyAccess),

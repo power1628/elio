@@ -1,4 +1,5 @@
 use derive_more::Display;
+use mojito_common::order::SortDirection;
 
 use crate::ast::Expr;
 
@@ -15,9 +16,10 @@ pub struct SortItem {
     pub direction: SortDirection,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Display, Default)]
-pub enum SortDirection {
-    #[default]
-    Asc,
-    Desc,
-}
+// TODO(pgao): move to common
+// #[derive(Clone, Copy, Debug, Eq, PartialEq, Display, Default)]
+// pub enum SortDirection {
+//     #[default]
+//     Asc,
+//     Desc,
+// }
