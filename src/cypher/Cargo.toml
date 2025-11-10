@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 educe = { workspace = true, features = ["full"] }
+enum-as-inner = { workspace = true }
 indexmap = { workspace = true }
 itertools = { workspace = true }
 mojito_catalog = { workspace = true }

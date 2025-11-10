@@ -9,6 +9,7 @@ peg = "0.8.5"
 # workspace
 either = { workspace = true }
 itertools = { workspace = true }
+mojito_common = { workspace = true }
 
 [dev-dependencies]
 insta = { workspace = true, features = ["yaml"] }

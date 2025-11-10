@@ -4,16 +4,11 @@ use crate::expr::Expr;
 
 pub struct SortItem {
     pub expr: Box<Expr>,
-    // pub projections: IndexMap<VariableName, Expr>,
     pub direction: SortDirection,
 }
 
-// pub struct OrderingSet {
-//     choices: Vec<OrderingChoice>,
-// }
-
-// // TODO(pgao): ordering choices should contain variable groups.
-// // some variables may be equal.
-// pub struct OrderingChoice {
-//     pub items: Vec<SortItem>,
-// }
+impl SortItem {
+    pub fn needs_extra_project(&self) -> bool {
+        self.expr.as_variable_ref().is_none()
+    }
+}

@@ -19,7 +19,7 @@ use super::*;
 // This is an simple implementation of planning an query graph.
 // we do not handle optionl match and update pattern in qg here.
 // So, if qg's node and imported is both empty, then qg is empty.
-pub(crate) fn plan_simple(ctx: &mut PlannerContext, qg: &QueryGraph) -> Result<Box<PlanExpr>, PlanError> {
+pub(crate) fn plan_qg_simple(ctx: &mut PlannerContext, qg: &QueryGraph) -> Result<Box<PlanExpr>, PlanError> {
     if qg.nodes.is_empty() && qg.imported().is_empty() {
         return Ok(PlanExpr::empty(ctx.ctx.clone()).boxed());
     }

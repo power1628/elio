@@ -88,6 +88,12 @@ pub struct Pagination {
     pub limit: Option<i64>,
 }
 
+impl Pagination {
+    pub fn is_empty(&self) -> bool {
+        self.offset.is_none() && self.limit.is_none()
+    }
+}
+
 pub struct UnwindProjection {
     pub variable: Variable,
     pub expr: Expr,

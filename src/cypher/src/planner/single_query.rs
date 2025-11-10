@@ -2,7 +2,7 @@ use crate::{
     error::PlanError,
     ir::query::{IrSingleQuery, IrSingleQueryPart},
     plan_node::PlanExpr,
-    planner::PlannerContext,
+    planner::{PlannerContext, horizon::plan_horizon, match_::plan_match},
 };
 
 pub fn plan_single_query(
@@ -17,25 +17,33 @@ pub fn plan_single_query(
 
     // plan tail
     for tail in part_iter {
-        root = plan_tail_part(ctx, root, tail)?
+        // root = plan_tail_part(ctx, root, tail)?
     }
 
-    Ok(root)
+    todo!()
+
+    // Ok(root)
 }
 
 fn plan_head(
     ctx: &mut PlannerContext,
-    part @ IrSingleQueryPart { query_graph, horizon }: &IrSingleQueryPart,
-) -> Result<PlanExpr, PlanError> {
+    part @ IrSingleQueryPart {
+        query_graph: _,
+        horizon,
+    }: &IrSingleQueryPart,
+) -> Result<Box<PlanExpr>, PlanError> {
     // plan match
-    todo!()
+    let mut root = plan_match(ctx, part)?;
+    // plan horizon
+    root = plan_horizon(ctx, root, horizon)?;
+    Ok(root)
 }
 
 fn plan_tail_part(
     ctx: &mut PlannerContext,
     lhs_plan: PlanExpr,
     part @ IrSingleQueryPart { query_graph, horizon }: &IrSingleQueryPart,
-) -> Result<PlanExpr, PlanError> {
+) -> Result<Box<PlanExpr>, PlanError> {
     // plan query graph with lhs
 
     // plan horizon

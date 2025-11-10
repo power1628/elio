@@ -1,7 +1,8 @@
 use std::collections::VecDeque;
 
-use indexmap::IndexSet;
-use mojito_common::{schema::Variable, variable::VariableName};
+use indexmap::{IndexMap, IndexSet};
+use itertools::Itertools;
+use mojito_common::{data_type::DataType, schema::Variable, variable::VariableName};
 
 use crate::{
     binder::pattern::PathPatternWithExtra,
@@ -138,6 +139,20 @@ impl QueryGraph {
 
     pub fn imported(&self) -> &IndexSet<Variable> {
         &self.imported
+    }
+
+    pub fn outputs(&self) -> IndexSet<Variable> {
+        let mut vars = IndexSet::new();
+        self.imported.iter().for_each(|v| {
+            vars.insert(v.clone());
+        });
+        self.nodes.iter().for_each(|n| {
+            vars.insert(Variable::new(n, &DataType::Node));
+        });
+        self.rels.iter().for_each(|v| {
+            vars.insert(Variable::new(&v.variable, &DataType::Relationship));
+        });
+        vars
     }
 
     // used for planing pattern without optional and update

@@ -18,6 +18,7 @@ pub mod empty;
 pub mod expand;
 pub mod filter;
 pub mod get_prop;
+pub mod pagination;
 pub mod plan_base;
 pub mod project;
 pub mod sort;
@@ -28,6 +29,7 @@ pub use empty::*;
 pub use expand::*;
 pub use filter::*;
 pub use get_prop::*;
+pub use pagination::*;
 pub use project::*;
 pub use sort::*;
 
@@ -43,6 +45,7 @@ pub enum PlanExpr {
     Project(Project),
     Sort(Sort),
     Filter(Filter),
+    Pagination(Pagination),
     Empty(Empty),
 }
 
@@ -53,6 +56,10 @@ impl PlanExpr {
 
     pub fn boxed(self) -> Box<Self> {
         Box::new(self)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        matches!(self, Self::Empty(_))
     }
 }
 
@@ -108,6 +115,7 @@ impl_plan_node!(
     Project,
     Sort,
     Filter,
+    Pagination,
     Empty
 );
 
@@ -144,5 +152,6 @@ impl_plan_node_for_expr!(
     Project,
     Sort,
     Filter,
+    Pagination,
     Empty
 );
