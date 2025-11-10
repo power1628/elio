@@ -54,7 +54,7 @@ impl ProjectInner {
 
 impl ProjectInner {
     fn build_schema(&self) -> Arc<Schema> {
-        let mut schema = Schema::from_arc(self.input.schema());
+        let mut schema = Schema::empty();
         for (var, expr) in &self.projections {
             schema.fields.push(Variable::new(var, &expr.typ()));
         }

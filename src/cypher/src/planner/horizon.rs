@@ -132,7 +132,7 @@ fn plan_sort(
         let mut inner = ProjectInner::new_from_input(std::mem::replace(&mut root, Box::new(empty)));
         extra_projections
             .iter()
-            .for_each(|(name, expr)| inner.add_unchecked(name.clone(), *expr.clone()));
+            .for_each(|(name, expr)| inner.add_unchecked(name.clone(), expr.as_ref().clone()));
         root = Project::new(inner).into();
     }
 
