@@ -9,6 +9,7 @@ pub fn plan_single_query(
     ctx: &mut PlannerContext,
     _single_query @ IrSingleQuery { parts }: &IrSingleQuery,
 ) -> Result<Box<PlanExpr>, PlanError> {
+    assert!(!parts.is_empty());
     let mut part_iter = parts.iter();
     let head = part_iter.next().unwrap();
 
