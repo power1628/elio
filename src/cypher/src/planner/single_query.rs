@@ -8,21 +8,22 @@ use crate::{
 pub fn plan_single_query(
     ctx: &mut PlannerContext,
     _single_query @ IrSingleQuery { parts }: &IrSingleQuery,
-) -> Result<PlanExpr, PlanError> {
+) -> Result<Box<PlanExpr>, PlanError> {
+    assert!(!parts.is_empty());
     let mut part_iter = parts.iter();
     let head = part_iter.next().unwrap();
 
     // plan head
-    let mut root = plan_head(ctx, head)?;
+    let root = plan_head(ctx, head)?;
 
     // plan tail
-    for tail in part_iter {
-        // root = plan_tail_part(ctx, root, tail)?
-    }
+    // for tail in part_iter {
+    // root = plan_tail_part(ctx, root, tail)?
+    // }
 
-    todo!()
+    // todo!()
 
-    // Ok(root)
+    Ok(root)
 }
 
 fn plan_head(

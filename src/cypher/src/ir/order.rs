@@ -1,4 +1,4 @@
-use mojito_parser::ast::SortDirection;
+use mojito_common::order::SortDirection;
 
 use crate::expr::Expr;
 

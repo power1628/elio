@@ -111,7 +111,7 @@ fn plan_sort(
         if item.needs_extra_project() {
             // TODO(pgao): we can have named once the expr have display trait
             let var = ctx.ctx.var_gen().unnamed();
-            extra_projections.push((var, item.expr.clone()));
+            extra_projections.push((var.clone(), item.expr.clone()));
             column_orders.push(ColumnOrder {
                 column: var,
                 direction: item.direction,
