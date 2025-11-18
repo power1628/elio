@@ -4,5 +4,6 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+bytes = { workspace = true }
 derive_more = { workspace = true, features = ["display"] }
 ordered-float = { workspace = true }

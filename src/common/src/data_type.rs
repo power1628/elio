@@ -13,7 +13,9 @@ pub enum DataType {
     // map
     // structural
     Node,
+    NodeRef,
     Relationship,
+    RelationshipRef,
     Path,
     // closed dynamic union type
     #[display("Union({})", _0.iter().map(|t| t.to_string()).collect::<Vec<_>>().join(", "))]
@@ -31,10 +33,10 @@ impl DataType {
     }
 
     pub fn is_node(&self) -> bool {
-        matches!(self, DataType::Node)
+        matches!(self, DataType::Node | DataType::NodeRef)
     }
     pub fn is_rel(&self) -> bool {
-        matches!(self, DataType::Relationship)
+        matches!(self, DataType::Relationship | DataType::RelationshipRef)
     }
     pub fn is_entity(&self) -> bool {
         self.is_node() || self.is_rel()
