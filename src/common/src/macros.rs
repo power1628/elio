@@ -15,8 +15,8 @@ macro_rules! for_all_variants {
     ($macro:ident $(, $x:ident)*) => {
         $macro! {
             [$($x),*],
-            { Bool, bool, BoolArray, BoolArrayBuilder, bool, bool },
-            { String, string, StringArray, StringArrayBuilder, String, &'a str },
+            { Bool, bool, crate::array::BoolArray, crate::array::BoolArrayBuilder, bool, bool },
+            { String, string, crate::array::StringArray, crate::array::StringArrayBuilder, String, &'a str }
         }
     };
 }
@@ -27,7 +27,7 @@ macro_rules! for_all_primitive_variants {
     ($macro:ident $(, $x:ident)*) => {
         $macro! {
             [$($x),*],
-            { Bool, bool, BoolArray, BoolArrayBuilder, bool, bool },
+            { Bool, bool, crate::array::BoolArray, crate::array::BoolArrayBuilder, bool, bool }
         }
     };
 }

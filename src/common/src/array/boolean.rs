@@ -1,4 +1,7 @@
-use crate::array::mask::Mask;
+use crate::array::{
+    Array, ArrayBuilder, ArrayIterator,
+    mask::{Mask, MaskMut},
+};
 
 #[derive(Clone, Debug)]
 pub struct BoolArray {
@@ -6,4 +9,62 @@ pub struct BoolArray {
     valid: Mask,
 }
 
-pub struct BoolArrayBuilder {}
+impl Array for BoolArray {
+    type Builder = BoolArrayBuilder;
+
+    type OwnedItem = bool;
+
+    type RefItem<'a> = bool;
+
+    fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
+        if self.valid.get(idx) {
+            Some(self.bits.get(idx))
+        } else {
+            None
+        }
+    }
+
+    fn len(&self) -> usize {
+        self.valid.len()
+    }
+
+    fn iter(&self) -> super::ArrayIterator<'_, Self> {
+        ArrayIterator::new(self)
+    }
+}
+
+pub struct BoolArrayBuilder {
+    data: MaskMut,
+    valid: MaskMut,
+}
+
+impl ArrayBuilder for BoolArrayBuilder {
+    type Array = BoolArray;
+
+    fn with_capacity(capacity: usize) -> Self {
+        Self {
+            data: MaskMut::with_capacity(capacity),
+            valid: MaskMut::with_capacity(capacity),
+        }
+    }
+
+    fn push(&mut self, value: Option<<Self::Array as super::Array>::RefItem<'_>>) {
+        match value {
+            Some(v) => {
+                self.data.push(v);
+                self.valid.push(true);
+            }
+            None => {
+                self.data.push(false);
+                self.valid.push(false);
+            }
+        }
+    }
+
+    fn finish(self) -> Self::Array {
+        Self::Array {
+            bits: self.data.freeze(),
+            valid: self.valid.freeze(),
+        }
+    }
+}

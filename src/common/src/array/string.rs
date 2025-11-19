@@ -24,7 +24,7 @@ impl Array for StringArray {
         if self.valid.get(idx) {
             let start = self.offsets[idx] as usize;
             let end = self.offsets[idx + 1] as usize;
-            unsafe { std::str::from_utf8_unchecked(&self.data[start..end]) }
+            unsafe { Some(std::str::from_utf8_unchecked(&self.data[start..end])) }
         } else {
             None
         }
@@ -64,6 +64,7 @@ impl ArrayBuilder for StringArrayBuilder {
             self.offsets.push(self.data.len() as u32);
             self.valid.push(true);
         } else {
+            self.offsets.push(self.data.len() as u32);
             self.valid.push(false);
         }
     }

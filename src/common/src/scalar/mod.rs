@@ -9,8 +9,9 @@
 //! This file is derived from https://github.com/skyzh/type-exercise-in-rust
 
 use crate::array::Array;
+pub mod impls;
 
-pub trait Scalar: std::fmt::Debug + Clone + Send + Sync + 'static + TryFrom<ScalarImpl> + Into<ScalarImpl> {
+pub trait Scalar: std::fmt::Debug + Clone + Send + Sync + 'static + Into<ScalarImpl> {
     type ArrayType: Array<OwnedItem = Self>;
     type RefType<'a>: ScalarRef<'a, ScalarType = Self, ArrayType = Self::ArrayType>;
 
@@ -21,9 +22,7 @@ pub trait Scalar: std::fmt::Debug + Clone + Send + Sync + 'static + TryFrom<Scal
 /// A borrowed value.
 ///
 /// For example, `i32`, `&str` both implements [`ScalarRef`].
-pub trait ScalarRef<'a>:
-    std::fmt::Debug + Clone + Copy + Send + 'a + TryFrom<ScalarRefImpl<'a>> + Into<ScalarRefImpl<'a>>
-{
+pub trait ScalarRef<'a>: std::fmt::Debug + Clone + Copy + Send + 'a + Into<ScalarRefImpl<'a>> {
     // corresponding array type
     type ArrayType: Array<RefItem<'a> = Self>;
 
@@ -35,11 +34,12 @@ pub trait ScalarRef<'a>:
 
 #[derive(Debug, Clone)]
 pub enum ScalarImpl {
-    Boolean(bool),
+    Bool(bool),
+    String(String),
 }
 
 #[derive(Debug, Clone, Copy)]
 pub enum ScalarRefImpl<'a> {
-    Boolean(bool),
+    Bool(bool),
     String(&'a str),
 }

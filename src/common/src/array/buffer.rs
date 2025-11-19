@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, ops::Range};
 
 use bytes::{Bytes, BytesMut};
 
@@ -44,6 +44,23 @@ impl<T> Buffer<T> {
             len: self.len,
             _phantom: PhantomData,
         }
+    }
+}
+
+impl<T> std::ops::Index<usize> for Buffer<T> {
+    type Output = T;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.as_slice()[index]
+    }
+}
+
+// index range
+impl<T> std::ops::Index<Range<usize>> for Buffer<T> {
+    type Output = [T];
+
+    fn index(&self, index: Range<usize>) -> &Self::Output {
+        &self.as_slice()[index]
     }
 }
 

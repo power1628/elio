@@ -9,25 +9,22 @@
 //!
 //! This file is derived from https://github.com/skyzh/type-exercise-in-rust
 
-use std::marker::PhantomData;
-
 pub mod boolean;
 pub mod buffer;
 pub mod chunk;
+pub mod impls;
 pub mod iterator;
 pub mod string;
-use crate::{
-    array::string::StringArray,
-    scalar::{Scalar, ScalarRef},
-};
+use crate::scalar::{Scalar, ScalarRef};
 pub use boolean::*;
 pub use iterator::*;
+pub use string::*;
 
 pub mod mask;
 // pub mod primitive_array;
 
 /// [`Array`] is a collection of data of the same type.
-pub trait Array: Send + Sync + Sized + 'static + TryFrom<ArrayImpl> + Into<ArrayImpl> + Clone {
+pub trait Array: Send + Sync + Sized + 'static + Into<ArrayImpl> + Clone {
     /// The corresponding [`ArrayBuilder`] of this [`Array`].
     ///
     /// We constriant the associated type so that `Self::Builder::Array = Self`.
@@ -86,13 +83,13 @@ pub trait ArrayBuilder {
 
 #[derive(Clone, Debug)]
 pub enum ArrayImpl {
-    Boolean(BoolArray),
+    Bool(BoolArray),
     String(StringArray),
 }
 
 #[derive(Clone, Debug)]
 pub enum ArrayImplRef<'a> {
-    Boolean(&'a BoolArray),
+    Bool(&'a BoolArray),
     String(&'a StringArray),
 }
 
