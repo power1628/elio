@@ -3,7 +3,7 @@ use derive_more::Display;
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Display)]
 pub enum DataType {
     Null,
-    Boolean,
+    Bool,
     Integer,
     Float,
     String,
@@ -28,7 +28,7 @@ impl DataType {
     pub fn is_primitive(&self) -> bool {
         matches!(
             self,
-            DataType::Null | DataType::Boolean | DataType::Integer | DataType::Float | DataType::String
+            DataType::Null | DataType::Bool | DataType::Integer | DataType::Float | DataType::String
         )
     }
 

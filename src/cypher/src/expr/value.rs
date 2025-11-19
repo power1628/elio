@@ -13,7 +13,7 @@ impl Constant {
     pub fn boolean(b: bool) -> Self {
         Self {
             data: Value::Boolean(b),
-            typ: DataType::Boolean,
+            typ: DataType::Bool,
         }
     }
 

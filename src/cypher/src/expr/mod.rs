@@ -81,7 +81,7 @@ impl Expr {
         Expr::FuncCall(FuncCall::new_unchecked(
             "AND".to_string(),
             vec![self, rhs],
-            DataType::Boolean,
+            DataType::Bool,
         ))
     }
 
@@ -89,7 +89,7 @@ impl Expr {
         Expr::FuncCall(FuncCall::new_unchecked(
             "OR".to_string(),
             vec![self, rhs],
-            DataType::Boolean,
+            DataType::Bool,
         ))
     }
 
@@ -97,7 +97,7 @@ impl Expr {
         Expr::FuncCall(FuncCall::new_unchecked(
             "EQ".to_string(),
             vec![self, rhs],
-            DataType::Boolean,
+            DataType::Bool,
         ))
     }
 

@@ -41,6 +41,9 @@ pub trait Array: Send + Sync + Sized + 'static + Into<ArrayImpl> + Clone {
     /// Retrieve a reference to value.
     fn get(&self, idx: usize) -> Option<Self::RefItem<'_>>;
 
+    /// SAFETY: when calling, user should ensure `idx` is within bounds and the value is not null.
+    // unsafe fn get_unchekced(&self, idx: usize) -> Self::RefItem<'_>;
+
     /// Number of items of array.
     fn len(&self) -> usize;
 

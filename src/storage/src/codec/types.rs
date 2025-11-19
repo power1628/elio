@@ -32,9 +32,15 @@ impl DataTypeCodec {
     // there's an requirment on whether the datatype can be stored as a property value
     pub fn storable(data_type: &DataType) -> bool {
         match data_type {
-            DataType::Null | DataType::Boolean | DataType::Integer | DataType::Float | DataType::String => true,
+            DataType::Null | DataType::Bool | DataType::Integer | DataType::Float | DataType::String => true,
             DataType::List(data_type) => data_type.is_primitive(),
-            DataType::Node | DataType::Relationship | DataType::Path | DataType::Union(_) | DataType::Any => false,
+            DataType::Node
+            | DataType::NodeRef
+            | DataType::Relationship
+            | DataType::RelationshipRef
+            | DataType::Path
+            | DataType::Union(_)
+            | DataType::Any => false,
         }
     }
 
@@ -59,7 +65,7 @@ impl DataTypeCodec {
         let inner_type = data_type >> INNER_TYPE_SHIFT;
         match outer_type {
             TYPE_ID_NULL => DataType::Null,
-            TYPE_ID_BOOLEAN => DataType::Boolean,
+            TYPE_ID_BOOLEAN => DataType::Bool,
             TYPE_ID_INTEGER => DataType::Integer,
             TYPE_ID_FLOAT => DataType::Float,
             TYPE_ID_STRING => DataType::String,

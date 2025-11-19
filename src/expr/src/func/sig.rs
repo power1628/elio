@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-
 use mojito_common::data_type::DataType;
+
+use crate::impl_::func_call::FunctionImpl;
 
 /// Function definition
 #[derive(Clone)]
@@ -8,6 +8,7 @@ pub struct FuncDef {
     pub name: String, // function name
     pub impls: Vec<FuncImpl>,
     pub is_agg: bool,
+    // TODO: propagate nulls
 }
 
 /// Function implementation
@@ -15,8 +16,8 @@ pub struct FuncDef {
 pub struct FuncImpl {
     pub args: Vec<FuncImplArg>,
     pub ret: FuncImplReturn,
-    // TODO(power): add evaluatable function implementation
-    // maybe we can hack the arrow-udf project
+    // function pointer which is invoked when the function is called
+    pub func: FunctionImpl,
 }
 
 impl FuncImpl {
@@ -71,4 +72,36 @@ impl FuncImplReturn {
     }
 }
 
-pub type FunctionRegistry = HashMap<String, FuncDef>;
+// pub type FunctionRegistry = HashMap<String, FuncDef>;
+
+// generate function implementation
+#[macro_export]
+macro_rules! define_function {
+    (name: $name:expr,
+     impls: [
+        $({
+            args: [$($arg_type:ident),*],
+            ret: $ret_type:ident,
+            func: $func_impl:ident,
+        }),+ $(,)?
+     ],
+     is_agg: $is_agg:expr
+    ) => {{
+        $crate::func::sig::FuncDef{
+            name: $name.to_string(),
+            impls: vec![
+                $({
+                    use $crate::func::sig::{FuncImpl, FuncImplArg, FuncImplReturn};
+                    use mojito_common::data_type::DataType;
+
+                    $crate::func::sig::FuncImpl{
+                        args: vec![$(FuncImplArg::Exact(DataType::$arg_type)),*],
+                        ret: FuncImplReturn::Exact(DataType::$ret_type),
+                        func: $func_impl,
+                    }
+                },)+
+            ],
+            is_agg: $is_agg,
+        }
+    }};
+}

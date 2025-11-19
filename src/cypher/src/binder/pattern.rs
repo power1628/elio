@@ -469,7 +469,7 @@ fn bind_quantified_path_pattern(
     if let Some(filter) = filter {
         let ectx = pctx.derive_expr_context(&inner_scope, "QuantifiedPathPattern Filter");
         let expr = bind_expr(&ectx, &[], filter)?;
-        if expr.typ() != DataType::Boolean {
+        if expr.typ() != DataType::Bool {
             return Err(PlanError::semantic_err(
                 "QuantifiedPathPattern filter must be boolean expression".to_string(),
             ));

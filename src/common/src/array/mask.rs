@@ -1,5 +1,3 @@
-use std::ops::Div;
-
 use bytes::{Bytes, BytesMut};
 
 #[derive(Clone, Debug)]
@@ -47,6 +45,10 @@ impl Mask {
         self.len
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
     pub fn get(&self, idx: usize) -> bool {
         match self.all_set {
             Some(v) => v,
@@ -89,6 +91,14 @@ impl Mask {
             len: self.len,
             all_set: self.all_set,
         }
+    }
+
+    pub fn all_set(&self) -> bool {
+        self.all_set.unwrap_or(false)
+    }
+
+    pub fn all_unset(&self) -> bool {
+        !self.all_set()
     }
 }
 
