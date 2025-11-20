@@ -219,7 +219,7 @@ pub fn bind_where(bctx: &BindContext, scope: &Scope, where_: &ast::Expr) -> Resu
     let ctx = where_.to_string();
     let ectx = bctx.derive_expr_context(scope, &ctx);
     let expr = bind_expr(&ectx, &bctx.outer_scopes, where_)?;
-    if expr.typ() != DataType::Boolean {
+    if expr.typ() != DataType::Bool {
         return Err(SemanticError::invalid_filter_expr_type(&expr.typ(), ectx.name).into());
     }
     Ok(expr.into())

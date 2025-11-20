@@ -41,7 +41,7 @@ pub enum LabelOp {
 
 impl ExprNode for LabelExpr {
     fn typ(&self) -> DataType {
-        DataType::Boolean
+        DataType::Bool
     }
 }
 

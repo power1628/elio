@@ -1,5 +1,8 @@
+pub mod array;
 pub mod data_type;
+mod macros;
 pub mod order;
+pub mod scalar;
 pub mod schema;
 pub mod store_types;
 pub mod value;

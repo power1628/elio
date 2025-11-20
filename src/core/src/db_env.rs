@@ -1,12 +1,12 @@
 use std::{collections::HashMap, sync::Arc};
 
 use mojito_common::value::Value;
-use mojito_storage::graph_store::{GraphStore, GraphStoreConfig};
+use mojito_storage::graph::GraphStore;
 
 use crate::{error::Error, result::ResultHandle};
 
 pub struct DbConfig {
-    store_config: GraphStoreConfig,
+    store_path: String,
 }
 
 pub struct DbEnv {
@@ -16,7 +16,7 @@ pub struct DbEnv {
 
 impl DbEnv {
     pub fn open(config: &DbConfig) -> Result<Arc<DbEnv>, Error> {
-        let store = GraphStore::open(&config.store_config)?;
+        let store = GraphStore::open(&config.store_path);
         let me = Self { store: Arc::new(store) };
         Ok(Arc::new(me))
     }
