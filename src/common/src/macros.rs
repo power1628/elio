@@ -9,7 +9,7 @@
 /// `for_all_variants` includes all variants of our array types. If you added a new array
 /// type inside the project, be sure to add a variant here.
 ///
-/// Every tuple has four elements, where
+/// Every tuple has 6 elements, where
 /// `{ enum variant name, function suffix name, array type, builder type, scalar type, scalar ref type }`
 macro_rules! for_all_variants {
     ($macro:ident $(, $x:ident)*) => {

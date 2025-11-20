@@ -77,7 +77,7 @@ impl Mask {
                     let last_byte = self.bits[full_bytes];
                     let mask = (1 << remainder_bits) - 1;
                     let relevant_bits = last_byte & mask;
-                    count += relevant_bits.count_zeros() as usize;
+                    count += remainder_bits - relevant_bits.count_ones() as usize;
                 }
 
                 count

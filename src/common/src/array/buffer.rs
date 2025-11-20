@@ -1,6 +1,7 @@
 use std::{marker::PhantomData, ops::Range};
 
 use bytes::{Bytes, BytesMut};
+use std::mem::size_of;
 
 // Typed buffer for storing elements of type T.
 // Require T must be primitive types
