@@ -74,7 +74,7 @@ impl Mask {
                 }
 
                 if remainder_bits > 0 {
-                    let last_byte = self.bits[full_bytes + 1];
+                    let last_byte = self.bits[full_bytes];
                     let mask = (1 << remainder_bits) - 1;
                     let relevant_bits = last_byte & mask;
                     count += relevant_bits.count_zeros() as usize;
@@ -120,10 +120,7 @@ impl MaskMut {
     pub fn new_set(len: usize) -> Self {
         let bytes = len.div_ceil(8);
         let mut bits = BytesMut::with_capacity(bytes);
-        unsafe {
-            let dst: *mut u8 = bits.as_mut_ptr();
-            std::ptr::write_bytes(dst, 0xFF, bytes);
-        }
+        bits.resize(bytes, 0xFF);
         Self {
             bits,
             len,
@@ -134,10 +131,7 @@ impl MaskMut {
     pub fn new_unset(len: usize) -> Self {
         let bytes = len.div_ceil(8);
         let mut bits = BytesMut::with_capacity(bytes);
-        unsafe {
-            let dst: *mut u8 = bits.as_mut_ptr();
-            std::ptr::write_bytes(dst, 0x00, bytes);
-        }
+        bits.resize(bytes, 0x00);
         Self {
             bits,
             len,
@@ -149,18 +143,32 @@ impl MaskMut {
         self.len
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
     pub fn capacity(&self) -> usize {
         self.bits.len() * 8
     }
 
     pub fn push(&mut self, value: bool) {
-        self.bits.reserve((self.len + 1).div_ceil(8));
-        let idx = self.len / 8;
-        let bit = self.len % 8;
+        if self.len == 0 {
+            self.all_set = Some(value);
+        } else if self.all_set.is_some_and(|v| v != value) {
+            self.all_set = None;
+        }
+
+        let byte_idx = self.len / 8;
+        let bit_idx = self.len % 8;
+
+        if bit_idx == 0 {
+            self.bits.resize(byte_idx + 1, 0);
+        }
+
         if value {
-            self.bits[idx] |= 0x01 << bit;
+            self.bits[byte_idx] |= 0x01 << bit_idx;
         } else {
-            self.bits[idx] &= !(0x01 << bit);
+            self.bits[byte_idx] &= !(0x01 << bit_idx);
         }
         self.len += 1;
     }

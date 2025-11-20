@@ -92,7 +92,7 @@ impl<T> BufferMut<T> {
     }
 
     pub fn capacity(&self) -> usize {
-        self.data.len() / size_of::<T>()
+        self.data.capacity() / size_of::<T>()
     }
 
     pub fn is_empty(&self) -> bool {
