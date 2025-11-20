@@ -24,7 +24,7 @@ impl Array for BoolArray {
         }
     }
 
-    unsafe fn get_unchekced(&self, idx: usize) -> Self::RefItem<'_> {
+    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
         self.bits.get(idx)
     }
 

@@ -30,7 +30,7 @@ impl Array for StringArray {
         }
     }
 
-    unsafe fn get_unchekced(&self, idx: usize) -> Self::RefItem<'_> {
+    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
         let start = self.offsets[idx] as usize;
         let end = self.offsets[idx + 1] as usize;
         unsafe { std::str::from_utf8_unchecked(&self.data[start..end]) }

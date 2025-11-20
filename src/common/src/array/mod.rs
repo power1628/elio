@@ -43,7 +43,7 @@ pub trait Array: Send + Sync + Sized + 'static + Into<ArrayImpl> + Clone {
 
     /// # SAFETY
     /// When calling, user should ensure `idx` is within bounds and the value is not null.
-    unsafe fn get_unchekced(&self, idx: usize) -> Self::RefItem<'_>;
+    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_>;
 
     /// Number of items of array.
     fn len(&self) -> usize;

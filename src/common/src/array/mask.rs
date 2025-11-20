@@ -52,7 +52,7 @@ impl Mask {
     pub fn get(&self, idx: usize) -> bool {
         match self.all_set {
             Some(v) => v,
-            None => self.bits[idx.div_ceil(8)] & (0x01 << (idx % 8)) != 0,
+            None => self.bits[idx / 8] & (0x01 << (idx % 8)) != 0,
         }
     }
 
@@ -74,7 +74,7 @@ impl Mask {
                 }
 
                 if remainder_bits > 0 {
-                    let last_byte = self.bits[full_bytes];
+                    let last_byte = self.bits[full_bytes + 1];
                     let mask = (1 << remainder_bits) - 1;
                     let relevant_bits = last_byte & mask;
                     count += relevant_bits.count_zeros() as usize;
