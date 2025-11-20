@@ -24,6 +24,10 @@ impl Array for BoolArray {
         }
     }
 
+    unsafe fn get_unchekced(&self, idx: usize) -> Self::RefItem<'_> {
+        self.bits.get(idx)
+    }
+
     fn len(&self) -> usize {
         self.valid.len()
     }

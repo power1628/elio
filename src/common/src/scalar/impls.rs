@@ -5,12 +5,49 @@
 
 //! Contains all macro-generated implementations of scalar methods
 
+use crate::data_type::DataType;
 use crate::macros::for_all_primitive_variants;
 use crate::macros::for_all_variants;
 use crate::scalar::Scalar;
 use crate::scalar::ScalarImpl;
 use crate::scalar::ScalarRef;
 use crate::scalar::ScalarRefImpl;
+
+/// Implements dispatch functions for [`Scalar`]
+macro_rules! impl_scalar_dispatch {
+    ([], $( { $Abc:ident, $abc:ident, $AbcArray:ty, $AbcArrayBuilder:ty, $Owned:ty, $Ref:ty } ),*) => {
+        impl ScalarImpl {
+            /// Get physical type of the current scalar
+            pub fn data_type(&self) -> DataType{
+                match self {
+                    $(
+                        Self::$Abc(_) => DataType::$Abc,
+                    )*
+                }
+            }
+        }
+    }
+}
+
+for_all_variants! { impl_scalar_dispatch }
+
+/// Implements dispatch functions for [`ScalarRef`]
+macro_rules! impl_scalar_ref_dispatch {
+    ([], $( { $Abc:ident, $abc:ident, $AbcArray:ty, $AbcArrayBuilder:ty, $Owned:ty, $Ref:ty } ),*) => {
+        impl <'a> ScalarRefImpl<'a> {
+            /// Get physical type of the current scalar
+            pub fn data_type(&self) -> DataType{
+                match self {
+                    $(
+                        Self::$Abc(_) => DataType::$Abc,
+                    )*
+                }
+            }
+        }
+    }
+}
+
+for_all_variants! { impl_scalar_ref_dispatch }
 
 /// Implements `TryFrom` and `From` for [`Scalar`] and [`ScalarRef`].
 macro_rules! impl_scalar_conversion {
@@ -50,10 +87,6 @@ macro_rules! impl_scalar {
                 fn as_scalar_ref(&self) -> $Owned {
                     *self
                 }
-
-                // fn upcast_gat<'short, 'long: 'short>(long: $Owned) -> $Owned {
-                //     long
-                // }
             }
 
             #[doc = concat!(

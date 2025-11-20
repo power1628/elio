@@ -30,6 +30,12 @@ impl Array for StringArray {
         }
     }
 
+    unsafe fn get_unchekced(&self, idx: usize) -> Self::RefItem<'_> {
+        let start = self.offsets[idx] as usize;
+        let end = self.offsets[idx + 1] as usize;
+        unsafe { std::str::from_utf8_unchecked(&self.data[start..end]) }
+    }
+
     fn len(&self) -> usize {
         self.valid.len()
     }
@@ -68,7 +74,6 @@ impl ArrayBuilder for StringArrayBuilder {
             self.valid.push(false);
         }
     }
-
     fn finish(self) -> Self::Array {
         let data = self.data.freeze();
         let offsets = self.offsets.freeze();

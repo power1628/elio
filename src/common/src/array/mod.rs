@@ -41,8 +41,9 @@ pub trait Array: Send + Sync + Sized + 'static + Into<ArrayImpl> + Clone {
     /// Retrieve a reference to value.
     fn get(&self, idx: usize) -> Option<Self::RefItem<'_>>;
 
-    /// SAFETY: when calling, user should ensure `idx` is within bounds and the value is not null.
-    // unsafe fn get_unchekced(&self, idx: usize) -> Self::RefItem<'_>;
+    /// # SAFETY
+    /// When calling, user should ensure `idx` is within bounds and the value is not null.
+    unsafe fn get_unchekced(&self, idx: usize) -> Self::RefItem<'_>;
 
     /// Number of items of array.
     fn len(&self) -> usize;
@@ -79,6 +80,7 @@ pub trait ArrayBuilder {
 
     /// Append a value to builder.
     fn push(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>);
+    // fn push(&mut self, value: Option<<<Self::Array as Array>::OwnedItem as Scalar>::RefType<'_>>);
 
     /// Finish build and return a new array.
     fn finish(self) -> Self::Array;

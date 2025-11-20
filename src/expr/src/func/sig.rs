@@ -91,7 +91,7 @@ macro_rules! define_function {
             name: $name.to_string(),
             impls: vec![
                 $({
-                    use $crate::func::sig::{FuncImpl, FuncImplArg, FuncImplReturn};
+                    use $crate::func::sig::{FuncImplArg, FuncImplReturn};
                     use mojito_common::data_type::DataType;
 
                     $crate::func::sig::FuncImpl{

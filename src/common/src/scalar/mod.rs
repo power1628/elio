@@ -11,7 +11,10 @@
 use crate::array::Array;
 pub mod impls;
 
-pub trait Scalar: std::fmt::Debug + Clone + Send + Sync + 'static + Into<ScalarImpl> {
+pub trait Scalar: std::fmt::Debug + Clone + Send + Sync + 'static + Into<ScalarImpl>
+where
+    for<'a> Self::ArrayType: Array<RefItem<'a> = Self::RefType<'a>>,
+{
     type ArrayType: Array<OwnedItem = Self>;
     type RefType<'a>: ScalarRef<'a, ScalarType = Self, ArrayType = Self::ArrayType>;
 

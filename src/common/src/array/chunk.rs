@@ -1,14 +1,13 @@
-use crate::array::{ArrayImpl, mask::Mask};
+use crate::array::ArrayImpl;
 
 #[derive(Clone)]
 pub struct DataChunk {
     pub columns: Vec<ArrayImpl>,
-    // selection mask
-    pub sel: Mask,
+    // TODO(pgao): selection vector
 }
 
 impl DataChunk {
-    pub fn into_parts(self) -> (Vec<ArrayImpl>, Mask) {
-        (self.columns, self.sel)
+    pub fn new(columns: Vec<ArrayImpl>) -> Self {
+        Self { columns }
     }
 }

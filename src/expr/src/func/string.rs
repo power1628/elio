@@ -23,17 +23,15 @@ fn string_lower(s: &str) -> String {
 
 fn upper_function(input: &DataChunk, _ctx: &EvalCtx) -> Result<ArrayImpl, EvalError> {
     let arg: &StringArray = input.columns[0].as_ref().into();
-    let sel = &input.sel;
 
-    let res: StringArray = UnaryExecutor::execute(arg, sel, string_upper)?;
+    let res: StringArray = UnaryExecutor::execute_simple::<String, String, _>(arg, string_upper)?;
     Ok(res.into())
 }
 
 fn lower_function(input: &DataChunk, _ctx: &EvalCtx) -> Result<ArrayImpl, EvalError> {
     let arg: &StringArray = input.columns[0].as_ref().into();
-    let sel = &input.sel;
 
-    let res: StringArray = UnaryExecutor::execute(arg, sel, string_lower)?;
+    let res: StringArray = UnaryExecutor::execute_simple::<String, String, _>(arg, string_lower)?;
     Ok(res.into())
 }
 
@@ -66,4 +64,5 @@ pub(crate) fn register(registry: &mut HashMap<String, FuncDef>) {
     );
 
     registry.insert(lower.name.clone(), lower);
+    registry.insert(upper.name.clone(), upper);
 }
