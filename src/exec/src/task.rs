@@ -3,7 +3,7 @@ use std::sync::Arc;
 use mojito_common::array::chunk::DataChunk;
 use mojito_cypher::planner::RootPlan;
 use mojito_storage::graph::GraphStore;
-use tokio::sync::mpsc::UnboundedReceiver;
+use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 use crate::error::ExecError;
 use crate::executor::BoxedExecutor;
@@ -30,6 +30,7 @@ impl TaskExecContext {
 pub struct TaskHandle {
     pub query_id: Arc<str>,
     pub task_id: Arc<str>,
+    recv: UnboundedReceiver<Result<DataChunk, ExecError>>,
     // output channnel for task results
 }
 
@@ -45,7 +46,11 @@ impl TaskHandle {
 }
 
 /// create task and spawn running task execution
-pub async fn create_task(_ectx: &Arc<ExecContext>, _query_id: Arc<str>, _plan: RootPlan) -> Result<TaskHandle, ExecError> {
+pub async fn create_task(
+    _ectx: &Arc<ExecContext>,
+    _query_id: Arc<str>,
+    _plan: RootPlan,
+) -> Result<TaskHandle, ExecError> {
     // compile to executor
 
     // spawn task runner and return task handle
@@ -54,7 +59,7 @@ pub async fn create_task(_ectx: &Arc<ExecContext>, _query_id: Arc<str>, _plan: R
 
 pub struct TaskRunner {
     ctx: Arc<TaskExecContext>,
-    tx: UnboundedReceiver<Result<DataChunk, ExecError>>,
+    tx: UnboundedSender<Result<DataChunk, ExecError>>,
     root_executor: BoxedExecutor,
 }
 
