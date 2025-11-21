@@ -23,7 +23,7 @@ impl DbEnv {
 }
 
 impl DbEnv {
-    pub fn execute(self: &Arc<Self>, query: String, params: HashMap<String, Value>) -> Result<ResultHandle, Error> {
+    pub fn execute(self: &Arc<Self>, _query: String, _params: HashMap<String, Value>) -> Result<ResultHandle, Error> {
         todo!()
     }
 }

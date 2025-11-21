@@ -41,9 +41,9 @@ fn plan_head(
 }
 
 fn plan_tail_part(
-    ctx: &mut PlannerContext,
-    lhs_plan: PlanExpr,
-    part @ IrSingleQueryPart { query_graph, horizon }: &IrSingleQueryPart,
+    _ctx: &mut PlannerContext,
+    _lhs_plan: PlanExpr,
+    _part @ IrSingleQueryPart { query_graph, horizon }: &IrSingleQueryPart,
 ) -> Result<Box<PlanExpr>, PlanError> {
     // plan query graph with lhs
 
