@@ -130,7 +130,7 @@ impl<T> BufferMut<T> {
     where
         T: Copy,
     {
-        let extend = unsafe { std::slice::from_raw_parts(slice.as_ptr() as *const u8, slice.len() * size_of::<T>()) };
+        let extend = unsafe { std::slice::from_raw_parts(slice.as_ptr() as *const u8, std::mem::size_of_val(slice)) };
         self.data.extend_from_slice(extend);
         self.len += slice.len();
     }

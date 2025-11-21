@@ -4,6 +4,7 @@ members = [
     "src/common",
     "src/core",
     "src/cypher",
+    "src/exec",
     "src/expr",
     "src/parser",
     "src/storage",
@@ -19,10 +20,10 @@ mojito_catalog = { path = "src/catalog" }
 mojito_common = { path = "src/common" }
 mojito_cypher = { path = "src/cypher" }
 mojito_db = { path = "src/core" }
+mojito_exec = { path = "src/exec" }
 mojito_expr = { path = "src/expr" }
 mojito_parser = { path = "src/parser" }
 mojito_storage = { path = "src/storage" }
-# mojito_storage = { path = "src/storage" }
 
 # other
 bytes = "1.10.1"
@@ -30,6 +31,8 @@ derive_more = { version = "2", features = ["display"] }
 educe = "0.6.0"
 either = "1.15.0"
 enum-as-inner = "0.6.1"
+futures = "0.3"
+futures-async-stream = "0.2.12"
 indexmap = "2.12.0"
 itertools = "0.14.0"
 ordered-float = "5.1.0"

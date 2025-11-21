@@ -19,7 +19,7 @@ pub struct GraphStore {
 impl GraphStore {
     // TODO(power): return results
     pub fn open(path: &str) -> Self {
-        let db: rocksdb::TransactionDB<rocksdb::MultiThreaded> = rocksdb::TransactionDB::open_default(path).unwrap();
+        let _db: rocksdb::TransactionDB<rocksdb::MultiThreaded> = rocksdb::TransactionDB::open_default(path).unwrap();
         todo!()
         // Self { db: Arc::new(db) }
     }

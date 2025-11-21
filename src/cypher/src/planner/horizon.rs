@@ -62,9 +62,9 @@ fn plan_project(
 }
 
 fn plan_aggregate(
-    ctx: &mut PlannerContext,
-    root: Box<PlanExpr>,
-    project @ AggregateProjection {
+    _ctx: &mut PlannerContext,
+    _root: Box<PlanExpr>,
+    _project @ AggregateProjection {
         group_by,
         aggregate,
         order_by,
@@ -76,9 +76,9 @@ fn plan_aggregate(
 }
 
 fn plan_distinct(
-    ctx: &mut PlannerContext,
-    root: Box<PlanExpr>,
-    project @ DistinctProjection {
+    _ctx: &mut PlannerContext,
+    _root: Box<PlanExpr>,
+    _project @ DistinctProjection {
         group_by,
         order_by,
         pagination,
@@ -89,9 +89,9 @@ fn plan_distinct(
 }
 
 fn plan_unwind(
-    ctx: &mut PlannerContext,
-    root: Box<PlanExpr>,
-    unwind @ UnwindProjection { variable, expr }: &UnwindProjection,
+    _ctx: &mut PlannerContext,
+    _root: Box<PlanExpr>,
+    _unwind @ UnwindProjection { variable, expr }: &UnwindProjection,
 ) -> Result<Box<PlanExpr>, PlanError> {
     Err(PlanError::not_supported("unwind clause not implemented yet."))
 }

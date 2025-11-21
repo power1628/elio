@@ -31,9 +31,9 @@ pub(crate) struct BinaryExecutor;
 impl BinaryExecutor {
     /// generate case of execution, return Result<Option<Item>>
     pub fn execute<LeftArray: Array, RightArray: Array, ResultArray: Array, F>(
-        left: &LeftArray,
-        right: &RightArray,
-        func: F,
+        _left: &LeftArray,
+        _right: &RightArray,
+        _func: F,
     ) -> ResultArray
     where
         F: Fn(LeftArray::RefItem<'_>, RightArray::RefItem<'_>) -> ResultArray::OwnedItem,

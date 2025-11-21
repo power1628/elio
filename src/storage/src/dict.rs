@@ -17,7 +17,7 @@ impl DictStore {
         // atomic add and put
         todo!()
     }
-    pub fn alloc_rel_id(&self, reltype: RelationshipTypeId) -> RelationshipId {
+    pub fn alloc_rel_id(&self, _reltype: RelationshipTypeId) -> RelationshipId {
         todo!()
     }
 }

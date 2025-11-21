@@ -73,7 +73,7 @@ impl<'a> TopoFormatWriter<'a> {
         self.header.num += 1;
     }
 
-    pub fn delete_relationship(&mut self, rel_id: RelationshipId) {
+    pub fn delete_relationship(&mut self, _rel_id: RelationshipId) {
         // TODO: implement delete relationship
     }
 }
