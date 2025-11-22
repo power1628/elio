@@ -3,6 +3,7 @@ use std::sync::Arc;
 use mojito_common::array::chunk::DataChunk;
 use mojito_cypher::planner::RootPlan;
 use mojito_storage::graph::GraphStore;
+use mojito_storage::transaction::Transaction;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 use crate::error::ExecError;
@@ -18,6 +19,7 @@ pub struct ExecContext {
 pub struct TaskExecContext {
     exec_ctx: Arc<ExecContext>,
     // task specific context here
+    tx: Arc<dyn Transaction>,
 }
 
 impl TaskExecContext {
