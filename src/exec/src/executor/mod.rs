@@ -9,6 +9,7 @@ use crate::error::ExecError;
 use crate::task::TaskExecContext;
 
 pub mod filter;
+pub mod relscan;
 
 pub trait DataChunkStream: Stream<Item = Result<DataChunk, ExecError>> {}
 

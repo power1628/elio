@@ -14,8 +14,8 @@ pub use topology::*;
 
 /// node and relationship properties are stored in the same column family.
 /// and use different prefix to distinguish node and relationship.
-pub const NODE_KEY_PREFIX: u8 = 0x01;
-pub const REL_KEY_PREFIX: u8 = 0x02;
+pub(crate) const NODE_KEY_PREFIX: u8 = 0x01;
+pub(crate) const REL_KEY_PREFIX: u8 = 0x02;
 
 /// topology are stored in separated column family.
 /// and prefixed by TOPO_KEY_PREFIX

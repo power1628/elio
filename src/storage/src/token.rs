@@ -1,18 +1,12 @@
-use std::{
-    collections::HashMap,
-    sync::{
-        Arc, RwLock,
-        atomic::{AtomicU16, Ordering},
-    },
-};
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicU16, Ordering};
+use std::sync::{Arc, RwLock};
 
 use mojito_common::{LabelId, PropertyKeyId, RelationshipTypeId, TokenId};
 
-use crate::{
-    CF_META,
-    codec::{TokenCodec, TokenKind},
-    error::GraphStoreError,
-};
+use crate::cf_meta;
+use crate::codec::{TokenCodec, TokenKind};
+use crate::error::GraphStoreError;
 
 pub struct TokenStore {
     db: Arc<rocksdb::TransactionDB>,
@@ -104,7 +98,7 @@ impl TokenStore {
         };
         tokens.insert(token.to_string(), token_id);
         // write to db
-        let cf = self.db.cf_handle(CF_META).unwrap();
+        let cf = self.db.cf_handle(cf_meta::CF_NAME).unwrap();
         {
             // insert token -> id to db
             let key = TokenCodec::data_key(&token_kind, token);
@@ -139,7 +133,7 @@ impl TokenStore {
     }
 
     fn db_get_all_token(&self, token_kind: TokenKind) -> Result<Vec<(String, u16)>, GraphStoreError> {
-        let cf = self.db.cf_handle(CF_META).unwrap();
+        let cf = self.db.cf_handle(cf_meta::CF_NAME).unwrap();
         let prefix = TokenCodec::data_key_prefix(&token_kind);
         let iter = self.db.prefix_iterator_cf(&cf, prefix);
 
