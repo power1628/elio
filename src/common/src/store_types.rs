@@ -38,7 +38,7 @@ impl PropertyValue {
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub enum RelationshipDirection {
+pub enum RelDirection {
     Incoming, // 0
     Outgoing, // 1
 }

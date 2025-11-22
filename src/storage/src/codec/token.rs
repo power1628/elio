@@ -1,6 +1,4 @@
-const LABEL_KEY_PREFIX: u8 = 0x01;
-const RELTYPE_KEY_PREFIX: u8 = 0x02;
-const PROPERTY_KEY_PREFIX: u8 = 0x03;
+use crate::cf_meta::{LABEL_KEY_PREFIX, PROPERTY_KEY_PREFIX, RELTYPE_KEY_PREFIX};
 
 /// Storage
 ///   - key   := <LABEL_PREFIX> <label>

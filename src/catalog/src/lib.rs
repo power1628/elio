@@ -1,6 +1,8 @@
-use std::{collections::HashMap, ops::Deref, sync::Arc};
+use std::collections::HashMap;
+use std::ops::Deref;
+use std::sync::Arc;
 
-use mojito_storage::meta::TokenStore;
+use mojito_storage::token::TokenStore;
 
 pub mod func;
 pub use func::FunctionCatalog;

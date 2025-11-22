@@ -1,14 +1,13 @@
-//! TopologyKey ::= TOPO_KEY_PREFIX NodeId Direction
-//! TopologyValue ::= <Num> <EdgeBlock>
+//! topology storage.
+//! Here we inline relationship properties with topology.
 //!
-//! Num ::= <Num>(4B)
-//! EdgeBlock ::= <TopologyElement>{num}
-//!
-//! TopologyElement ::= <RelationshipTypeId>(8B) <OtherNodeId>(8B)
+//! TopologyKey ::= TOPO_KEY_PREFIX SrcNodeId Direction RelTypeId DstNodeId RelationshipId
+//! TopologyValue ::= [PropertyBlock]
 
 use bytemuck::{Pod, Zeroable};
 use bytes::{BufMut, Bytes, BytesMut};
-use mojito_common::{NodeId, RelationshipId, store_types::RelationshipDirection};
+use mojito_common::store_types::RelDirection;
+use mojito_common::{NodeId, RelationshipId, RelationshipTypeId};
 
 use crate::codec::TOPO_KEY_PREFIX;
 
@@ -18,26 +17,38 @@ const OUTGOING_SUFFIX: u8 = 0x02;
 pub struct TopoFormat;
 
 impl TopoFormat {
-    pub fn encode_topo_key(node_id: NodeId, dir: RelationshipDirection) -> Bytes {
+    pub fn encode_topo_key(
+        src_id: NodeId,
+        dir: RelDirection,
+        reltype: RelationshipTypeId,
+        dst_id: NodeId,
+        relid: RelationshipId,
+    ) -> Bytes {
         let mut bytes = BytesMut::new();
         bytes.put_u8(TOPO_KEY_PREFIX);
-        bytes.put_u64_le(node_id);
+        bytes.put_u64_le(src_id);
         match dir {
-            RelationshipDirection::Incoming => bytes.put_u8(INCOMING_SUFFIX),
-            RelationshipDirection::Outgoing => bytes.put_u8(OUTGOING_SUFFIX),
+            RelDirection::Incoming => bytes.put_u8(INCOMING_SUFFIX),
+            RelDirection::Outgoing => bytes.put_u8(OUTGOING_SUFFIX),
         }
+        bytes.put_u16(reltype);
+        bytes.put_u64_le(dst_id);
+        bytes.put_u64_le(relid);
         bytes.freeze()
     }
 
-    pub fn decode_topo_key(buf: &[u8]) -> (NodeId, RelationshipDirection) {
-        assert_eq!(buf.len(), 10);
-        let node_id = u64::from_le_bytes(buf[1..9].try_into().unwrap());
+    pub fn decode_topo_key(buf: &[u8]) -> (NodeId, RelDirection, RelationshipTypeId, NodeId, RelationshipId) {
+        assert_eq!(buf.len(), 28);
+        let src_id = u64::from_le_bytes(buf[1..9].try_into().unwrap());
         let dir = match buf[9] {
-            INCOMING_SUFFIX => RelationshipDirection::Incoming,
-            OUTGOING_SUFFIX => RelationshipDirection::Outgoing,
+            INCOMING_SUFFIX => RelDirection::Incoming,
+            OUTGOING_SUFFIX => RelDirection::Outgoing,
             _ => panic!("invalid direction suffix"),
         };
-        (node_id, dir)
+        let rel_type = u16::from_le_bytes(buf[10..12].try_into().unwrap());
+        let dst_id = u64::from_le_bytes(buf[12..20].try_into().unwrap());
+        let relid = u64::from_le_bytes(buf[20..28].try_into().unwrap());
+        (src_id, dir, rel_type, dst_id, relid)
     }
 }
 
