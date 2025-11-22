@@ -79,7 +79,7 @@ impl IdGenerator {
         loop {
             // get from in memory id first
             let current = self.current.load(Ordering::Relaxed);
-            let max = self.current.load(Ordering::Relaxed);
+            let max = self.max.load(Ordering::Relaxed);
 
             if current < max {
                 // allocate ok
@@ -127,7 +127,7 @@ impl IdGenerator {
         let mut write_opts = rocksdb::WriteOptions::default();
         write_opts.set_sync(true);
         self.db
-            .put_cf_opt(&cf, self.key.as_ref(), new_max.to_be_bytes(), &write_opts)?;
+            .put_cf_opt(&cf, self.key.as_ref(), new_max.to_le_bytes(), &write_opts)?;
 
         // update in memory state
         self.current.store(old_max, Ordering::Release);

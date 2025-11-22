@@ -1,7 +1,7 @@
 use super::*;
-pub struct AllRelScanExectutor {}
+pub struct AllRelScanExecutor {}
 
-impl Executor for AllRelScanExectutor {
+impl Executor for AllRelScanExecutor {
     fn build(self, ctx: &Arc<TaskExecContext>) -> Result<SendableDataChunkStream, ExecError> {
         todo!()
     }
