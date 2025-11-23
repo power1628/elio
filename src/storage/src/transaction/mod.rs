@@ -51,7 +51,7 @@ impl RoTransaction {
 }
 
 impl Transaction for RoTransaction {
-    fn rel_scan(&self, opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
+    fn rel_scan(&self, _opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
         todo!()
     }
 
@@ -59,28 +59,28 @@ impl Transaction for RoTransaction {
         batch_node_scan(&self.inner, opts)
     }
 
-    fn node_create(&self, node: &DataChunk) -> Result<(), GraphStoreError> {
+    fn node_create(&self, _node: &DataChunk) -> Result<(), GraphStoreError> {
         // readonly transaction, not allowed to create node
         Err(GraphStoreError::internal(
             "readonly transaction, not allowed to create node",
         ))
     }
 
-    fn relationship_create(&self, rel: &DataChunk) -> Result<(), GraphStoreError> {
+    fn relationship_create(&self, _rel: &DataChunk) -> Result<(), GraphStoreError> {
         // readonly transaction, not allowed to create relationship
         Err(GraphStoreError::internal(
             "readonly transaction, not allowed to create relationship",
         ))
     }
 
-    fn node_delete(&self, node: &DataChunk) -> Result<(), GraphStoreError> {
+    fn node_delete(&self, _node: &DataChunk) -> Result<(), GraphStoreError> {
         // readonly transaction, not allowed to delete node
         Err(GraphStoreError::internal(
             "readonly transaction, not allowed to delete node",
         ))
     }
 
-    fn relationship_delete(&self, rel: &DataChunk) -> Result<(), GraphStoreError> {
+    fn relationship_delete(&self, _rel: &DataChunk) -> Result<(), GraphStoreError> {
         // readonly transaction, not allowed to delete relationship
         Err(GraphStoreError::internal(
             "readonly transaction, not allowed to delete relationship",
@@ -112,7 +112,7 @@ impl RwTransaction {
 }
 
 impl Transaction for RwTransaction {
-    fn rel_scan(&self, opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
+    fn rel_scan(&self, _opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
         todo!()
     }
 
@@ -120,19 +120,19 @@ impl Transaction for RwTransaction {
         batch_node_scan(&self.inner, opts)
     }
 
-    fn node_create(&self, node: &DataChunk) -> Result<(), GraphStoreError> {
+    fn node_create(&self, _node: &DataChunk) -> Result<(), GraphStoreError> {
         todo!()
     }
 
-    fn relationship_create(&self, rel: &DataChunk) -> Result<(), GraphStoreError> {
+    fn relationship_create(&self, _rel: &DataChunk) -> Result<(), GraphStoreError> {
         todo!()
     }
 
-    fn node_delete(&self, node: &DataChunk) -> Result<(), GraphStoreError> {
+    fn node_delete(&self, _node: &DataChunk) -> Result<(), GraphStoreError> {
         todo!()
     }
 
-    fn relationship_delete(&self, rel: &DataChunk) -> Result<(), GraphStoreError> {
+    fn relationship_delete(&self, _rel: &DataChunk) -> Result<(), GraphStoreError> {
         todo!()
     }
 

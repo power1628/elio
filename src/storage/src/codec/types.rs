@@ -36,7 +36,7 @@ impl DataTypeCodec {
             DataType::List(data_type) => data_type.is_primitive(),
             DataType::Node
             | DataType::NodeRef
-            | DataType::Relationship
+            | DataType::Rel
             | DataType::RelationshipRef
             | DataType::Path
             | DataType::Union(_)

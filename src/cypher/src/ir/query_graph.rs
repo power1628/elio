@@ -2,17 +2,15 @@ use std::collections::VecDeque;
 
 use indexmap::IndexSet;
 use itertools::Itertools;
-use mojito_common::{data_type::DataType, schema::Variable, variable::VariableName};
+use mojito_common::data_type::DataType;
+use mojito_common::schema::Variable;
+use mojito_common::variable::VariableName;
 
-use crate::{
-    binder::pattern::PathPatternWithExtra,
-    expr::FilterExprs,
-    ir::{
-        mutating_pattern::{CreatePattern, MutatingPattern},
-        node_connection::{ExhaustiveNodeConnection, QuantifiedPathPattern, RelPattern},
-        path_pattern::{PathPattern, SelectivePathPattern, SingleNode},
-    },
-};
+use crate::binder::pattern::PathPatternWithExtra;
+use crate::expr::FilterExprs;
+use crate::ir::mutating_pattern::{CreatePattern, MutatingPattern};
+use crate::ir::node_connection::{ExhaustiveNodeConnection, QuantifiedPathPattern, RelPattern};
+use crate::ir::path_pattern::{PathPattern, SelectivePathPattern, SingleNode};
 
 #[derive(Default)]
 pub struct QueryGraph {
@@ -150,7 +148,7 @@ impl QueryGraph {
             vars.insert(Variable::new(n, &DataType::Node));
         });
         self.rels.iter().for_each(|v| {
-            vars.insert(Variable::new(&v.variable, &DataType::Relationship));
+            vars.insert(Variable::new(&v.variable, &DataType::Rel));
         });
         vars
     }

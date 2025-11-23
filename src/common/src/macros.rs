@@ -16,7 +16,9 @@ macro_rules! for_all_variants {
         $macro! {
             [$($x),*],
             { Bool, bool, crate::array::BoolArray, crate::array::BoolArrayBuilder, bool, bool },
-            { String, string, crate::array::StringArray, crate::array::StringArrayBuilder, String, &'a str }
+            { String, string, crate::array::StringArray, crate::array::StringArrayBuilder, String, &'a str },
+            { Node, node, crate::array::NodeArray, crate::array::NodeArrayBuilder, crate::scalar::NodeValue, crate::scalar::NodeValueRef<'a> },
+            { Rel, rel, crate::array::RelArray, crate::array::RelArrayBuilder, crate::scalar::RelValue, crate::scalar::RelValueRef<'a> }
         }
     };
 }

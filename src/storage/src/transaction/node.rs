@@ -7,7 +7,7 @@ use crate::transaction::{DataChunkIterator, NodeScanOptions, OwnedTransaction, T
 
 // node create id
 // node -> encoding -> rocksdb write batch
-pub(crate) fn batch_node_create(tx: &OwnedTransaction, chunk: &DataChunk) -> Result<ArrayImpl, GraphStoreError> {
+pub(crate) fn batch_node_create(tx: &OwnedTransaction, _chunk: &DataChunk) -> Result<ArrayImpl, GraphStoreError> {
     // allocate node id for the batch
 
     // encode node to keys and values
@@ -24,8 +24,8 @@ pub(crate) fn batch_node_create(tx: &OwnedTransaction, chunk: &DataChunk) -> Res
 
 pub(crate) fn batch_node_scan<T: TxRead>(
     tx: &T,
-    opts: &NodeScanOptions,
+    _opts: &NodeScanOptions,
 ) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
-    let mut iter = tx.full_iter();
+    let _iter = tx.full_iter();
     todo!()
 }

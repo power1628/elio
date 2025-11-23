@@ -1,28 +1,26 @@
-use std::{collections::HashSet, ops::Range};
+use std::collections::HashSet;
+use std::ops::Range;
 
 use indexmap::IndexSet;
-use mojito_common::{data_type::DataType, schema::Variable, variable::VariableName};
+use mojito_common::data_type::DataType;
+use mojito_common::schema::Variable;
+use mojito_common::variable::VariableName;
 use mojito_parser::ast::{self, NodePattern, RelationshipPattern};
 use mojito_storage::codec::TokenKind;
 
-use crate::{
-    binder::{
-        BindContext,
-        expr::{ExprContext, bind_expr},
-        label_expr::bind_label_expr,
-        query::ClauseKind,
-        scope::{Scope, ScopeItem},
-    },
-    error::PlanError,
-    expr::{Expr, ExprNode, FilterExprs, IrToken, property_access::PropertyAccess},
-    ir::{
-        node_connection::{
-            ExhaustiveNodeConnection, NodeBinding, PatternLength, QuantifiedPathPattern, RelPattern, Repetition,
-            VariableGrouping,
-        },
-        path_pattern::{NodeConnections, PathPattern, SingleNode},
-    },
+use crate::binder::BindContext;
+use crate::binder::expr::{ExprContext, bind_expr};
+use crate::binder::label_expr::bind_label_expr;
+use crate::binder::query::ClauseKind;
+use crate::binder::scope::{Scope, ScopeItem};
+use crate::error::PlanError;
+use crate::expr::property_access::PropertyAccess;
+use crate::expr::{Expr, ExprNode, FilterExprs, IrToken};
+use crate::ir::node_connection::{
+    ExhaustiveNodeConnection, NodeBinding, PatternLength, QuantifiedPathPattern, RelPattern, Repetition,
+    VariableGrouping,
 };
+use crate::ir::path_pattern::{NodeConnections, PathPattern, SingleNode};
 
 #[derive(Debug, Clone)]
 pub struct PatternContext<'a> {
@@ -72,11 +70,9 @@ pub struct PathPatternWithExtra {
     pub extra: PathPatternExtra,
 }
 
-/// - SimplePattern: bind and pull the filter into WHERE clause
-///   Return (Vec<NodeVar>, Vec<RelPattern>, Filter)
-/// - QuantifiedPathPattern: generate selective path pattern
-///   SemanticCheck: RejectNestedSelector
-///   Return SelectivePathPattern
+/// - SimplePattern: bind and pull the filter into WHERE clause Return (Vec<NodeVar>, Vec<RelPattern>, Filter)
+/// - QuantifiedPathPattern: generate selective path pattern SemanticCheck: RejectNestedSelector Return
+///   SelectivePathPattern
 /// - Path variable, generate path expression
 ///
 /// After binding, return
@@ -307,7 +303,7 @@ fn bind_simple_pattern(
         },
     ) in relationships.iter().enumerate()
     {
-        let (var, is_outer) = bind_variable(pctx, &mut scope, variable.as_deref(), &DataType::Relationship)?;
+        let (var, is_outer) = bind_variable(pctx, &mut scope, variable.as_deref(), &DataType::Rel)?;
 
         if is_outer {
             outer.insert(var.name.clone());
@@ -508,7 +504,7 @@ fn bind_quantified_path_pattern(
             // safety: must be resolved, since do not allow implicit join in QPP
             .unwrap()
             .symbol;
-        let item = ScopeItem::new_variable(vg.group.clone(), symbol.as_deref(), DataType::Relationship);
+        let item = ScopeItem::new_variable(vg.group.clone(), symbol.as_deref(), DataType::Rel);
         scope.add_item(item);
     }
 

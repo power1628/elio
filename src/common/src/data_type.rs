@@ -10,11 +10,13 @@ pub enum DataType {
     // composite
     #[display("List({})", _0)]
     List(Box<DataType>),
-    // map
-    // structural
+    // materialized node: labels and properties
     Node,
+    // node with id
     NodeRef,
-    Relationship,
+    // materialized rel: reltype and properties
+    Rel,
+    // relationship id
     RelationshipRef,
     Path,
     // closed dynamic union type
@@ -35,9 +37,11 @@ impl DataType {
     pub fn is_node(&self) -> bool {
         matches!(self, DataType::Node | DataType::NodeRef)
     }
+
     pub fn is_rel(&self) -> bool {
-        matches!(self, DataType::Relationship | DataType::RelationshipRef)
+        matches!(self, DataType::Rel | DataType::RelationshipRef)
     }
+
     pub fn is_entity(&self) -> bool {
         self.is_node() || self.is_rel()
     }
