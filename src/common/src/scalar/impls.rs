@@ -6,12 +6,8 @@
 //! Contains all macro-generated implementations of scalar methods
 
 use crate::data_type::DataType;
-use crate::macros::for_all_primitive_variants;
-use crate::macros::for_all_variants;
-use crate::scalar::Scalar;
-use crate::scalar::ScalarImpl;
-use crate::scalar::ScalarRef;
-use crate::scalar::ScalarRefImpl;
+use crate::macros::{for_all_primitive_variants, for_all_variants};
+use crate::scalar::{Scalar, ScalarImpl, ScalarRef, ScalarRefImpl};
 
 /// Implements dispatch functions for [`Scalar`]
 macro_rules! impl_scalar_dispatch {

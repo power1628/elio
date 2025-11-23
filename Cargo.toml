@@ -26,6 +26,7 @@ mojito_parser = { path = "src/parser" }
 mojito_storage = { path = "src/storage" }
 
 # other
+async-trait = "0.1.89"
 bytes = "1.10.1"
 derive_more = { version = "2", features = ["display"] }
 educe = "0.6.0"

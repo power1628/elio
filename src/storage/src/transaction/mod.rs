@@ -1,18 +1,21 @@
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use mojito_common::array::chunk::DataChunk;
-use rocksdb::{self};
 
+use crate::cf_property;
 use crate::dict::IdStore;
 use crate::error::GraphStoreError;
+use crate::transaction::node::batch_node_scan;
 
-// mod node;
+mod node;
 // mod relationship;
 
 pub struct RelScanOptions {}
 pub struct NodeScanOptions {}
 
+#[async_trait]
 pub trait DataChunkIterator: Send {
     fn next_batch(&mut self) -> Result<Option<DataChunk>, GraphStoreError>;
 }
@@ -48,28 +51,40 @@ impl RoTransaction {
 }
 
 impl Transaction for RoTransaction {
-    fn rel_scan(&self, opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
+    fn rel_scan(&self, _opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
         todo!()
     }
 
     fn node_scan(&self, opts: &NodeScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
-        todo!()
+        batch_node_scan(&self.inner, opts)
     }
 
-    fn node_create(&self, node: &DataChunk) -> Result<(), GraphStoreError> {
-        todo!()
+    fn node_create(&self, _node: &DataChunk) -> Result<(), GraphStoreError> {
+        // readonly transaction, not allowed to create node
+        Err(GraphStoreError::internal(
+            "readonly transaction, not allowed to create node",
+        ))
     }
 
-    fn relationship_create(&self, rel: &DataChunk) -> Result<(), GraphStoreError> {
-        todo!()
+    fn relationship_create(&self, _rel: &DataChunk) -> Result<(), GraphStoreError> {
+        // readonly transaction, not allowed to create relationship
+        Err(GraphStoreError::internal(
+            "readonly transaction, not allowed to create relationship",
+        ))
     }
 
-    fn node_delete(&self, node: &DataChunk) -> Result<(), GraphStoreError> {
-        todo!()
+    fn node_delete(&self, _node: &DataChunk) -> Result<(), GraphStoreError> {
+        // readonly transaction, not allowed to delete node
+        Err(GraphStoreError::internal(
+            "readonly transaction, not allowed to delete node",
+        ))
     }
 
-    fn relationship_delete(&self, rel: &DataChunk) -> Result<(), GraphStoreError> {
-        todo!()
+    fn relationship_delete(&self, _rel: &DataChunk) -> Result<(), GraphStoreError> {
+        // readonly transaction, not allowed to delete relationship
+        Err(GraphStoreError::internal(
+            "readonly transaction, not allowed to delete relationship",
+        ))
     }
 
     fn commit(self) -> Result<(), GraphStoreError> {
@@ -97,27 +112,27 @@ impl RwTransaction {
 }
 
 impl Transaction for RwTransaction {
-    fn rel_scan(&self, opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
+    fn rel_scan(&self, _opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
         todo!()
     }
 
     fn node_scan(&self, opts: &NodeScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
+        batch_node_scan(&self.inner, opts)
+    }
+
+    fn node_create(&self, _node: &DataChunk) -> Result<(), GraphStoreError> {
         todo!()
     }
 
-    fn node_create(&self, node: &DataChunk) -> Result<(), GraphStoreError> {
+    fn relationship_create(&self, _rel: &DataChunk) -> Result<(), GraphStoreError> {
         todo!()
     }
 
-    fn relationship_create(&self, rel: &DataChunk) -> Result<(), GraphStoreError> {
+    fn node_delete(&self, _node: &DataChunk) -> Result<(), GraphStoreError> {
         todo!()
     }
 
-    fn node_delete(&self, node: &DataChunk) -> Result<(), GraphStoreError> {
-        todo!()
-    }
-
-    fn relationship_delete(&self, rel: &DataChunk) -> Result<(), GraphStoreError> {
+    fn relationship_delete(&self, _rel: &DataChunk) -> Result<(), GraphStoreError> {
         todo!()
     }
 
@@ -130,9 +145,9 @@ impl Transaction for RwTransaction {
     }
 }
 
-struct OwnedTransaction {
-    _db: Arc<rocksdb::TransactionDB>,
-    tx: rocksdb::Transaction<'static, rocksdb::TransactionDB>,
+pub(crate) struct OwnedTransaction {
+    pub(crate) _db: Arc<rocksdb::TransactionDB>,
+    pub(crate) tx: rocksdb::Transaction<'static, rocksdb::TransactionDB>,
 }
 
 impl OwnedTransaction {
@@ -184,5 +199,44 @@ impl Deref for OwnedSnapshot {
 
     fn deref(&self) -> &Self::Target {
         &self.snapshot
+    }
+}
+
+pub trait TxRead {
+    type DBAccess: rocksdb::DBAccess;
+    /// full data scan, without seek
+    fn full_iter(&self) -> rocksdb::DBIteratorWithThreadMode<'_, Self::DBAccess>;
+}
+
+impl TxRead for OwnedSnapshot {
+    type DBAccess = rocksdb::DBWithThreadMode<rocksdb::MultiThreaded>;
+
+    fn full_iter(&self) -> rocksdb::DBIteratorWithThreadMode<'_, Self::DBAccess> {
+        self.iter()
+    }
+}
+
+impl TxRead for OwnedTransaction {
+    type DBAccess = rocksdb::Transaction<'static, rocksdb::TransactionDB>;
+
+    fn full_iter(&self) -> rocksdb::DBIteratorWithThreadMode<'_, Self::DBAccess> {
+        self.iter()
+    }
+}
+
+impl OwnedSnapshot {
+    pub fn iter(&self) -> rocksdb::DBIteratorWithThreadMode<'_, rocksdb::DB> {
+        let cf = self._db.cf_handle(cf_property::CF_NAME).unwrap();
+        let readopts = rocksdb::ReadOptions::default();
+        let mode = rocksdb::IteratorMode::Start;
+        self.snapshot.iterator_cf_opt(&cf, readopts, mode)
+    }
+}
+
+impl OwnedTransaction {
+    pub fn iter(&self) -> rocksdb::DBIteratorWithThreadMode<'_, rocksdb::Transaction<'static, rocksdb::TransactionDB>> {
+        let cf = self._db.cf_handle(cf_property::CF_NAME).unwrap();
+        let mode = rocksdb::IteratorMode::Start;
+        self.tx.iterator_cf(&cf, mode)
     }
 }

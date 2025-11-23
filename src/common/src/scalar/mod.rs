@@ -10,6 +10,10 @@
 
 use crate::array::Array;
 pub mod impls;
+pub mod node;
+pub mod rel;
+pub use node::*;
+pub use rel::*;
 
 pub trait Scalar: std::fmt::Debug + Clone + Send + Sync + 'static + Into<ScalarImpl>
 where
@@ -39,10 +43,14 @@ pub trait ScalarRef<'a>: std::fmt::Debug + Clone + Copy + Send + 'a + Into<Scala
 pub enum ScalarImpl {
     Bool(bool),
     String(String),
+    Node(NodeValue),
+    Rel(RelValue),
 }
 
 #[derive(Debug, Clone, Copy)]
 pub enum ScalarRefImpl<'a> {
     Bool(bool),
     String(&'a str),
+    Node(NodeValueRef<'a>),
+    Rel(RelValueRef<'a>),
 }

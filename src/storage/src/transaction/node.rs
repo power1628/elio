@@ -1,48 +1,31 @@
-use mojito_common::{LabelId, NodeId, PropertyKeyId, store_types::PropertyValue, value::Value};
+use mojito_common::array::ArrayImpl;
+use mojito_common::array::chunk::DataChunk;
 
-use crate::{error::GraphStoreError, transaction::Transaction};
+use crate::cf_property;
+use crate::error::GraphStoreError;
+use crate::transaction::{DataChunkIterator, NodeScanOptions, OwnedTransaction, TxRead};
 
-impl Transaction {
-    pub fn node_create(
-        &self,
-        _labels: Vec<LabelId>,
-        _props: Vec<(PropertyKeyId, Value)>,
-    ) -> Result<NodeId, GraphStoreError> {
-        todo!()
+// node create id
+// node -> encoding -> rocksdb write batch
+pub(crate) fn batch_node_create(tx: &OwnedTransaction, _chunk: &DataChunk) -> Result<ArrayImpl, GraphStoreError> {
+    // allocate node id for the batch
+
+    // encode node to keys and values
+
+    // construct batch
+    let keys: Vec<Vec<u8>> = vec![];
+    let vals: Vec<Vec<u8>> = vec![];
+    let cf = tx._db.cf_handle(cf_property::CF_NAME).unwrap();
+    for (k, v) in keys.iter().zip(vals.iter()) {
+        tx.put_cf(&cf, k, v)?;
     }
+    todo!()
+}
 
-    pub fn node_delete(&self, _node_id: NodeId) -> Result<bool, GraphStoreError> {
-        todo!()
-    }
-
-    /// return number of deleted relationships
-    pub fn node_detach_delete(&self, _node_id: NodeId) -> Result<u64, GraphStoreError> {
-        todo!()
-    }
-
-    /// return true if label added
-    pub fn node_add_label(&self, _node_id: NodeId, _label: LabelId) -> Result<bool, GraphStoreError> {
-        todo!()
-    }
-
-    pub fn node_remove_label(&self, _node_id: NodeId, _label: LabelId) -> Result<bool, GraphStoreError> {
-        todo!()
-    }
-
-    pub fn node_set_property(&self, _key: PropertyKeyId, _value: PropertyValue) -> Result<(), GraphStoreError> {
-        todo!()
-    }
-
-    pub fn node_remove_property(&self, _key: PropertyKeyId) -> Result<(), GraphStoreError> {
-        todo!()
-    }
-
-    pub fn node_apply_changes(
-        &self,
-        _added_label: Vec<LabelId>,
-        _removed_label: Vec<LabelId>,
-        _properties: Vec<(PropertyKeyId, PropertyValue)>,
-    ) -> Result<(), GraphStoreError> {
-        todo!()
-    }
+pub(crate) fn batch_node_scan<T: TxRead>(
+    tx: &T,
+    _opts: &NodeScanOptions,
+) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
+    let _iter = tx.full_iter();
+    todo!()
 }

@@ -14,11 +14,16 @@ pub mod buffer;
 pub mod chunk;
 pub mod impls;
 pub mod iterator;
+pub mod node;
+pub mod rel;
 pub mod string;
-use crate::scalar::{Scalar, ScalarRef};
 pub use boolean::*;
 pub use iterator::*;
 pub use string::*;
+
+use crate::array::node::{NodeArray, NodeArrayBuilder};
+use crate::array::rel::{RelArray, RelArrayBuilder};
+use crate::scalar::{Scalar, ScalarRef};
 
 pub mod mask;
 // pub mod primitive_array;
@@ -90,16 +95,22 @@ pub trait ArrayBuilder {
 pub enum ArrayImpl {
     Bool(BoolArray),
     String(StringArray),
+    Node(NodeArray),
+    Rel(RelArray),
 }
 
 #[derive(Clone, Debug)]
 pub enum ArrayImplRef<'a> {
     Bool(&'a BoolArray),
     String(&'a StringArray),
+    Node(&'a NodeArray),
+    Rel(&'a RelArray),
 }
 
 /// Encapsules all variants of array builders in this library.
 pub enum ArrayBuilderImpl {
     Bool(BoolArrayBuilder),
     String(StringArrayBuilder),
+    Node(NodeArrayBuilder),
+    Rel(RelArrayBuilder),
 }

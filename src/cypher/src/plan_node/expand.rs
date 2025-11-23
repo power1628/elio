@@ -43,11 +43,11 @@ impl ExpandInner {
         match self.kind {
             ExpandKind::All => {
                 // add [r, to] to output
-                schema.fields.push(Variable::new(&self.rel, &DataType::Relationship));
+                schema.fields.push(Variable::new(&self.rel, &DataType::Rel));
                 schema.fields.push(Variable::new(&self.to, &DataType::Node));
             }
             // add [r] to output
-            ExpandKind::Into => schema.fields.push(Variable::new(&self.rel, &DataType::Relationship)),
+            ExpandKind::Into => schema.fields.push(Variable::new(&self.rel, &DataType::Rel)),
         }
         schema.into()
     }

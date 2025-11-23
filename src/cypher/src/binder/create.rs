@@ -175,7 +175,7 @@ fn bind_create_part(
             symbol: Some(symbol.to_owned()),
             variable: var_name.clone(),
             expr: Default::default(),
-            typ: DataType::Relationship,
+            typ: DataType::Rel,
         };
         create_scope.add_item(item);
 
