@@ -5,11 +5,7 @@
 
 //! Contains all macro-generated implementations of array methods
 
-use crate::array::Array;
-use crate::array::ArrayBuilder;
-use crate::array::ArrayBuilderImpl;
-use crate::array::ArrayImpl;
-use crate::array::ArrayImplRef;
+use crate::array::{Array, ArrayBuilder, ArrayBuilderImpl, ArrayImpl, ArrayImplRef};
 use crate::data_type::DataType;
 use crate::macros::for_all_variants;
 use crate::scalar::ScalarRefImpl;
@@ -127,25 +123,25 @@ macro_rules! impl_array_conversion {
 
 for_all_variants! { impl_array_conversion }
 
-/// Implements `data_type` for [`Array`]
-macro_rules! impl_data_type {
-    (
-        [], $({ $Abc:ident, $abc:ident, $AbcArray:ty, $AbcArrayBuilder:ty, $Owned:ty, $Ref:ty }),*
-    ) => {
-        $(
-            impl $AbcArray {
-                fn data_type(&self) -> DataType {
-                    DataType::$Abc
-                }
-            }
+//// Implements `data_type` for [`Array`]
+// macro_rules! impl_data_type {
+//     (
+//         [], $({ $Abc:ident, $abc:ident, $AbcArray:ty, $AbcArrayBuilder:ty, $Owned:ty, $Ref:ty }),*
+//     ) => {
+//         $(
+//             impl $AbcArray {
+//                 fn data_type(&self) -> DataType {
+//                     DataType::$Abc
+//                 }
+//             }
 
-            impl $AbcArrayBuilder {
-                fn data_type(&self) -> DataType {
-                    DataType::$Abc
-                }
-            }
-        )*
-    };
-}
+//             impl $AbcArrayBuilder {
+//                 fn data_type(&self) -> DataType {
+//                     DataType::$Abc
+//                 }
+//             }
+//         )*
+//     };
+// }
 
-for_all_variants! { impl_data_type }
+// for_all_variants! { impl_data_type }

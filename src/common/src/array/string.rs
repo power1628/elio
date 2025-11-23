@@ -1,8 +1,7 @@
-use crate::array::{
-    Array, ArrayBuilder, ArrayIterator,
-    buffer::{Buffer, BufferMut},
-    mask::{Mask, MaskMut},
-};
+use crate::array::buffer::{Buffer, BufferMut};
+use crate::array::mask::{Mask, MaskMut};
+use crate::array::{Array, ArrayBuilder, ArrayIterator};
+use crate::data_type::DataType;
 
 #[derive(Clone, Debug)]
 pub struct StringArray {
@@ -15,9 +14,7 @@ pub struct StringArray {
 
 impl Array for StringArray {
     type Builder = StringArrayBuilder;
-
     type OwnedItem = String;
-
     type RefItem<'a> = &'a str;
 
     fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
@@ -42,6 +39,10 @@ impl Array for StringArray {
 
     fn iter(&self) -> super::ArrayIterator<'_, Self> {
         ArrayIterator::new(self)
+    }
+
+    fn data_type(&self) -> DataType {
+        DataType::String
     }
 }
 
@@ -74,6 +75,7 @@ impl ArrayBuilder for StringArrayBuilder {
             self.valid.push(false);
         }
     }
+
     fn finish(self) -> Self::Array {
         let data = self.data.freeze();
         let offsets = self.offsets.freeze();

@@ -9,7 +9,9 @@
 //! This file is derived from https://github.com/skyzh/type-exercise-in-rust
 
 use crate::array::Array;
+use crate::scalar::list::{ListValue, ListValueRef};
 pub mod impls;
+pub mod list;
 pub mod node;
 pub mod rel;
 pub use node::*;
@@ -45,6 +47,7 @@ pub enum ScalarImpl {
     String(String),
     Node(NodeValue),
     Rel(RelValue),
+    List(ListValue),
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -53,4 +56,5 @@ pub enum ScalarRefImpl<'a> {
     String(&'a str),
     Node(NodeValueRef<'a>),
     Rel(RelValueRef<'a>),
+    List(ListValueRef<'a>),
 }

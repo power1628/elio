@@ -5,7 +5,9 @@ use crate::cf_property;
 use crate::error::GraphStoreError;
 use crate::transaction::{DataChunkIterator, NodeScanOptions, OwnedTransaction, TxRead};
 
-// node create id
+// expected input columns
+// label: Vec<LabelId> | ListArray<u16>
+// properties: Vec<(PropertyKeyId, PropertyValue)> | StructArray
 // node -> encoding -> rocksdb write batch
 pub(crate) fn batch_node_create(tx: &OwnedTransaction, _chunk: &DataChunk) -> Result<ArrayImpl, GraphStoreError> {
     // allocate node id for the batch

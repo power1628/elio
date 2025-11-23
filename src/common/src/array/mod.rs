@@ -14,6 +14,7 @@ pub mod buffer;
 pub mod chunk;
 pub mod impls;
 pub mod iterator;
+pub mod list;
 pub mod node;
 pub mod rel;
 pub mod string;
@@ -21,8 +22,10 @@ pub use boolean::*;
 pub use iterator::*;
 pub use string::*;
 
+use crate::array::list::{ListArray, ListArrayBuilder};
 use crate::array::node::{NodeArray, NodeArrayBuilder};
 use crate::array::rel::{RelArray, RelArrayBuilder};
+use crate::data_type::DataType;
 use crate::scalar::{Scalar, ScalarRef};
 
 pub mod mask;
@@ -69,6 +72,8 @@ pub trait Array: Send + Sync + Sized + 'static + Into<ArrayImpl> + Clone {
         }
         builder.finish()
     }
+
+    fn data_type(&self) -> DataType;
 }
 
 /// [`ArrayBuilder`] builds an [`Array`].
@@ -97,6 +102,7 @@ pub enum ArrayImpl {
     String(StringArray),
     Node(NodeArray),
     Rel(RelArray),
+    List(ListArray),
 }
 
 #[derive(Clone, Debug)]
@@ -105,6 +111,7 @@ pub enum ArrayImplRef<'a> {
     String(&'a StringArray),
     Node(&'a NodeArray),
     Rel(&'a RelArray),
+    List(&'a ListArray),
 }
 
 /// Encapsules all variants of array builders in this library.
@@ -113,4 +120,5 @@ pub enum ArrayBuilderImpl {
     String(StringArrayBuilder),
     Node(NodeArrayBuilder),
     Rel(RelArrayBuilder),
+    List(ListArrayBuilder),
 }

@@ -1,7 +1,6 @@
-use crate::array::{
-    Array, ArrayBuilder, ArrayIterator,
-    mask::{Mask, MaskMut},
-};
+use crate::array::mask::{Mask, MaskMut};
+use crate::array::{Array, ArrayBuilder, ArrayIterator};
+use crate::data_type::DataType;
 
 #[derive(Clone, Debug)]
 pub struct BoolArray {
@@ -11,9 +10,7 @@ pub struct BoolArray {
 
 impl Array for BoolArray {
     type Builder = BoolArrayBuilder;
-
     type OwnedItem = bool;
-
     type RefItem<'a> = bool;
 
     fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
@@ -34,6 +31,10 @@ impl Array for BoolArray {
 
     fn iter(&self) -> super::ArrayIterator<'_, Self> {
         ArrayIterator::new(self)
+    }
+
+    fn data_type(&self) -> crate::data_type::DataType {
+        DataType::Bool
     }
 }
 

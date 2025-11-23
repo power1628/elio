@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use crate::array::buffer::Buffer;
 use crate::array::{Array, ArrayBuilder};
+use crate::data_type::DataType;
 use crate::scalar::rel::{RelValue, RelValueRef};
 use crate::store_types::PropertyValue;
 use crate::{NodeId, PropertyKeyId, RelationshipId, RelationshipTypeId};
@@ -34,6 +35,10 @@ impl Array for RelArray {
 
     fn iter(&self) -> super::ArrayIterator<'_, Self> {
         todo!()
+    }
+
+    fn data_type(&self) -> DataType {
+        DataType::Rel
     }
 }
 

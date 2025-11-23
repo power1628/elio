@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use crate::array::buffer::Buffer;
 use crate::array::{Array, ArrayBuilder};
+use crate::data_type::DataType;
 use crate::scalar::node::{NodeValue, NodeValueRef};
 use crate::store_types::PropertyValue;
 use crate::{LabelId, NodeId, PropertyKeyId};
@@ -33,6 +34,10 @@ impl Array for NodeArray {
 
     fn iter(&self) -> super::ArrayIterator<'_, Self> {
         todo!()
+    }
+
+    fn data_type(&self) -> DataType {
+        DataType::Node
     }
 }
 

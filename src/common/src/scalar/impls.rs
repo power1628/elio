@@ -5,7 +5,7 @@
 
 //! Contains all macro-generated implementations of scalar methods
 
-use crate::data_type::DataType;
+// use crate::data_type::DataType;
 use crate::macros::{for_all_primitive_variants, for_all_variants};
 use crate::scalar::{Scalar, ScalarImpl, ScalarRef, ScalarRefImpl};
 
@@ -25,7 +25,7 @@ macro_rules! impl_scalar_dispatch {
     }
 }
 
-for_all_variants! { impl_scalar_dispatch }
+// for_all_variants! { impl_scalar_dispatch }
 
 /// Implements dispatch functions for [`ScalarRef`]
 macro_rules! impl_scalar_ref_dispatch {
@@ -43,7 +43,7 @@ macro_rules! impl_scalar_ref_dispatch {
     }
 }
 
-for_all_variants! { impl_scalar_ref_dispatch }
+// for_all_variants! { impl_scalar_ref_dispatch }
 
 /// Implements `TryFrom` and `From` for [`Scalar`] and [`ScalarRef`].
 macro_rules! impl_scalar_conversion {
