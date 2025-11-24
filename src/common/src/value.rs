@@ -1,6 +1,4 @@
-use ordered_float::OrderedFloat;
 
-use crate::{LabelId, NodeId, PropertyKeyId, RelationshipId, RelationshipTypeId};
 
 // #[derive(Debug, Hash, Clone, Eq, PartialEq)]
 // pub enum Value {

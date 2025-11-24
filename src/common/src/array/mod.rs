@@ -33,6 +33,7 @@ use crate::array::prop_map::{PropertyMapArray, PropertyMapArrayBuilder};
 use crate::array::rel::{RelArray, RelArrayBuilder};
 use crate::data_type::DataType;
 use crate::scalar::{Scalar, ScalarRef};
+use crate::{NodeId, RelationshipId};
 
 pub mod mask;
 
@@ -46,6 +47,8 @@ impl PrimitiveType for u64 {}
 impl PrimitiveType for f32 {}
 impl PrimitiveType for f64 {}
 impl PrimitiveType for usize {}
+impl PrimitiveType for NodeId {}
+impl PrimitiveType for RelationshipId {}
 
 /// [`Array`] is a collection of data of the same type.
 pub trait Array: Send + Sync + Sized + 'static + Into<ArrayImpl> + Clone {

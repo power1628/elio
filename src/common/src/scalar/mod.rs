@@ -11,6 +11,7 @@
 use crate::array::Array;
 use crate::scalar::list::{ListValue, ListValueRef};
 use crate::store_types::PropertyValue;
+use crate::{NodeId, RelationshipId};
 pub mod impls;
 pub mod list;
 pub mod node;
@@ -19,7 +20,6 @@ pub mod prop_value;
 pub mod rel;
 pub use node::*;
 pub use prop_map::*;
-pub use prop_value::*;
 pub use rel::*;
 
 pub trait Scalar: std::fmt::Debug + Clone + Send + Sync + 'static + Into<ScalarImpl>
@@ -53,8 +53,8 @@ pub enum ScalarImpl {
     Float(f64),
     String(String),
     TokenId(u16),
-    NodeId(u64),
-    RelId(u64),
+    NodeId(NodeId),
+    RelId(RelationshipId),
     List(ListValue),
     Node(NodeValue),
     Rel(RelValue),
@@ -69,8 +69,8 @@ pub enum ScalarRefImpl<'a> {
     Float(f64),
     String(&'a str),
     TokenId(u16),
-    NodeId(u64),
-    RelId(u64),
+    NodeId(NodeId),
+    RelId(RelationshipId),
     Node(NodeValueRef<'a>),
     Rel(RelValueRef<'a>),
     List(ListValueRef<'a>),

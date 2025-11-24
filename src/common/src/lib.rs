@@ -8,8 +8,8 @@ pub mod store_types;
 pub mod value;
 pub mod variable;
 
-pub type NodeId = u64;
-pub type RelationshipId = u64;
+// pub type NodeId = u64;
+// pub type RelationshipId = u64;
 
 pub type TokenId = u16;
 pub type LabelId = TokenId;
@@ -24,3 +24,11 @@ pub enum EntityKind {
     Node,
     Rel,
 }
+
+#[derive(derive_more::Display, derive_more::Deref, derive_more::From, derive_more::Into, Debug, Copy, Clone)]
+#[repr(transparent)]
+pub struct NodeId(pub u64);
+
+#[derive(derive_more::Display, derive_more::Deref, derive_more::From, derive_more::Into, Debug, Copy, Clone)]
+#[repr(transparent)]
+pub struct RelationshipId(pub u64);

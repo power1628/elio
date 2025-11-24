@@ -13,11 +13,11 @@ impl Array for PropertyArray {
     type OwnedItem = PropertyValue;
     type RefItem<'a> = &'a PropertyValue;
 
-    fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
+    fn get(&self, _idx: usize) -> Option<Self::RefItem<'_>> {
         todo!()
     }
 
-    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
+    unsafe fn get_unchecked(&self, _idx: usize) -> Self::RefItem<'_> {
         todo!()
     }
 
@@ -41,11 +41,11 @@ pub struct PropertyArrayBuilder {
 impl ArrayBuilder for PropertyArrayBuilder {
     type Array = PropertyArray;
 
-    fn with_capacity(capacity: usize) -> Self {
+    fn with_capacity(_capacity: usize) -> Self {
         todo!()
     }
 
-    fn push(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>) {
+    fn push(&mut self, _value: Option<<Self::Array as Array>::RefItem<'_>>) {
         todo!()
     }
 

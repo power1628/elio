@@ -5,5 +5,5 @@ edition.workspace = true
 
 [dependencies]
 bytes = { workspace = true }
-derive_more = { workspace = true, features = ["display"] }
+derive_more = { workspace = true, features = ["full"] }
 ordered-float = { workspace = true }

@@ -25,11 +25,11 @@ impl IdStore {
 
 impl IdStore {
     pub fn next_node_id(&self) -> Result<NodeId, GraphStoreError> {
-        self.node_id.next_id()
+        self.node_id.next_id().map(|id| id.into())
     }
 
     pub fn next_rel_id(&self) -> Result<RelationshipId, GraphStoreError> {
-        self.rel_id.next_id()
+        self.rel_id.next_id().map(|id| id.into())
     }
 }
 
