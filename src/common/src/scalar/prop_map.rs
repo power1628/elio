@@ -3,23 +3,26 @@ use crate::array::prop_map::PropertyMapArray;
 use crate::scalar::{Scalar, ScalarRef};
 use crate::store_types::PropertyValue;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, derive_more::DerefMut, derive_more::Deref, derive_more::From, derive_more::Into)]
 pub struct PropertyMapValue(Vec<(PropertyKeyId, PropertyValue)>);
 
 impl Scalar for PropertyMapValue {
     type ArrayType = PropertyMapArray;
-    type RefType<'a> = &'a PropertyMapValue;
+    type RefType<'a> = PropertyMapValueRef<'a>;
 
     fn as_scalar_ref(&self) -> Self::RefType<'_> {
-        todo!()
+        PropertyMapValueRef(&self.0)
     }
 }
 
-impl<'a> ScalarRef<'a> for &'a PropertyMapValue {
+#[derive(Clone, Copy, Debug, derive_more::DerefMut, derive_more::Deref, derive_more::From, derive_more::Into)]
+pub struct PropertyMapValueRef<'a>(&'a [(PropertyKeyId, PropertyValue)]);
+
+impl<'a> ScalarRef<'a> for PropertyMapValueRef<'a> {
     type ArrayType = PropertyMapArray;
     type ScalarType = PropertyMapValue;
 
     fn to_owned_scalar(&self) -> Self::ScalarType {
-        todo!()
+        Self::ScalarType::from(self.0.to_vec())
     }
 }

@@ -26,7 +26,7 @@ macro_rules! for_all_variants {
             { Rel, rel, crate::array::RelArray, crate::array::RelArrayBuilder, crate::scalar::RelValue, crate::scalar::RelValueRef<'a> },
             { List, list, crate::array::ListArray, crate::array::ListArrayBuilder, crate::scalar::ListValue, crate::scalar::ListValueRef<'a> },
             { Property, any, crate::array::PropertyArray, crate::array::PropertyArrayBuilder, crate::scalar::PropertyValue, &'a crate::scalar::PropertyValue },
-            { PropertyMap, map, crate::array::PropertyMapArray, crate::array::PropertyMapArrayBuilder, crate::scalar::PropertyMapValue, &'a crate::scalar::PropertyMapValue }
+            { PropertyMap, map, crate::array::PropertyMapArray, crate::array::PropertyMapArrayBuilder, crate::scalar::PropertyMapValue, crate::scalar::PropertyMapValueRef<'a> }
         }
     };
 }

@@ -1,5 +1,6 @@
 #[derive(Clone, Debug)]
 pub enum PropertyValue {
+    // TODO(pgao): maybe get rid of null here?
     Null,
     Boolean(bool),
     Integer(i64),

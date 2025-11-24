@@ -1,18 +1,19 @@
 use crate::array::buffer::{Buffer, BufferMut};
 use crate::array::mask::{Mask, MaskMut};
-use crate::array::{Array, ArrayBuilder, ArrayImpl, PrimitiveType};
+use crate::array::{Array, ArrayBuilder, ArrayImpl, ArrayIterator, PrimitiveArrayElementType};
+use crate::data_type::DataType;
 use crate::scalar::{Scalar, ScalarRef};
 use crate::{NodeId, RelationshipId};
 
 #[derive(Clone, Debug)]
-pub struct PrimitiveArray<T: PrimitiveType> {
+pub struct PrimitiveArray<T: PrimitiveArrayElementType> {
     data: Buffer<T>,
     valid: Mask,
 }
 
 impl<T> Array for PrimitiveArray<T>
 where
-    T: PrimitiveType,
+    T: PrimitiveArrayElementType,
     T: Scalar<ArrayType = Self>,
     for<'a> T: ScalarRef<'a, ScalarType = T, ArrayType = Self>,
     for<'a> T: Scalar<RefType<'a> = T>,
@@ -24,35 +25,35 @@ where
     // primive types, just copy the value
     type RefItem<'a> = T;
 
-    fn get(&self, _idx: usize) -> Option<Self::RefItem<'_>> {
-        todo!()
+    fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
+        self.valid.get(idx).then(|| self.data[idx])
     }
 
-    unsafe fn get_unchecked(&self, _idx: usize) -> Self::RefItem<'_> {
-        todo!()
+    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
+        self.data[idx]
     }
 
     fn len(&self) -> usize {
-        todo!()
+        self.data.len()
     }
 
     fn iter(&self) -> super::ArrayIterator<'_, Self> {
-        todo!()
+        ArrayIterator::new(self)
     }
 
-    fn data_type(&self) -> crate::data_type::DataType {
-        todo!()
+    fn data_type(&self) -> DataType {
+        T::data_type()
     }
 }
 
-pub struct PrimitiveArrayBuilder<T: PrimitiveType> {
+pub struct PrimitiveArrayBuilder<T: PrimitiveArrayElementType> {
     data: BufferMut<T>,
     valid: MaskMut,
 }
 
 impl<T> ArrayBuilder for PrimitiveArrayBuilder<T>
 where
-    T: PrimitiveType,
+    T: PrimitiveArrayElementType,
     T: Scalar<ArrayType = PrimitiveArray<T>>,
     for<'a> T: ScalarRef<'a, ScalarType = T, ArrayType = PrimitiveArray<T>>,
     for<'a> T: Scalar<RefType<'a> = T>,
@@ -62,16 +63,27 @@ where
 {
     type Array = PrimitiveArray<T>;
 
-    fn with_capacity(_capacity: usize) -> Self {
-        todo!()
+    fn with_capacity(capacity: usize) -> Self {
+        Self {
+            data: BufferMut::with_capacity(capacity),
+            valid: MaskMut::with_capacity(capacity),
+        }
     }
 
-    fn push(&mut self, _value: Option<<Self::Array as Array>::RefItem<'_>>) {
-        todo!()
+    fn push(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>) {
+        if let Some(value) = value {
+            self.data.push(value);
+            self.valid.push(true);
+        } else {
+            self.valid.push(false);
+        }
     }
 
     fn finish(self) -> Self::Array {
-        todo!()
+        Self::Array {
+            data: self.data.freeze(),
+            valid: self.valid.freeze(),
+        }
     }
 }
 

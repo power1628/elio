@@ -4,18 +4,30 @@ use std::ops::Range;
 
 use bytes::{Bytes, BytesMut};
 
-use crate::array::PrimitiveType;
+use crate::{NodeId, RelationshipId};
+
+pub trait BufferElementType: Send + Sync + Clone + Copy + std::fmt::Debug {}
+
+impl BufferElementType for u8 {}
+impl BufferElementType for u16 {}
+impl BufferElementType for u32 {}
+impl BufferElementType for usize {}
+impl BufferElementType for i64 {}
+impl BufferElementType for u64 {}
+impl BufferElementType for f64 {}
+impl BufferElementType for NodeId {}
+impl BufferElementType for RelationshipId {}
 
 // Typed buffer for storing elements of type T.
 // Require T must be primitive types
 #[derive(Clone, Debug)]
-pub struct Buffer<T: PrimitiveType> {
+pub struct Buffer<T: BufferElementType> {
     data: Bytes,
     len: usize,
     _phantom: PhantomData<T>,
 }
 
-impl<T: PrimitiveType> Buffer<T> {
+impl<T: BufferElementType> Buffer<T> {
     pub fn new(data: Bytes, len: usize) -> Self {
         Self {
             data,
@@ -51,7 +63,7 @@ impl<T: PrimitiveType> Buffer<T> {
     }
 }
 
-impl<T: PrimitiveType> std::ops::Index<usize> for Buffer<T> {
+impl<T: BufferElementType> std::ops::Index<usize> for Buffer<T> {
     type Output = T;
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -60,7 +72,7 @@ impl<T: PrimitiveType> std::ops::Index<usize> for Buffer<T> {
 }
 
 // index range
-impl<T: PrimitiveType> std::ops::Index<Range<usize>> for Buffer<T> {
+impl<T: BufferElementType> std::ops::Index<Range<usize>> for Buffer<T> {
     type Output = [T];
 
     fn index(&self, index: Range<usize>) -> &Self::Output {
@@ -74,7 +86,7 @@ pub struct BufferMut<T> {
     _phantom: PhantomData<T>,
 }
 
-impl<T> BufferMut<T> {
+impl<T: BufferElementType> BufferMut<T> {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             data: BytesMut::with_capacity(capacity * size_of::<T>()),
@@ -140,7 +152,7 @@ impl<T> BufferMut<T> {
 
     pub fn freeze(self) -> Buffer<T>
     where
-        T: PrimitiveType,
+        T: BufferElementType,
     {
         Buffer {
             data: self.data.into(),

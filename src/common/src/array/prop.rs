@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use crate::array::{Array, ArrayBuilder};
+use crate::array::{Array, ArrayBuilder, ArrayIterator};
+use crate::data_type::DataType;
 use crate::store_types::PropertyValue;
 
 #[derive(Debug, Clone)]
@@ -13,24 +14,26 @@ impl Array for PropertyArray {
     type OwnedItem = PropertyValue;
     type RefItem<'a> = &'a PropertyValue;
 
-    fn get(&self, _idx: usize) -> Option<Self::RefItem<'_>> {
-        todo!()
+    fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
+        // note: propertyvalue contains null
+        Some(&self.data[idx])
     }
 
-    unsafe fn get_unchecked(&self, _idx: usize) -> Self::RefItem<'_> {
-        todo!()
+    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
+        // note: propertyvalue contains null
+        &self.data[idx]
     }
 
     fn len(&self) -> usize {
-        todo!()
+        self.data.len()
     }
 
     fn iter(&self) -> super::ArrayIterator<'_, Self> {
-        todo!()
+        ArrayIterator::new(self)
     }
 
-    fn data_type(&self) -> crate::data_type::DataType {
-        todo!()
+    fn data_type(&self) -> DataType {
+        DataType::Property
     }
 }
 
@@ -41,15 +44,20 @@ pub struct PropertyArrayBuilder {
 impl ArrayBuilder for PropertyArrayBuilder {
     type Array = PropertyArray;
 
-    fn with_capacity(_capacity: usize) -> Self {
-        todo!()
+    fn with_capacity(capacity: usize) -> Self {
+        Self {
+            buffer: Vec::with_capacity(capacity),
+        }
     }
 
-    fn push(&mut self, _value: Option<<Self::Array as Array>::RefItem<'_>>) {
-        todo!()
+    fn push(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>) {
+        assert!(value.is_some());
+        self.buffer.push(value.unwrap().clone());
     }
 
     fn finish(self) -> Self::Array {
-        todo!()
+        Self::Array {
+            data: self.buffer.into(),
+        }
     }
 }

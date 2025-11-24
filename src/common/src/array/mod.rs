@@ -26,6 +26,7 @@ pub use iterator::*;
 pub use primitive::*;
 pub use string::*;
 
+use crate::array::buffer::BufferElementType;
 use crate::array::list::{ListArray, ListArrayBuilder};
 use crate::array::node::{NodeArray, NodeArrayBuilder};
 use crate::array::prop::{PropertyArray, PropertyArrayBuilder};
@@ -37,18 +38,39 @@ use crate::{NodeId, RelationshipId};
 
 pub mod mask;
 
-pub trait PrimitiveType: Clone + Copy + std::fmt::Debug + Sized + Send + Sync {}
+pub trait PrimitiveArrayElementType: BufferElementType + Clone + Copy + std::fmt::Debug + Sized + Send + Sync {
+    fn data_type() -> DataType;
+}
 
-impl PrimitiveType for u8 {}
-impl PrimitiveType for u16 {}
-impl PrimitiveType for u32 {}
-impl PrimitiveType for i64 {}
-impl PrimitiveType for u64 {}
-impl PrimitiveType for f32 {}
-impl PrimitiveType for f64 {}
-impl PrimitiveType for usize {}
-impl PrimitiveType for NodeId {}
-impl PrimitiveType for RelationshipId {}
+impl PrimitiveArrayElementType for u16 {
+    fn data_type() -> DataType {
+        DataType::U16
+    }
+}
+// impl PrimitiveType for u32 {}
+impl PrimitiveArrayElementType for i64 {
+    fn data_type() -> DataType {
+        DataType::Integer
+    }
+}
+// impl PrimitiveType for u64 {}
+// impl PrimitiveType for f32 {}
+impl PrimitiveArrayElementType for f64 {
+    fn data_type() -> DataType {
+        DataType::Float
+    }
+}
+// impl PrimitiveType for usize {}
+impl PrimitiveArrayElementType for NodeId {
+    fn data_type() -> DataType {
+        DataType::NodeId
+    }
+}
+impl PrimitiveArrayElementType for RelationshipId {
+    fn data_type() -> DataType {
+        DataType::RelId
+    }
+}
 
 /// [`Array`] is a collection of data of the same type.
 pub trait Array: Send + Sync + Sized + 'static + Into<ArrayImpl> + Clone {

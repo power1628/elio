@@ -9,7 +9,7 @@ impl Scalar for PropertyValue {
     type RefType<'a> = &'a PropertyValue;
 
     fn as_scalar_ref(&self) -> Self::RefType<'_> {
-        todo!()
+        self
     }
 }
 
@@ -18,6 +18,6 @@ impl<'a> ScalarRef<'a> for &'a PropertyValue {
     type ScalarType = PropertyValue;
 
     fn to_owned_scalar(&self) -> Self::ScalarType {
-        todo!()
+        (*self).clone()
     }
 }

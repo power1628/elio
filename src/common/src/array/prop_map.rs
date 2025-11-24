@@ -6,6 +6,7 @@
 use std::sync::Arc;
 
 use crate::array::{Array, ArrayBuilder};
+use crate::scalar::PropertyMapValueRef;
 use crate::scalar::prop_map::PropertyMapValue;
 
 #[derive(Clone, Debug)]
@@ -16,7 +17,7 @@ pub struct PropertyMapArray {
 impl Array for PropertyMapArray {
     type Builder = PropertyMapArrayBuilder;
     type OwnedItem = PropertyMapValue;
-    type RefItem<'a> = &'a PropertyMapValue;
+    type RefItem<'a> = PropertyMapValueRef<'a>;
 
     fn get(&self, _idx: usize) -> Option<Self::RefItem<'_>> {
         todo!()

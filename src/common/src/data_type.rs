@@ -24,9 +24,9 @@ pub enum DataType {
     // closed dynamic union type
     // #[display("Union({})", _0.iter().map(|t| t.to_string()).collect::<Vec<_>>().join(", "))]
     // Union(Vec<DataType>),
-    // Any type
+    // Any property type
     Property,
-    // Any map type
+    // Any property map type
     PropertyMap,
 }
 

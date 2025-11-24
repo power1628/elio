@@ -75,7 +75,7 @@ pub enum ScalarRefImpl<'a> {
     Rel(RelValueRef<'a>),
     List(ListValueRef<'a>),
     Property(&'a PropertyValue),
-    PropertyMap(&'a PropertyMapValue),
+    PropertyMap(PropertyMapValueRef<'a>),
 }
 
 pub type Datum = Option<ScalarImpl>;
