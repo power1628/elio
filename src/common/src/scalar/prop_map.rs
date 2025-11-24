@@ -3,7 +3,7 @@ use crate::array::prop_map::PropertyMapArray;
 use crate::scalar::{Scalar, ScalarRef};
 use crate::store_types::PropertyValue;
 
-#[derive(Clone, Debug, derive_more::DerefMut, derive_more::Deref, derive_more::From, derive_more::Into)]
+#[derive(Clone, Debug, Default, derive_more::DerefMut, derive_more::Deref, derive_more::From, derive_more::Into)]
 pub struct PropertyMapValue(Vec<(PropertyKeyId, PropertyValue)>);
 
 impl Scalar for PropertyMapValue {
