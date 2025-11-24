@@ -19,7 +19,9 @@ macro_rules! for_all_variants {
             { String, string, crate::array::StringArray, crate::array::StringArrayBuilder, String, &'a str },
             { Node, node, crate::array::NodeArray, crate::array::NodeArrayBuilder, crate::scalar::NodeValue, crate::scalar::NodeValueRef<'a> },
             { Rel, rel, crate::array::RelArray, crate::array::RelArrayBuilder, crate::scalar::RelValue, crate::scalar::RelValueRef<'a> },
-            { List, list, crate::array::ListArray, crate::array::ListArrayBuilder, crate::scalar::ListValue, crate::scalar::ListValueRef<'a> }
+            { List, list, crate::array::ListArray, crate::array::ListArrayBuilder, crate::scalar::ListValue, crate::scalar::ListValueRef<'a> },
+            { Property, any, crate::array::PropertyArray, crate::array::PropertyArrayBuilder, crate::scalar::PropertyValue, &'a crate::scalar::PropertyValue },
+            { PropertyMap, map, crate::array::PropertyMapArray, crate::array::PropertyMapArrayBuilder, crate::scalar::PropertyMapValue, &'a crate::scalar::PropertyMapValue }
         }
     };
 }

@@ -7,7 +7,7 @@ use crate::transaction::{DataChunkIterator, NodeScanOptions, OwnedTransaction, T
 
 // expected input columns
 // label: Vec<LabelId> | ListArray<u16>
-// properties: Vec<(PropertyKeyId, PropertyValue)> | StructArray
+// properties: Vec<(PropertyKeyId, PropertyValue)> | AnyMapArray
 // node -> encoding -> rocksdb write batch
 pub(crate) fn batch_node_create(tx: &OwnedTransaction, _chunk: &DataChunk) -> Result<ArrayImpl, GraphStoreError> {
     // allocate node id for the batch

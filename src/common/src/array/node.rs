@@ -1,17 +1,16 @@
-use std::sync::Arc;
-
+use crate::NodeId;
 use crate::array::buffer::Buffer;
+use crate::array::list::{ListArray, ListArrayBuilder};
+use crate::array::prop_map::{PropertyMapArray, PropertyMapArrayBuilder};
 use crate::array::{Array, ArrayBuilder};
 use crate::data_type::DataType;
 use crate::scalar::node::{NodeValue, NodeValueRef};
-use crate::store_types::PropertyValue;
-use crate::{LabelId, NodeId, PropertyKeyId};
 
 #[derive(Clone, Debug)]
 pub struct NodeArray {
     id: Buffer<NodeId>,
-    labels: Arc<[Box<[LabelId]>]>,
-    properties: Arc<[Box<[(PropertyKeyId, PropertyValue)]>]>,
+    labels: ListArray,
+    properties: PropertyMapArray,
     // TODO(pgao): inline hot properties here
 }
 
@@ -43,8 +42,8 @@ impl Array for NodeArray {
 
 pub struct NodeArrayBuilder {
     id: Buffer<NodeId>,
-    labels: Vec<Vec<LabelId>>,
-    properties: Vec<Vec<(PropertyKeyId, PropertyValue)>>,
+    labels: ListArrayBuilder,
+    properties: PropertyMapArrayBuilder,
 }
 
 impl ArrayBuilder for NodeArrayBuilder {
