@@ -16,12 +16,14 @@ pub mod impls;
 pub mod iterator;
 pub mod list;
 pub mod node;
+pub mod primitive;
 pub mod prop;
 pub mod prop_map;
 pub mod rel;
 pub mod string;
 pub use boolean::*;
 pub use iterator::*;
+pub use primitive::*;
 pub use string::*;
 
 use crate::array::list::{ListArray, ListArrayBuilder};
@@ -33,7 +35,17 @@ use crate::data_type::DataType;
 use crate::scalar::{Scalar, ScalarRef};
 
 pub mod mask;
-// pub mod primitive_array;
+
+pub trait PrimitiveType: Clone + Copy + std::fmt::Debug + Sized + Send + Sync {}
+
+impl PrimitiveType for u8 {}
+impl PrimitiveType for u16 {}
+impl PrimitiveType for u32 {}
+impl PrimitiveType for i64 {}
+impl PrimitiveType for u64 {}
+impl PrimitiveType for f32 {}
+impl PrimitiveType for f64 {}
+impl PrimitiveType for usize {}
 
 /// [`Array`] is a collection of data of the same type.
 pub trait Array: Send + Sync + Sized + 'static + Into<ArrayImpl> + Clone {
@@ -103,7 +115,12 @@ pub trait ArrayBuilder {
 #[derive(Clone, Debug)]
 pub enum ArrayImpl {
     Bool(BoolArray),
+    Integer(IntegerArray),
+    Float(FloatArray),
     String(StringArray),
+    TokenId(TokenIdArray),
+    NodeId(NodeIdArray),
+    RelId(RelIdArray),
     Node(NodeArray),
     Rel(RelArray),
     List(ListArray),
@@ -114,7 +131,12 @@ pub enum ArrayImpl {
 #[derive(Clone, Debug)]
 pub enum ArrayImplRef<'a> {
     Bool(&'a BoolArray),
+    Integer(&'a IntegerArray),
+    Float(&'a FloatArray),
     String(&'a StringArray),
+    TokenId(&'a TokenIdArray),
+    NodeId(&'a NodeIdArray),
+    RelId(&'a RelIdArray),
     Node(&'a NodeArray),
     Rel(&'a RelArray),
     List(&'a ListArray),
@@ -126,6 +148,11 @@ pub enum ArrayImplRef<'a> {
 pub enum ArrayBuilderImpl {
     Bool(BoolArrayBuilder),
     String(StringArrayBuilder),
+    Integer(IntegerArrayBuilder),
+    Float(FloatArrayBuilder),
+    TokenId(TokenIdArrayBuilder),
+    NodeId(NodeIdArrayBuilder),
+    RelId(RelIdArrayBuilder),
     Node(NodeArrayBuilder),
     Rel(RelArrayBuilder),
     List(ListArrayBuilder),

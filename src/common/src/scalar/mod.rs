@@ -49,10 +49,15 @@ pub trait ScalarRef<'a>: std::fmt::Debug + Clone + Copy + Send + 'a + Into<Scala
 #[derive(Debug, Clone)]
 pub enum ScalarImpl {
     Bool(bool),
+    Integer(i64),
+    Float(f64),
     String(String),
+    TokenId(u16),
+    NodeId(u64),
+    RelId(u64),
+    List(ListValue),
     Node(NodeValue),
     Rel(RelValue),
-    List(ListValue),
     Property(PropertyValue),
     PropertyMap(PropertyMapValue),
 }
@@ -60,7 +65,12 @@ pub enum ScalarImpl {
 #[derive(Debug, Clone, Copy)]
 pub enum ScalarRefImpl<'a> {
     Bool(bool),
+    Integer(i64),
+    Float(f64),
     String(&'a str),
+    TokenId(u16),
+    NodeId(u64),
+    RelId(u64),
     Node(NodeValueRef<'a>),
     Rel(RelValueRef<'a>),
     List(ListValueRef<'a>),

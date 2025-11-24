@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use crate::array::mask::{Mask, MaskMut};
 use crate::array::{Array, ArrayBuilder};
 use crate::store_types::PropertyValue;
 

@@ -16,6 +16,11 @@ macro_rules! for_all_variants {
         $macro! {
             [$($x),*],
             { Bool, bool, crate::array::BoolArray, crate::array::BoolArrayBuilder, bool, bool },
+            { Integer, integer, crate::array::IntegerArray, crate::array::IntegerArrayBuilder, i64, i64},
+            { Float, float, crate::array::FloatArray, crate::array::FloatArrayBuilder, f64, f64},
+            { TokenId, token_id, crate::array::TokenIdArray, crate::array::TokenIdArrayBuilder, u16, u16 },
+            { NodeId, node_id, crate::array::NodeIdArray, crate::array::NodeIdArrayBuilder, u64, u64 },
+            { RelId, rel_id, crate::array::RelIdArray, crate::array::RelIdArrayBuilder, u64, u64 },
             { String, string, crate::array::StringArray, crate::array::StringArrayBuilder, String, &'a str },
             { Node, node, crate::array::NodeArray, crate::array::NodeArrayBuilder, crate::scalar::NodeValue, crate::scalar::NodeValueRef<'a> },
             { Rel, rel, crate::array::RelArray, crate::array::RelArrayBuilder, crate::scalar::RelValue, crate::scalar::RelValueRef<'a> },
@@ -32,7 +37,12 @@ macro_rules! for_all_primitive_variants {
     ($macro:ident $(, $x:ident)*) => {
         $macro! {
             [$($x),*],
-            { Bool, bool, crate::array::BoolArray, crate::array::BoolArrayBuilder, bool, bool }
+            { Bool, bool, crate::array::BoolArray, crate::array::BoolArrayBuilder, bool, bool },
+            { Integer, integer, crate::array::IntegerArray, crate::array::IntegerArrayBuilder, i64, i64},
+            { Float, float, crate::array::FloatArray, crate::array::FloatArrayBuilder, f64, f64},
+            { TokenId, token_id, crate::array::TokenIdArray, crate::array::TokenIdArrayBuilder, u16, u16 },
+            { NodeId, node_id, crate::array::NodeIdArray, crate::array::NodeIdArrayBuilder, u64, u64 },
+            { RelId, rel_id, crate::array::RelIdArray, crate::array::RelIdArrayBuilder, u64, u64 }
         }
     };
 }

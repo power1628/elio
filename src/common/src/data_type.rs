@@ -8,20 +8,18 @@ pub enum DataType {
     Float,
     String,
     // for label data type
-    U16,
-    // for entity id data type
-    U64,
+    TokenId,
+    // node with id
+    NodeId,
+    // relationship id
+    RelId,
     // composite
     #[display("List({})", _0)]
     List(Box<DataType>),
     // materialized node: labels and properties
     Node,
-    // node with id
-    NodeRef,
     // materialized rel: reltype and properties
     Rel,
-    // relationship id
-    RelationshipRef,
     Path,
     // closed dynamic union type
     // #[display("Union({})", _0.iter().map(|t| t.to_string()).collect::<Vec<_>>().join(", "))]
@@ -41,17 +39,16 @@ impl DataType {
                 | DataType::Integer
                 | DataType::Float
                 // | DataType::String
-                | DataType::U16
-                | DataType::U64
+                | DataType::TokenId
         )
     }
 
     pub fn is_node(&self) -> bool {
-        matches!(self, DataType::Node | DataType::NodeRef)
+        matches!(self, DataType::Node | DataType::NodeId)
     }
 
     pub fn is_rel(&self) -> bool {
-        matches!(self, DataType::Rel | DataType::RelationshipRef)
+        matches!(self, DataType::Rel | DataType::RelId)
     }
 
     pub fn is_entity(&self) -> bool {

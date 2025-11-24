@@ -1,18 +1,21 @@
-use std::{marker::PhantomData, ops::Range};
+use std::marker::PhantomData;
+use std::mem::size_of;
+use std::ops::Range;
 
 use bytes::{Bytes, BytesMut};
-use std::mem::size_of;
+
+use crate::array::PrimitiveType;
 
 // Typed buffer for storing elements of type T.
 // Require T must be primitive types
 #[derive(Clone, Debug)]
-pub struct Buffer<T> {
+pub struct Buffer<T: PrimitiveType> {
     data: Bytes,
     len: usize,
     _phantom: PhantomData<T>,
 }
 
-impl<T> Buffer<T> {
+impl<T: PrimitiveType> Buffer<T> {
     pub fn new(data: Bytes, len: usize) -> Self {
         Self {
             data,
@@ -48,7 +51,7 @@ impl<T> Buffer<T> {
     }
 }
 
-impl<T> std::ops::Index<usize> for Buffer<T> {
+impl<T: PrimitiveType> std::ops::Index<usize> for Buffer<T> {
     type Output = T;
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -57,7 +60,7 @@ impl<T> std::ops::Index<usize> for Buffer<T> {
 }
 
 // index range
-impl<T> std::ops::Index<Range<usize>> for Buffer<T> {
+impl<T: PrimitiveType> std::ops::Index<Range<usize>> for Buffer<T> {
     type Output = [T];
 
     fn index(&self, index: Range<usize>) -> &Self::Output {
@@ -135,7 +138,10 @@ impl<T> BufferMut<T> {
         self.len += slice.len();
     }
 
-    pub fn freeze(self) -> Buffer<T> {
+    pub fn freeze(self) -> Buffer<T>
+    where
+        T: PrimitiveType,
+    {
         Buffer {
             data: self.data.into(),
             len: self.len,
