@@ -3,26 +3,20 @@ use std::collections::HashSet;
 use indexmap::IndexMap;
 use itertools::Itertools;
 use mojito_catalog::FunctionCatalog;
-use mojito_common::{schema::Variable, value::Value};
+use mojito_common::schema::Variable;
 use mojito_parser::ast::{self, ReturnItem};
 
-use crate::{
-    binder::{
-        BindContext,
-        builder::IrSingleQueryBuilder,
-        expr::bind_expr,
-        query::ClauseKind,
-        scope::{Scope, ScopeItem},
-    },
-    error::{PlanError, SemanticError},
-    expr::{Constant, Expr, ExprNode, FilterExprs, VariableRef},
-    ir::{
-        horizon::{
-            AggregateProjection, DistinctProjection, Pagination, QueryHorizon, QueryProjection, RegularProjection,
-        },
-        order::SortItem,
-    },
+use crate::binder::BindContext;
+use crate::binder::builder::IrSingleQueryBuilder;
+use crate::binder::expr::bind_expr;
+use crate::binder::query::ClauseKind;
+use crate::binder::scope::{Scope, ScopeItem};
+use crate::error::{PlanError, SemanticError};
+use crate::expr::{Constant, Expr, ExprNode, FilterExprs, VariableRef};
+use crate::ir::horizon::{
+    AggregateProjection, DistinctProjection, Pagination, QueryHorizon, QueryProjection, RegularProjection,
 };
+use crate::ir::order::SortItem;
 
 pub enum BoundReturnItems {
     Project(Vec<(Variable, Expr)>),

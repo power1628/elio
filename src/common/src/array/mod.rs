@@ -16,6 +16,8 @@ pub mod impls;
 pub mod iterator;
 pub mod list;
 pub mod node;
+pub mod prop;
+pub mod prop_map;
 pub mod rel;
 pub mod string;
 pub use boolean::*;
@@ -24,6 +26,8 @@ pub use string::*;
 
 use crate::array::list::{ListArray, ListArrayBuilder};
 use crate::array::node::{NodeArray, NodeArrayBuilder};
+use crate::array::prop::{PropertyArray, PropertyArrayBuilder};
+use crate::array::prop_map::{PropertyMapArray, PropertyMapArrayBuilder};
 use crate::array::rel::{RelArray, RelArrayBuilder};
 use crate::data_type::DataType;
 use crate::scalar::{Scalar, ScalarRef};
@@ -103,6 +107,8 @@ pub enum ArrayImpl {
     Node(NodeArray),
     Rel(RelArray),
     List(ListArray),
+    Property(PropertyArray),
+    PropertyMap(PropertyMapArray),
 }
 
 #[derive(Clone, Debug)]
@@ -112,6 +118,8 @@ pub enum ArrayImplRef<'a> {
     Node(&'a NodeArray),
     Rel(&'a RelArray),
     List(&'a ListArray),
+    Property(&'a PropertyArray),
+    PropertyMap(&'a PropertyMapArray),
 }
 
 /// Encapsules all variants of array builders in this library.
@@ -121,4 +129,6 @@ pub enum ArrayBuilderImpl {
     Node(NodeArrayBuilder),
     Rel(RelArrayBuilder),
     List(ListArrayBuilder),
+    Property(PropertyArrayBuilder),
+    PropertyMap(PropertyMapArrayBuilder),
 }

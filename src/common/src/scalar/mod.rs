@@ -10,11 +10,16 @@
 
 use crate::array::Array;
 use crate::scalar::list::{ListValue, ListValueRef};
+use crate::store_types::PropertyValue;
 pub mod impls;
 pub mod list;
 pub mod node;
+pub mod prop_map;
+pub mod prop_value;
 pub mod rel;
 pub use node::*;
+pub use prop_map::*;
+pub use prop_value::*;
 pub use rel::*;
 
 pub trait Scalar: std::fmt::Debug + Clone + Send + Sync + 'static + Into<ScalarImpl>
@@ -48,6 +53,8 @@ pub enum ScalarImpl {
     Node(NodeValue),
     Rel(RelValue),
     List(ListValue),
+    Property(PropertyValue),
+    PropertyMap(PropertyMapValue),
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -57,4 +64,9 @@ pub enum ScalarRefImpl<'a> {
     Node(NodeValueRef<'a>),
     Rel(RelValueRef<'a>),
     List(ListValueRef<'a>),
+    Property(&'a PropertyValue),
+    PropertyMap(&'a PropertyMapValue),
 }
+
+pub type Datum = Option<ScalarImpl>;
+pub type DatumRef<'a> = Option<ScalarRefImpl<'a>>;

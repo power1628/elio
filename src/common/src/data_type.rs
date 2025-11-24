@@ -7,6 +7,10 @@ pub enum DataType {
     Integer,
     Float,
     String,
+    // for label data type
+    U16,
+    // for entity id data type
+    U64,
     // composite
     #[display("List({})", _0)]
     List(Box<DataType>),
@@ -20,17 +24,25 @@ pub enum DataType {
     RelationshipRef,
     Path,
     // closed dynamic union type
-    #[display("Union({})", _0.iter().map(|t| t.to_string()).collect::<Vec<_>>().join(", "))]
-    Union(Vec<DataType>),
+    // #[display("Union({})", _0.iter().map(|t| t.to_string()).collect::<Vec<_>>().join(", "))]
+    // Union(Vec<DataType>),
     // Any type
-    Any,
+    Property,
+    // Any map type
+    PropertyMap,
 }
 
 impl DataType {
     pub fn is_primitive(&self) -> bool {
         matches!(
             self,
-            DataType::Null | DataType::Bool | DataType::Integer | DataType::Float | DataType::String
+            DataType::Null
+                | DataType::Bool
+                | DataType::Integer
+                | DataType::Float
+                // | DataType::String
+                | DataType::U16
+                | DataType::U64
         )
     }
 
