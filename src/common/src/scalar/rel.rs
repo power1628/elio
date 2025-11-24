@@ -1,6 +1,5 @@
 use crate::array::rel::RelArray;
-use crate::scalar::{Scalar, ScalarRef};
-use crate::store_types::PropertyValue;
+use crate::scalar::{PropertyMapValue, PropertyMapValueRef, Scalar, ScalarRef};
 use crate::{NodeId, PropertyKeyId, RelationshipId, RelationshipTypeId};
 
 #[derive(Clone, Debug)]
@@ -9,7 +8,7 @@ pub struct RelValue {
     pub reltype: RelationshipTypeId,
     pub start: NodeId,
     pub end: NodeId,
-    pub properties: Vec<(PropertyKeyId, PropertyValue)>,
+    pub properties: PropertyMapValue,
 }
 
 impl Scalar for RelValue {
@@ -17,17 +16,23 @@ impl Scalar for RelValue {
     type RefType<'a> = RelValueRef<'a>;
 
     fn as_scalar_ref(&self) -> Self::RefType<'_> {
-        todo!()
+        RelValueRef {
+            id: self.id,
+            reltype: self.reltype,
+            start: self.start,
+            end: self.end,
+            properties: self.properties.as_scalar_ref(),
+        }
     }
 }
 
 #[derive(Clone, Copy, Debug)]
 pub struct RelValueRef<'scalar> {
-    pub id: &'scalar RelationshipId,
-    pub reltype: &'scalar RelationshipTypeId,
-    pub start: &'scalar NodeId,
-    pub end: &'scalar NodeId,
-    pub properties: &'scalar [(PropertyKeyId, PropertyValue)],
+    pub id: RelationshipId,
+    pub reltype: RelationshipTypeId,
+    pub start: NodeId,
+    pub end: NodeId,
+    pub properties: PropertyMapValueRef<'scalar>,
 }
 
 impl<'a> ScalarRef<'a> for RelValueRef<'a> {
@@ -35,6 +40,12 @@ impl<'a> ScalarRef<'a> for RelValueRef<'a> {
     type ScalarType = RelValue;
 
     fn to_owned_scalar(&self) -> Self::ScalarType {
-        todo!()
+        RelValue {
+            id: self.id,
+            reltype: self.reltype,
+            start: self.start,
+            end: self.end,
+            properties: self.properties.to_owned_scalar(),
+        }
     }
 }

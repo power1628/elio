@@ -1,19 +1,20 @@
-use std::sync::Arc;
-
-use crate::array::buffer::Buffer;
-use crate::array::{Array, ArrayBuilder};
+use crate::array::mask::{Mask, MaskMut};
+use crate::array::prop_map::{PropertyMapArray, PropertyMapArrayBuilder};
+use crate::array::{
+    Array, ArrayBuilder, ArrayIterator, NodeIdArray, NodeIdArrayBuilder, RelIdArray, RelIdArrayBuilder, U16Array,
+    U16ArrayBuilder,
+};
 use crate::data_type::DataType;
 use crate::scalar::rel::{RelValue, RelValueRef};
-use crate::store_types::PropertyValue;
-use crate::{NodeId, PropertyKeyId, RelationshipId, RelationshipTypeId};
 
 #[derive(Clone, Debug)]
 pub struct RelArray {
-    id: Buffer<RelationshipId>,
-    reltype: Buffer<RelationshipId>,
-    start: Buffer<NodeId>,
-    end: Buffer<NodeId>,
-    properties: Arc<[Box<[(PropertyKeyId, PropertyValue)]>]>,
+    id: RelIdArray,
+    reltype: U16Array,
+    start: NodeIdArray,
+    end: NodeIdArray,
+    properties: PropertyMapArray,
+    valid: Mask,
 }
 
 impl Array for RelArray {
@@ -21,20 +22,28 @@ impl Array for RelArray {
     type OwnedItem = RelValue;
     type RefItem<'a> = RelValueRef<'a>;
 
-    fn get(&self, _idx: usize) -> Option<Self::RefItem<'_>> {
-        todo!()
+    fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
+        self.valid.get(idx).then(|| unsafe { self.get_unchecked(idx) })
     }
 
-    unsafe fn get_unchecked(&self, _idx: usize) -> Self::RefItem<'_> {
-        todo!()
+    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
+        unsafe {
+            RelValueRef {
+                id: self.id.get_unchecked(idx),
+                reltype: self.reltype.get_unchecked(idx),
+                start: self.start.get_unchecked(idx),
+                end: self.end.get_unchecked(idx),
+                properties: self.properties.get_unchecked(idx),
+            }
+        }
     }
 
     fn len(&self) -> usize {
-        todo!()
+        self.id.len()
     }
 
     fn iter(&self) -> super::ArrayIterator<'_, Self> {
-        todo!()
+        ArrayIterator::new(self)
     }
 
     fn data_type(&self) -> DataType {
@@ -43,25 +52,57 @@ impl Array for RelArray {
 }
 
 pub struct RelArrayBuilder {
-    id: Buffer<RelationshipId>,
-    reltype: Buffer<RelationshipTypeId>,
-    start: Buffer<NodeId>,
-    end: Buffer<NodeId>,
-    properties: Vec<Vec<(PropertyKeyId, PropertyValue)>>,
+    id: RelIdArrayBuilder,
+    reltype: U16ArrayBuilder,
+    start: NodeIdArrayBuilder,
+    end: NodeIdArrayBuilder,
+    properties: PropertyMapArrayBuilder,
+    valid: MaskMut,
 }
 
 impl ArrayBuilder for RelArrayBuilder {
     type Array = RelArray;
 
-    fn with_capacity(_capacity: usize) -> Self {
-        todo!()
+    fn with_capacity(capacity: usize) -> Self {
+        Self {
+            id: RelIdArrayBuilder::with_capacity(capacity),
+            reltype: U16ArrayBuilder::with_capacity(capacity),
+            start: NodeIdArrayBuilder::with_capacity(capacity),
+            end: NodeIdArrayBuilder::with_capacity(capacity),
+            properties: PropertyMapArrayBuilder::with_capacity(capacity),
+            valid: MaskMut::with_capacity(capacity),
+        }
     }
 
-    fn push(&mut self, _value: Option<<Self::Array as Array>::RefItem<'_>>) {
-        todo!()
+    fn push(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>) {
+        match value {
+            None => {
+                self.id.push(None);
+                self.reltype.push(None);
+                self.start.push(None);
+                self.end.push(None);
+                self.properties.push(None);
+                self.valid.push(false);
+            }
+            Some(value) => {
+                self.id.push(Some(value.id));
+                self.reltype.push(Some(value.reltype));
+                self.start.push(Some(value.start));
+                self.end.push(Some(value.end));
+                self.properties.push(Some(value.properties));
+                self.valid.push(true);
+            }
+        }
     }
 
     fn finish(self) -> Self::Array {
-        todo!()
+        Self::Array {
+            id: self.id.finish(),
+            reltype: self.reltype.finish(),
+            start: self.start.finish(),
+            end: self.end.finish(),
+            properties: self.properties.finish(),
+            valid: self.valid.freeze(),
+        }
     }
 }
