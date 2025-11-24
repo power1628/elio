@@ -18,7 +18,7 @@ macro_rules! for_all_variants {
             { Bool, bool, crate::array::BoolArray, crate::array::BoolArrayBuilder, bool, bool },
             { Integer, integer, crate::array::IntegerArray, crate::array::IntegerArrayBuilder, i64, i64},
             { Float, float, crate::array::FloatArray, crate::array::FloatArrayBuilder, f64, f64},
-            { TokenId, token_id, crate::array::TokenIdArray, crate::array::TokenIdArrayBuilder, u16, u16 },
+            { U16, u16, crate::array::U16Array, crate::array::U16ArrayBuilder, u16, u16 },
             { NodeId, node_id, crate::array::NodeIdArray, crate::array::NodeIdArrayBuilder, crate::NodeId, crate::NodeId },
             { RelId, rel_id, crate::array::RelIdArray, crate::array::RelIdArrayBuilder, crate::RelationshipId, crate::RelationshipId },
             { String, string, crate::array::StringArray, crate::array::StringArrayBuilder, String, &'a str },
@@ -40,7 +40,7 @@ macro_rules! for_all_primitive_variants {
             { Bool, bool, crate::array::BoolArray, crate::array::BoolArrayBuilder, bool, bool },
             { Integer, integer, crate::array::IntegerArray, crate::array::IntegerArrayBuilder, i64, i64},
             { Float, float, crate::array::FloatArray, crate::array::FloatArrayBuilder, f64, f64},
-            { TokenId, token_id, crate::array::TokenIdArray, crate::array::TokenIdArrayBuilder, u16, u16 },
+            { U16, u16, crate::array::U16Array, crate::array::U16ArrayBuilder, u16, u16 },
             { NodeId, node_id, crate::array::NodeIdArray, crate::array::NodeIdArrayBuilder, crate::NodeId, crate::NodeId },
             { RelId, rel_id, crate::array::RelIdArray, crate::array::RelIdArrayBuilder, crate::RelationshipId, crate::RelationshipId }
         }

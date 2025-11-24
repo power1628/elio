@@ -81,8 +81,8 @@ pub type IntegerArrayBuilder = PrimitiveArrayBuilder<i64>;
 pub type FloatArray = PrimitiveArray<f64>;
 pub type FloatArrayBuilder = PrimitiveArrayBuilder<f64>;
 
-pub type TokenIdArray = PrimitiveArray<u16>;
-pub type TokenIdArrayBuilder = PrimitiveArrayBuilder<u16>;
+pub type U16Array = PrimitiveArray<u16>;
+pub type U16ArrayBuilder = PrimitiveArrayBuilder<u16>;
 
 pub type NodeIdArray = PrimitiveArray<NodeId>;
 pub type NodeIdArrayBuilder = PrimitiveArrayBuilder<NodeId>;

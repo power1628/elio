@@ -8,7 +8,7 @@ pub enum DataType {
     Float,
     String,
     // for label data type
-    TokenId,
+    U16,
     // node with id
     NodeId,
     // relationship id
@@ -39,7 +39,7 @@ impl DataType {
                 | DataType::Integer
                 | DataType::Float
                 // | DataType::String
-                | DataType::TokenId
+                | DataType::U16
         )
     }
 
