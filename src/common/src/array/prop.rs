@@ -44,7 +44,8 @@ pub struct PropertyArrayBuilder {
 impl ArrayBuilder for PropertyArrayBuilder {
     type Array = PropertyArray;
 
-    fn with_capacity(capacity: usize) -> Self {
+    fn with_capacity(capacity: usize, typ: DataType) -> Self {
+        assert_eq!(typ, DataType::Property);
         Self {
             buffer: Vec::with_capacity(capacity),
         }
@@ -59,5 +60,9 @@ impl ArrayBuilder for PropertyArrayBuilder {
         Self::Array {
             data: self.buffer.into(),
         }
+    }
+
+    fn len(&self) -> usize {
+        self.buffer.len()
     }
 }

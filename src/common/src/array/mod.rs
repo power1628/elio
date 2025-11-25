@@ -33,7 +33,7 @@ use crate::array::prop::{PropertyArray, PropertyArrayBuilder};
 use crate::array::prop_map::{PropertyMapArray, PropertyMapArrayBuilder};
 use crate::array::rel::{RelArray, RelArrayBuilder};
 use crate::data_type::DataType;
-use crate::scalar::{Scalar, ScalarRef};
+use crate::scalar::{DatumRef, Scalar, ScalarRef};
 use crate::{NodeId, RelationshipId};
 
 pub mod mask;
@@ -105,14 +105,14 @@ pub trait Array: Send + Sync + Sized + 'static + Into<ArrayImpl> + Clone {
     /// Get iterator of this array.
     fn iter(&self) -> ArrayIterator<'_, Self>;
 
-    /// Build array from slice
-    fn from_slice(data: &[Option<Self::RefItem<'_>>]) -> Self {
-        let mut builder = Self::Builder::with_capacity(data.len());
-        for item in data {
-            builder.push(*item);
-        }
-        builder.finish()
-    }
+    // /// Build array from slice
+    // fn from_slice(data: &[Option<Self::RefItem<'_>>]) -> Self {
+    //     let mut builder = Self::Builder::with_capacity(data.len());
+    //     for item in data {
+    //         builder.push(*item);
+    //     }
+    //     builder.finish()
+    // }
 
     fn data_type(&self) -> DataType;
 }
@@ -127,7 +127,7 @@ pub trait ArrayBuilder {
     type Array: Array<Builder = Self>;
 
     /// Create a new builder with `capacity`.
-    fn with_capacity(capacity: usize) -> Self;
+    fn with_capacity(capacity: usize, typ: DataType) -> Self;
 
     /// Append a value to builder.
     fn push(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>);
@@ -135,6 +135,12 @@ pub trait ArrayBuilder {
 
     /// Finish build and return a new array.
     fn finish(self) -> Self::Array;
+
+    fn len(&self) -> usize;
+
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -151,6 +157,12 @@ pub enum ArrayImpl {
     List(ListArray),
     Property(PropertyArray),
     PropertyMap(PropertyMapArray),
+}
+
+impl ArrayImpl {
+    pub fn iter(&self) -> impl Iterator<Item = DatumRef<'_>> {
+        (0..self.len()).map(|i| self.get(i))
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -183,4 +195,26 @@ pub enum ArrayBuilderImpl {
     List(ListArrayBuilder),
     Property(PropertyArrayBuilder),
     PropertyMap(PropertyMapArrayBuilder),
+}
+
+impl ArrayBuilderImpl {
+    // TODO(pgao): needs to be refactored, use macro rules
+    pub fn with_capacity(capacity: usize, typ: DataType) -> Self {
+        match typ {
+            DataType::Null => unreachable!("null type is not supported"),
+            DataType::Bool => Self::Bool(BoolArrayBuilder::with_capacity(capacity, typ)),
+            DataType::Integer => Self::Integer(IntegerArrayBuilder::with_capacity(capacity, typ)),
+            DataType::Float => Self::Float(FloatArrayBuilder::with_capacity(capacity, typ)),
+            DataType::String => Self::String(StringArrayBuilder::with_capacity(capacity, typ)),
+            DataType::U16 => Self::U16(U16ArrayBuilder::with_capacity(capacity, typ)),
+            DataType::NodeId => Self::NodeId(NodeIdArrayBuilder::with_capacity(capacity, typ)),
+            DataType::RelId => Self::RelId(RelIdArrayBuilder::with_capacity(capacity, typ)),
+            DataType::List(_) => Self::List(ListArrayBuilder::with_capacity(capacity, typ)),
+            DataType::Node => Self::Node(NodeArrayBuilder::with_capacity(capacity, typ)),
+            DataType::Rel => Self::Rel(RelArrayBuilder::with_capacity(capacity, typ)),
+            DataType::Path => todo!("support path array"),
+            DataType::Property => Self::Property(PropertyArrayBuilder::with_capacity(capacity, typ)),
+            DataType::PropertyMap => Self::PropertyMap(PropertyMapArrayBuilder::with_capacity(capacity, typ)),
+        }
+    }
 }

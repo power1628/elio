@@ -55,7 +55,8 @@ pub struct StringArrayBuilder {
 impl ArrayBuilder for StringArrayBuilder {
     type Array = StringArray;
 
-    fn with_capacity(capacity: usize) -> Self {
+    fn with_capacity(capacity: usize, typ: DataType) -> Self {
+        assert_eq!(typ, DataType::String);
         let mut offsets = BufferMut::with_capacity(capacity + 1);
         offsets.push(0);
         Self {
@@ -81,5 +82,9 @@ impl ArrayBuilder for StringArrayBuilder {
         let offsets = self.offsets.freeze();
         let valid = self.valid.freeze();
         Self::Array { data, offsets, valid }
+    }
+
+    fn len(&self) -> usize {
+        self.offsets.len() - 1
     }
 }

@@ -1,7 +1,7 @@
-use crate::error::EvalError;
-use mojito_common::array::Array;
-use mojito_common::array::ArrayBuilder;
+use mojito_common::array::{Array, ArrayBuilder};
 use mojito_common::scalar::Scalar;
+
+use crate::error::EvalError;
 
 pub(crate) struct UnaryExecutor;
 

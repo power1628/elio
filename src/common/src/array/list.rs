@@ -18,20 +18,26 @@ impl Array for ListArray {
     type OwnedItem = ListValue;
     type RefItem<'a> = ListValueRef<'a>;
 
-    fn get(&self, _idx: usize) -> Option<Self::RefItem<'_>> {
-        todo!()
+    fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
+        self.valid.get(idx).then(|| {
+            let start = self.offsets[idx];
+            let end = self.offsets[idx + 1];
+            ListValueRef::new(self.data.as_ref(), start, end)
+        })
     }
 
-    unsafe fn get_unchecked(&self, _idx: usize) -> Self::RefItem<'_> {
-        todo!()
+    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
+        let start = self.offsets[idx];
+        let end = self.offsets[idx + 1];
+        ListValueRef::new(self.data.as_ref(), start, end)
     }
 
     fn len(&self) -> usize {
-        todo!()
+        self.offsets.len() - 1
     }
 
     fn iter(&self) -> super::ArrayIterator<'_, Self> {
-        todo!()
+        super::ArrayIterator::new(self)
     }
 
     fn data_type(&self) -> DataType {
@@ -40,7 +46,7 @@ impl Array for ListArray {
 }
 
 pub struct ListArrayBuilder {
-    inner: Box<ArrayBuilderImpl>,
+    data: Box<ArrayBuilderImpl>,
     offsets: BufferMut<u32>,
     valid: MaskMut,
 }
@@ -48,15 +54,50 @@ pub struct ListArrayBuilder {
 impl ArrayBuilder for ListArrayBuilder {
     type Array = ListArray;
 
-    fn with_capacity(_capacity: usize) -> Self {
-        todo!()
+    fn with_capacity(capacity: usize, typ: DataType) -> Self {
+        let inner_type = {
+            match typ {
+                DataType::List(inner_typ) => inner_typ,
+                _ => panic!("expected list type"),
+            }
+        };
+        let mut offsets = BufferMut::with_capacity(capacity + 1);
+        offsets.push(0);
+        Self {
+            data: Box::new(ArrayBuilderImpl::with_capacity(capacity, *inner_type)),
+            offsets,
+            valid: MaskMut::with_capacity(capacity),
+        }
     }
 
-    fn push(&mut self, _value: Option<<Self::Array as Array>::RefItem<'_>>) {
-        todo!()
+    fn push(&mut self, value: Option<ListValueRef<'_>>) {
+        match value {
+            Some(list) => {
+                for item in list.iter() {
+                    self.data.push(item);
+                }
+                self.offsets.push(self.data.len() as u32);
+                self.valid.push(true);
+            }
+            None => {
+                self.offsets.push(self.data.len() as u32);
+                self.valid.push(false);
+            }
+        }
     }
 
     fn finish(self) -> Self::Array {
-        todo!()
+        let data = self.data.finish();
+        let offsets = self.offsets.freeze();
+        let valid = self.valid.freeze();
+        Self::Array {
+            data: Arc::new(data),
+            offsets,
+            valid,
+        }
+    }
+
+    fn len(&self) -> usize {
+        self.offsets.len() - 1
     }
 }

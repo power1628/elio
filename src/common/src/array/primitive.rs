@@ -46,6 +46,12 @@ where
     }
 }
 
+impl<T: PrimitiveArrayElementType> PrimitiveArray<T> {
+    pub fn as_slice(&self) -> &[T] {
+        self.data.as_slice()
+    }
+}
+
 pub struct PrimitiveArrayBuilder<T: PrimitiveArrayElementType> {
     data: BufferMut<T>,
     valid: MaskMut,
@@ -63,7 +69,8 @@ where
 {
     type Array = PrimitiveArray<T>;
 
-    fn with_capacity(capacity: usize) -> Self {
+    fn with_capacity(capacity: usize, typ: DataType) -> Self {
+        assert_eq!(typ, T::data_type());
         Self {
             data: BufferMut::with_capacity(capacity),
             valid: MaskMut::with_capacity(capacity),
@@ -84,6 +91,10 @@ where
             data: self.data.freeze(),
             valid: self.valid.freeze(),
         }
+    }
+
+    fn len(&self) -> usize {
+        self.data.len()
     }
 }
 

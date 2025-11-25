@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use crate::array::mask::{Mask, MaskMut};
 use crate::array::{Array, ArrayBuilder, ArrayIterator};
+use crate::data_type::DataType;
 use crate::scalar::prop_map::PropertyMapValue;
 use crate::scalar::{PropertyMapValueRef, Scalar, ScalarRef};
 
@@ -50,7 +51,8 @@ pub struct PropertyMapArrayBuilder {
 impl ArrayBuilder for PropertyMapArrayBuilder {
     type Array = PropertyMapArray;
 
-    fn with_capacity(capacity: usize) -> Self {
+    fn with_capacity(capacity: usize, typ: DataType) -> Self {
+        assert_eq!(typ, DataType::PropertyMap);
         Self {
             buffer: Vec::with_capacity(capacity),
             valid: MaskMut::with_capacity(capacity),
@@ -75,5 +77,9 @@ impl ArrayBuilder for PropertyMapArrayBuilder {
             data: self.buffer.into(),
             valid: self.valid.freeze(),
         }
+    }
+
+    fn len(&self) -> usize {
+        self.buffer.len()
     }
 }

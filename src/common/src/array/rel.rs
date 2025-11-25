@@ -63,13 +63,14 @@ pub struct RelArrayBuilder {
 impl ArrayBuilder for RelArrayBuilder {
     type Array = RelArray;
 
-    fn with_capacity(capacity: usize) -> Self {
+    fn with_capacity(capacity: usize, typ: DataType) -> Self {
+        assert_eq!(typ, DataType::Rel);
         Self {
-            id: RelIdArrayBuilder::with_capacity(capacity),
-            reltype: U16ArrayBuilder::with_capacity(capacity),
-            start: NodeIdArrayBuilder::with_capacity(capacity),
-            end: NodeIdArrayBuilder::with_capacity(capacity),
-            properties: PropertyMapArrayBuilder::with_capacity(capacity),
+            id: RelIdArrayBuilder::with_capacity(capacity, DataType::RelId),
+            reltype: U16ArrayBuilder::with_capacity(capacity, DataType::U16),
+            start: NodeIdArrayBuilder::with_capacity(capacity, DataType::NodeId),
+            end: NodeIdArrayBuilder::with_capacity(capacity, DataType::NodeId),
+            properties: PropertyMapArrayBuilder::with_capacity(capacity, DataType::PropertyMap),
             valid: MaskMut::with_capacity(capacity),
         }
     }
@@ -104,5 +105,9 @@ impl ArrayBuilder for RelArrayBuilder {
             properties: self.properties.finish(),
             valid: self.valid.freeze(),
         }
+    }
+
+    fn len(&self) -> usize {
+        self.id.len()
     }
 }

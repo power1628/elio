@@ -1,6 +1,6 @@
 use crate::array::rel::RelArray;
 use crate::scalar::{PropertyMapValue, PropertyMapValueRef, Scalar, ScalarRef};
-use crate::{NodeId, PropertyKeyId, RelationshipId, RelationshipTypeId};
+use crate::{NodeId, RelationshipId, RelationshipTypeId};
 
 #[derive(Clone, Debug)]
 pub struct RelValue {

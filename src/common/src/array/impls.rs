@@ -16,9 +16,10 @@ macro_rules! impl_array_dispatch {
         impl ArrayImpl {
             /// Create new [`ArrayBuilder`] from [`Array`] type.
             pub fn new_builder(&self, capacity: usize) -> ArrayBuilderImpl {
+                let typ = self.data_type();
                 match self {
                     $(
-                        Self::$Abc(_) => ArrayBuilderImpl::$Abc(<$AbcArrayBuilder>::with_capacity(capacity))
+                        Self::$Abc(_) => ArrayBuilderImpl::$Abc(<$AbcArrayBuilder>::with_capacity(capacity, typ))
                     ),*
                 }
             }
@@ -123,7 +124,7 @@ macro_rules! impl_array_conversion {
 
 for_all_variants! { impl_array_conversion }
 
-//// Implements `data_type` for [`Array`]
+/// Implements `data_type` for [`Array`]
 // macro_rules! impl_data_type {
 //     (
 //         [], $({ $Abc:ident, $abc:ident, $AbcArray:ty, $AbcArrayBuilder:ty, $Owned:ty, $Ref:ty }),*
@@ -145,3 +146,51 @@ for_all_variants! { impl_array_conversion }
 // }
 
 // for_all_variants! { impl_data_type }
+
+/// Implements dispatch functions for [`ArrayBuilder`]
+macro_rules! impl_array_builder_dispatch {
+    ([], $( { $Abc:ident, $abc:ident, $AbcArray:ty, $AbcArrayBuilder:ty, $Owned:ty, $Ref:ty } ),*) => {
+        impl ArrayBuilderImpl {
+
+            /// Appends an element to the back of array.
+            pub fn push(&mut self, v: Option<ScalarRefImpl<'_>>) {
+                match (self, v) {
+                    $(
+                        (Self::$Abc(a), Some(ScalarRefImpl::$Abc(v))) => a.push(Some(v)),
+                        (Self::$Abc(a), None) => a.push(None),
+                    )*
+                    // (a, Some(b)) => panic!("type mismatch {}, expected {}", b.data_type(), a.data_type()),
+                    (_, Some(_)) => panic!("type mismatch"),
+                }
+            }
+
+            pub fn len(&self) -> usize {
+                match self {
+                    $(
+                        Self::$Abc(a) => a.len(),
+                    )*
+                }
+            }
+
+            pub fn is_empty(&self) -> bool {
+                match self {
+                    $(
+                        Self::$Abc(a) => a.is_empty(),
+                    )*
+                }
+            }
+
+            /// Finish build and return a new array.
+            pub fn finish(self) -> ArrayImpl {
+                match self {
+                    $(
+                        Self::$Abc(a) => ArrayImpl::$Abc(a.finish()),
+                    )*
+                }
+            }
+
+        }
+    }
+}
+
+for_all_variants! { impl_array_builder_dispatch }

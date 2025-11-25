@@ -46,7 +46,8 @@ pub struct BoolArrayBuilder {
 impl ArrayBuilder for BoolArrayBuilder {
     type Array = BoolArray;
 
-    fn with_capacity(capacity: usize) -> Self {
+    fn with_capacity(capacity: usize, typ: DataType) -> Self {
+        assert_eq!(typ, DataType::Bool);
         Self {
             data: MaskMut::with_capacity(capacity),
             valid: MaskMut::with_capacity(capacity),
@@ -71,5 +72,9 @@ impl ArrayBuilder for BoolArrayBuilder {
             bits: self.data.freeze(),
             valid: self.valid.freeze(),
         }
+    }
+
+    fn len(&self) -> usize {
+        self.data.len()
     }
 }
