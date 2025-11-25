@@ -1,4 +1,4 @@
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum PropertyValue {
     // TODO(pgao): maybe get rid of null here?
     Null,

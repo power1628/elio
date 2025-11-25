@@ -38,7 +38,9 @@ use crate::{NodeId, RelationshipId};
 
 pub mod mask;
 
-pub trait PrimitiveArrayElementType: BufferElementType + Clone + Copy + std::fmt::Debug + Sized + Send + Sync {
+pub trait PrimitiveArrayElementType:
+    BufferElementType + Clone + Copy + std::fmt::Debug + Sized + Send + Sync + Default
+{
     fn data_type() -> DataType;
 }
 

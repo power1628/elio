@@ -88,3 +88,94 @@ impl ArrayBuilder for StringArrayBuilder {
         self.offsets.len() - 1
     }
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::array::ArrayBuilder;
+    use crate::data_type::DataType;
+
+    #[test]
+    fn test_string_array_builder() {
+        let mut builder = StringArrayBuilder::with_capacity(5, DataType::String);
+        builder.push(Some("hello"));
+        builder.push(Some("world"));
+        builder.push(None);
+        builder.push(Some("!"));
+        builder.push(None);
+
+        assert_eq!(builder.len(), 5);
+
+        let arr = builder.finish();
+
+        assert_eq!(arr.len(), 5);
+        assert_eq!(arr.get(0), Some("hello"));
+        assert_eq!(arr.get(1), Some("world"));
+        assert_eq!(arr.get(2), None);
+        assert_eq!(arr.get(3), Some("!"));
+        assert_eq!(arr.get(4), None);
+
+        unsafe {
+            assert_eq!(arr.get_unchecked(0), "hello");
+            assert_eq!(arr.get_unchecked(1), "world");
+            assert_eq!(arr.get_unchecked(3), "!");
+            // For None values, get_unchecked will return an empty string
+            // because the start and end offsets will be the same.
+            assert_eq!(arr.get_unchecked(2), "");
+            assert_eq!(arr.get_unchecked(4), "");
+        }
+    }
+
+    #[test]
+    fn test_string_array_iter() {
+        let mut builder = StringArrayBuilder::with_capacity(3, DataType::String);
+        builder.push(Some("first"));
+        builder.push(None);
+        builder.push(Some("third"));
+        let arr = builder.finish();
+
+        let mut iter = arr.iter();
+        assert_eq!(iter.next(), Some(Some("first")));
+        assert_eq!(iter.next(), Some(None));
+        assert_eq!(iter.next(), Some(Some("third")));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn test_string_array_empty() {
+        let builder = StringArrayBuilder::with_capacity(0, DataType::String);
+        let arr = builder.finish();
+        assert!(arr.is_empty());
+        assert_eq!(arr.len(), 0);
+    }
+
+    #[test]
+    fn test_string_array_with_empty_string() {
+        let mut builder = StringArrayBuilder::with_capacity(2, DataType::String);
+        builder.push(Some(""));
+        builder.push(Some("not empty"));
+        let arr = builder.finish();
+
+        assert_eq!(arr.len(), 2);
+        assert_eq!(arr.get(0), Some(""));
+        assert_eq!(arr.get(1), Some("not empty"));
+    }
+    
+    #[test]
+    fn test_all_nulls() {
+        let mut builder = StringArrayBuilder::with_capacity(3, DataType::String);
+        builder.push(None);
+        builder.push(None);
+        builder.push(None);
+        let arr = builder.finish();
+        assert_eq!(arr.len(), 3);
+        assert_eq!(arr.get(0), None);
+        assert_eq!(arr.get(1), None);
+        assert_eq!(arr.get(2), None);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_string_array_builder_wrong_type() {
+        let _builder = StringArrayBuilder::with_capacity(5, DataType::Bool);
+    }
+}

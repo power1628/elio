@@ -66,3 +66,85 @@ impl ArrayBuilder for PropertyArrayBuilder {
         self.buffer.len()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::array::ArrayBuilder;
+    use crate::data_type::DataType;
+    use crate::store_types::PropertyValue;
+
+    #[test]
+    fn test_property_array_builder() {
+        let mut builder = PropertyArrayBuilder::with_capacity(4, DataType::Property);
+        let prop1 = PropertyValue::Integer(123);
+        let prop2 = PropertyValue::String("test".to_string());
+        let prop3 = PropertyValue::Null;
+        let prop4 = PropertyValue::Float(45.67);
+
+        builder.push(Some(&prop1));
+        builder.push(Some(&prop2));
+        builder.push(Some(&prop3));
+        builder.push(Some(&prop4));
+
+        assert_eq!(builder.len(), 4);
+
+        let arr = builder.finish();
+        assert_eq!(arr.len(), 4);
+        assert_eq!(arr.data_type(), DataType::Property);
+
+        assert_eq!(arr.get(0), Some(&prop1));
+        assert_eq!(arr.get(1), Some(&prop2));
+        assert_eq!(arr.get(2), Some(&prop3));
+        assert_eq!(arr.get(3), Some(&prop4));
+
+        unsafe {
+            assert_eq!(arr.get_unchecked(0), &prop1);
+            assert_eq!(arr.get_unchecked(1), &prop2);
+            assert_eq!(arr.get_unchecked(2), &prop3);
+            assert_eq!(arr.get_unchecked(3), &prop4);
+        }
+    }
+
+    #[test]
+    fn test_property_array_iter() {
+        let mut builder = PropertyArrayBuilder::with_capacity(3, DataType::Property);
+        let prop1 = PropertyValue::Boolean(true);
+        let prop2 = PropertyValue::Null;
+        let prop3 = PropertyValue::String("another".to_string());
+
+        builder.push(Some(&prop1));
+        builder.push(Some(&prop2));
+        builder.push(Some(&prop3));
+
+        let arr = builder.finish();
+        let mut iter = arr.iter();
+
+        assert_eq!(iter.next(), Some(Some(&prop1)));
+        assert_eq!(iter.next(), Some(Some(&prop2)));
+        assert_eq!(iter.next(), Some(Some(&prop3)));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn test_empty_property_array() {
+        let builder = PropertyArrayBuilder::with_capacity(0, DataType::Property);
+        let arr = builder.finish();
+        assert!(arr.is_empty());
+        assert_eq!(arr.len(), 0);
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion `left == right` failed")]
+    fn test_builder_with_wrong_type() {
+        // This should panic because we are not passing DataType::Property
+        let _builder = PropertyArrayBuilder::with_capacity(5, DataType::String);
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed: value.is_some()")]
+    fn test_pushing_none_panics() {
+        let mut builder = PropertyArrayBuilder::with_capacity(1, DataType::Property);
+        builder.push(None);
+    }
+}

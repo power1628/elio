@@ -83,3 +83,102 @@ impl ArrayBuilder for PropertyMapArrayBuilder {
         self.buffer.len()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeMap;
+
+    use itertools::Itertools;
+
+    use super::*;
+    use crate::array::{Array, ArrayBuilder};
+    use crate::data_type::DataType;
+    use crate::scalar::prop_map::PropertyMapValue;
+    use crate::store_types::PropertyValue;
+
+    #[test]
+    fn test_prop_map_array_builder_and_get() {
+        let mut builder = PropertyMapArrayBuilder::with_capacity(4, DataType::PropertyMap);
+
+        // Create some property maps
+        let mut map1 = BTreeMap::new();
+        map1.insert(1u16, PropertyValue::String("Alice".to_string()));
+        map1.insert(2u16, PropertyValue::Integer(30));
+        let prop_map1 = PropertyMapValue(map1.into_iter().collect_vec());
+        let mut map2 = BTreeMap::new();
+        map2.insert(3u16, PropertyValue::String("New York".to_string()));
+        let prop_map2 = PropertyMapValue(map2.into_iter().collect_vec());
+
+        let empty_map = PropertyMapValue::default();
+
+        builder.push(Some(prop_map1.as_scalar_ref()));
+        builder.push(None);
+        builder.push(Some(prop_map2.as_scalar_ref()));
+        builder.push(Some(empty_map.as_scalar_ref()));
+
+        assert_eq!(builder.len(), 4);
+        let arr = builder.finish();
+
+        assert_eq!(arr.len(), 4);
+        assert_eq!(arr.data_type(), DataType::PropertyMap);
+
+        // Test get()
+        assert_eq!(arr.get(0), Some(prop_map1.as_scalar_ref()));
+        assert_eq!(arr.get(1), None);
+        assert_eq!(arr.get(2), Some(prop_map2.as_scalar_ref()));
+        assert_eq!(arr.get(3), Some(empty_map.as_scalar_ref()));
+
+        // Test get_unchecked()
+        unsafe {
+            assert_eq!(arr.get_unchecked(0), prop_map1.as_scalar_ref());
+            assert_eq!(arr.get_unchecked(2), prop_map2.as_scalar_ref());
+            // For None, it should return the default value which was pushed
+            assert_eq!(arr.get_unchecked(1), PropertyMapValue::default().as_scalar_ref());
+        }
+    }
+
+    #[test]
+    fn test_prop_map_array_iter() {
+        let mut builder = PropertyMapArrayBuilder::with_capacity(3, DataType::PropertyMap);
+
+        let mut map1 = BTreeMap::new();
+        map1.insert(1u16, PropertyValue::String("value".to_string()));
+        let prop_map1 = PropertyMapValue(map1.into_iter().collect_vec());
+
+        builder.push(Some(prop_map1.as_scalar_ref()));
+        builder.push(None);
+
+        let arr = builder.finish();
+        let mut iter = arr.iter();
+
+        assert_eq!(iter.next(), Some(Some(prop_map1.as_scalar_ref())));
+        assert_eq!(iter.next(), Some(None));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn test_empty_prop_map_array() {
+        let builder = PropertyMapArrayBuilder::with_capacity(0, DataType::PropertyMap);
+        let arr = builder.finish();
+        assert!(arr.is_empty());
+        assert_eq!(arr.len(), 0);
+        assert_eq!(arr.iter().next(), None);
+    }
+
+    #[test]
+    fn test_all_nulls_prop_map_array() {
+        let mut builder = PropertyMapArrayBuilder::with_capacity(3, DataType::PropertyMap);
+        builder.push(None);
+        builder.push(None);
+        let arr = builder.finish();
+        assert_eq!(arr.len(), 2);
+        assert_eq!(arr.get(0), None);
+        assert_eq!(arr.get(1), None);
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion `left == right` failed")]
+    fn test_builder_with_wrong_type() {
+        let _builder = PropertyMapArrayBuilder::with_capacity(5, DataType::String);
+    }
+}

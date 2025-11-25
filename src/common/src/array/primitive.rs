@@ -59,7 +59,7 @@ pub struct PrimitiveArrayBuilder<T: PrimitiveArrayElementType> {
 
 impl<T> ArrayBuilder for PrimitiveArrayBuilder<T>
 where
-    T: PrimitiveArrayElementType,
+    T: PrimitiveArrayElementType + Default,
     T: Scalar<ArrayType = PrimitiveArray<T>>,
     for<'a> T: ScalarRef<'a, ScalarType = T, ArrayType = PrimitiveArray<T>>,
     for<'a> T: Scalar<RefType<'a> = T>,
@@ -82,6 +82,9 @@ where
             self.data.push(value);
             self.valid.push(true);
         } else {
+            // Push a dummy value for nulls, as it won't be read by `get` due to `valid` mask.
+            // This maintains `data` and `valid` lengths consistency.
+            self.data.push(T::default());
             self.valid.push(false);
         }
     }
@@ -111,3 +114,113 @@ pub type NodeIdArray = PrimitiveArray<NodeId>;
 pub type NodeIdArrayBuilder = PrimitiveArrayBuilder<NodeId>;
 pub type RelIdArray = PrimitiveArray<RelationshipId>;
 pub type RelIdArrayBuilder = PrimitiveArrayBuilder<RelationshipId>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::array::ArrayBuilder;
+    use crate::data_type::DataType;
+
+    #[test]
+    fn test_primitive_array_builder_push_and_finish() {
+        let mut builder = PrimitiveArrayBuilder::<i64>::with_capacity(5, DataType::Integer);
+        builder.push(Some(10));
+        builder.push(Some(20));
+        builder.push(None);
+        builder.push(Some(30));
+        builder.push(None);
+
+        let arr = builder.finish();
+
+        assert_eq!(arr.len(), 5);
+        assert_eq!(arr.get(0), Some(10));
+        assert_eq!(arr.get(1), Some(20));
+        assert_eq!(arr.get(2), None);
+        assert_eq!(arr.get(3), Some(30));
+        assert_eq!(arr.get(4), None);
+
+        unsafe {
+            assert_eq!(arr.get_unchecked(0), 10);
+            assert_eq!(arr.get_unchecked(1), 20);
+            assert_eq!(arr.get_unchecked(2), i64::default()); // Default value for null
+            assert_eq!(arr.get_unchecked(3), 30);
+            assert_eq!(arr.get_unchecked(4), i64::default()); // Default value for null
+        }
+    }
+
+    #[test]
+    fn test_primitive_array_all_valid() {
+        let mut builder = PrimitiveArrayBuilder::<f64>::with_capacity(3, DataType::Float);
+        builder.push(Some(1.1));
+        builder.push(Some(2.2));
+        builder.push(Some(3.3));
+        let arr = builder.finish();
+
+        assert_eq!(arr.len(), 3);
+        assert_eq!(arr.get(0), Some(1.1));
+        assert_eq!(arr.get(1), Some(2.2));
+        assert_eq!(arr.get(2), Some(3.3));
+    }
+
+    #[test]
+    fn test_primitive_array_all_invalid() {
+        let mut builder = PrimitiveArrayBuilder::<u16>::with_capacity(3, DataType::U16);
+        builder.push(None);
+        builder.push(None);
+        builder.push(None);
+        let arr = builder.finish();
+
+        assert_eq!(arr.len(), 3);
+        assert_eq!(arr.get(0), None);
+        assert_eq!(arr.get(1), None);
+        assert_eq!(arr.get(2), None);
+    }
+
+    #[test]
+    fn test_primitive_array_iter() {
+        let mut builder = PrimitiveArrayBuilder::<i64>::with_capacity(5, DataType::Integer);
+        builder.push(Some(1));
+        builder.push(Some(2));
+        builder.push(None);
+        builder.push(Some(4));
+        builder.push(None);
+        let arr = builder.finish();
+
+        let mut iter = arr.iter();
+        assert_eq!(iter.next(), Some(Some(1)));
+        assert_eq!(iter.next(), Some(Some(2)));
+        assert_eq!(iter.next(), Some(None));
+        assert_eq!(iter.next(), Some(Some(4)));
+        assert_eq!(iter.next(), Some(None));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn test_primitive_array_is_empty() {
+        let builder = PrimitiveArrayBuilder::<i64>::with_capacity(0, DataType::Integer);
+        let arr = builder.finish();
+        assert!(arr.is_empty());
+
+        let mut builder = PrimitiveArrayBuilder::<i64>::with_capacity(1, DataType::Integer);
+        builder.push(Some(100));
+        let arr = builder.finish();
+        assert!(!arr.is_empty());
+    }
+
+    #[test]
+    fn test_primitive_array_as_slice() {
+        let mut builder = PrimitiveArrayBuilder::<i64>::with_capacity(3, DataType::Integer);
+        builder.push(Some(1));
+        builder.push(Some(2));
+        builder.push(Some(3));
+        let arr = builder.finish();
+
+        assert_eq!(arr.as_slice(), &[1, 2, 3]);
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion `left == right` failed\n  left: Float\n right: Integer")]
+    fn test_primitive_array_builder_with_capacity_wrong_type() {
+        let _builder = PrimitiveArrayBuilder::<i64>::with_capacity(5, DataType::Float);
+    }
+}

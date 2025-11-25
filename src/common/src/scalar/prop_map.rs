@@ -3,8 +3,8 @@ use crate::array::prop_map::PropertyMapArray;
 use crate::scalar::{Scalar, ScalarRef};
 use crate::store_types::PropertyValue;
 
-#[derive(Clone, Debug, Default, derive_more::DerefMut, derive_more::Deref, derive_more::From, derive_more::Into)]
-pub struct PropertyMapValue(Vec<(PropertyKeyId, PropertyValue)>);
+#[derive(Clone, Debug, Default, derive_more::DerefMut, derive_more::Deref, derive_more::From, derive_more::Into, PartialEq)]
+pub struct PropertyMapValue(pub Vec<(PropertyKeyId, PropertyValue)>);
 
 impl Scalar for PropertyMapValue {
     type ArrayType = PropertyMapArray;
@@ -15,8 +15,8 @@ impl Scalar for PropertyMapValue {
     }
 }
 
-#[derive(Clone, Copy, Debug, derive_more::DerefMut, derive_more::Deref, derive_more::From, derive_more::Into)]
-pub struct PropertyMapValueRef<'a>(&'a [(PropertyKeyId, PropertyValue)]);
+#[derive(Clone, Copy, Debug, derive_more::DerefMut, derive_more::Deref, derive_more::From, derive_more::Into, PartialEq)]
+pub struct PropertyMapValueRef<'a>(pub &'a [(PropertyKeyId, PropertyValue)]);
 
 impl<'a> ScalarRef<'a> for PropertyMapValueRef<'a> {
     type ArrayType = PropertyMapArray;

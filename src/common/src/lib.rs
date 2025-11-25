@@ -25,10 +25,36 @@ pub enum EntityKind {
     Rel,
 }
 
-#[derive(derive_more::Display, derive_more::Deref, derive_more::From, derive_more::Into, Debug, Copy, Clone)]
+#[derive(
+    derive_more::Display,
+    derive_more::Deref,
+    derive_more::From,
+    derive_more::Into,
+    Debug,
+    Copy,
+    Clone,
+    Default,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+)]
 #[repr(transparent)]
 pub struct NodeId(pub u64);
 
-#[derive(derive_more::Display, derive_more::Deref, derive_more::From, derive_more::Into, Debug, Copy, Clone)]
+#[derive(
+    derive_more::Display,
+    derive_more::Deref,
+    derive_more::From,
+    derive_more::Into,
+    Debug,
+    Copy,
+    Clone,
+    Default,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+)]
 #[repr(transparent)]
 pub struct RelationshipId(pub u64);

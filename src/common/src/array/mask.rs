@@ -98,7 +98,7 @@ impl Mask {
     }
 
     pub fn all_unset(&self) -> bool {
-        !self.all_set()
+        self.all_set.map(|x| !x).unwrap_or(false)
     }
 }
 
@@ -179,5 +179,156 @@ impl MaskMut {
             len: self.len,
             all_set: self.all_set,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_mask_new_set() {
+        let mask = Mask::new_set(10);
+        assert_eq!(mask.len(), 10);
+        assert!(mask.all_set());
+        for i in 0..10 {
+            assert!(mask.get(i));
+        }
+        assert_eq!(mask.set_count(), 10);
+        assert_eq!(mask.unset_count(), 0);
+    }
+
+    #[test]
+    fn test_mask_new_unset() {
+        let mask = Mask::new_unset(10);
+        assert_eq!(mask.len(), 10);
+        assert!(!mask.all_set());
+        for i in 0..10 {
+            assert!(!mask.get(i));
+        }
+        assert_eq!(mask.set_count(), 0);
+        assert_eq!(mask.unset_count(), 10);
+    }
+
+    #[test]
+    fn test_mask_empty() {
+        let mask = Mask::empty();
+        assert_eq!(mask.len(), 0);
+        assert!(mask.is_empty());
+    }
+
+    #[test]
+    fn test_mask_full() {
+        let mask = Mask::full(true, 12);
+        assert_eq!(mask.len(), 12);
+        assert!(mask.all_set());
+        assert_eq!(mask.set_count(), 12);
+
+        let mask = Mask::full(false, 12);
+        assert_eq!(mask.len(), 12);
+        assert!(!mask.all_set());
+        assert_eq!(mask.unset_count(), 12);
+    }
+
+    #[test]
+    fn test_mask_from_mut() {
+        let mut mask_mut = MaskMut::with_capacity(10);
+        mask_mut.push(true);
+        mask_mut.push(false);
+        mask_mut.push(true);
+        mask_mut.push(true);
+        mask_mut.push(false);
+        mask_mut.push(false);
+        mask_mut.push(true);
+        mask_mut.push(false);
+        mask_mut.push(true);
+        mask_mut.push(true);
+
+        let mask = mask_mut.freeze();
+        assert_eq!(mask.len(), 10);
+        assert!(!mask.all_set());
+        assert!(!mask.all_unset());
+
+        assert!(mask.get(0));
+        assert!(!mask.get(1));
+        assert!(mask.get(2));
+        assert!(mask.get(3));
+        assert!(!mask.get(4));
+        assert!(!mask.get(5));
+        assert!(mask.get(6));
+        assert!(!mask.get(7));
+        assert!(mask.get(8));
+        assert!(mask.get(9));
+
+        assert_eq!(mask.set_count(), 6);
+        assert_eq!(mask.unset_count(), 4);
+    }
+
+    #[test]
+    fn test_mask_unset_count_partial_byte() {
+        let mut mask_mut = MaskMut::with_capacity(3);
+        mask_mut.push(true);
+        mask_mut.push(false);
+        mask_mut.push(true);
+
+        let mask = mask_mut.freeze();
+        assert_eq!(mask.len(), 3);
+        assert_eq!(mask.unset_count(), 1);
+        assert_eq!(mask.set_count(), 2);
+    }
+
+    #[test]
+    fn test_mask_mut_push_all_set_logic() {
+        let mut mask_mut = MaskMut::with_capacity(4);
+        assert_eq!(mask_mut.all_set, None);
+
+        mask_mut.push(true);
+        assert_eq!(mask_mut.all_set, Some(true));
+        mask_mut.push(true);
+        assert_eq!(mask_mut.all_set, Some(true));
+
+        let mask = mask_mut.freeze();
+        assert!(mask.all_set());
+
+        let mut mask_mut = MaskMut::with_capacity(4);
+        mask_mut.push(false);
+        assert_eq!(mask_mut.all_set, Some(false));
+        mask_mut.push(false);
+        assert_eq!(mask_mut.all_set, Some(false));
+        let mask = mask_mut.freeze();
+        assert!(!mask.all_set());
+        assert!(mask.all_unset());
+
+        let mut mask_mut = MaskMut::with_capacity(4);
+        mask_mut.push(true);
+        assert_eq!(mask_mut.all_set, Some(true));
+        mask_mut.push(false);
+        assert_eq!(mask_mut.all_set, None);
+        let mask = mask_mut.freeze();
+        assert!(!mask.all_set());
+        assert!(!mask.all_unset());
+    }
+
+    #[test]
+    fn test_mask_mut_new() {
+        let mut mask_mut = MaskMut::new_set(5);
+        assert_eq!(mask_mut.len(), 5);
+        assert_eq!(mask_mut.all_set, Some(true));
+        mask_mut.push(true);
+        assert_eq!(mask_mut.len(), 6);
+        assert_eq!(mask_mut.all_set, Some(true));
+        mask_mut.push(false);
+        assert_eq!(mask_mut.len(), 7);
+        assert_eq!(mask_mut.all_set, None);
+
+        let mut mask_mut = MaskMut::new_unset(5);
+        assert_eq!(mask_mut.len(), 5);
+        assert_eq!(mask_mut.all_set, Some(false));
+        mask_mut.push(false);
+        assert_eq!(mask_mut.len(), 6);
+        assert_eq!(mask_mut.all_set, Some(false));
+        mask_mut.push(true);
+        assert_eq!(mask_mut.len(), 7);
+        assert_eq!(mask_mut.all_set, None);
     }
 }
