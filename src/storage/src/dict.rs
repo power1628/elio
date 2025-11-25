@@ -31,6 +31,16 @@ impl IdStore {
     pub fn next_rel_id(&self) -> Result<RelationshipId, GraphStoreError> {
         self.rel_id.next_id().map(|id| id.into())
     }
+
+    pub fn batch_node_id(&self, count: usize) -> Result<Vec<NodeId>, GraphStoreError> {
+        let ids = (0..count).map(|_| self.next_node_id()).collect::<Result<Vec<_>, _>>()?;
+        Ok(ids)
+    }
+
+    pub fn batch_rel_id(&self, count: usize) -> Result<Vec<RelationshipId>, GraphStoreError> {
+        let ids = (0..count).map(|_| self.next_rel_id()).collect::<Result<Vec<_>, _>>()?;
+        Ok(ids)
+    }
 }
 
 pub struct IdGenerator {

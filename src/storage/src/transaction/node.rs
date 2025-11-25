@@ -1,16 +1,23 @@
 use mojito_common::array::ArrayImpl;
-use mojito_common::array::chunk::DataChunk;
 
 use crate::cf_property;
 use crate::error::GraphStoreError;
-use crate::transaction::{DataChunkIterator, NodeScanOptions, OwnedTransaction, TxRead};
+use crate::transaction::{DataChunkIterator, NodeScanOptions, OwnedTransaction, RwTransaction, TxRead};
 
 // expected input columns
 // label: Vec<LabelId> | ListArray<u16>
 // properties: Vec<(PropertyKeyId, PropertyValue)> | AnyMapArray
 // node -> encoding -> rocksdb write batch
-pub(crate) fn batch_node_create(tx: &OwnedTransaction, _chunk: &DataChunk) -> Result<ArrayImpl, GraphStoreError> {
+pub(crate) fn batch_node_create(
+    tx: &RwTransaction,
+    labels: &ArrayImpl,
+    props: &ArrayImpl,
+) -> Result<ArrayImpl, GraphStoreError> {
+    assert_eq!(labels.len(), props.len());
+    let len = labels.len();
+
     // allocate node id for the batch
+    let node_ids = tx.dict.batch_node_id(len)?;
 
     // encode node to keys and values
 

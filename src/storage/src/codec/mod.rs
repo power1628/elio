@@ -4,10 +4,10 @@ pub use token::*;
 // pub use node::*;
 // pub mod relationship;
 // pub use relationship::*;
-// pub mod property;
-// pub use property::*;
-// pub mod types;
-// pub use types::*;
+pub mod property;
+pub use property::*;
+pub mod types;
+pub use types::*;
 
 // pub mod topology;
 // pub use topology::*;

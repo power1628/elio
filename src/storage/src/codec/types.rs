@@ -34,13 +34,10 @@ impl DataTypeCodec {
         match data_type {
             DataType::Null | DataType::Bool | DataType::Integer | DataType::Float | DataType::String => true,
             DataType::List(data_type) => data_type.is_primitive(),
-            DataType::Node
-            | DataType::NodeRef
-            | DataType::Rel
-            | DataType::RelationshipRef
-            | DataType::Path
-            | DataType::Union(_)
-            | DataType::Any => false,
+            DataType::Node | DataType::Rel | DataType::Path | DataType::Property | DataType::PropertyMap => false,
+            DataType::U16 => todo!(),
+            DataType::NodeId => todo!(),
+            DataType::RelId => todo!(),
         }
     }
 
