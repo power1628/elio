@@ -1,4 +1,5 @@
 use mojito_common::array::{Array, ArrayBuilder};
+use mojito_common::data_type::DataType;
 use mojito_common::scalar::Scalar;
 
 use crate::error::EvalError;
@@ -10,11 +11,18 @@ impl UnaryExecutor {
     // 1. propagate nulls
     // 2. do not generate nulls
     // 3. do not throw erro
-    pub fn execute_simple<I: Scalar, O: Scalar, F>(input: &I::ArrayType, func: F) -> Result<O::ArrayType, EvalError>
+    pub fn execute_simple<I: Scalar, O: Scalar, F>(
+        input: &I::ArrayType,
+        func: F,
+        // output data type
+        // this is an hack
+        // should get ride of this
+        typ: DataType,
+    ) -> Result<O::ArrayType, EvalError>
     where
         F: Fn(I::RefType<'_>) -> O,
     {
-        let mut builder = <O::ArrayType as Array>::Builder::with_capacity(input.len());
+        let mut builder = <O::ArrayType as Array>::Builder::with_capacity(input.len(), typ);
         for item in input.iter() {
             match item {
                 Some(arg) => builder.push(Some(func(arg).as_scalar_ref())),

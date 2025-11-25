@@ -77,6 +77,7 @@ pub trait Array: Send + Sync + Sized + 'static + Into<ArrayImpl> + Clone {
     /// The corresponding [`ArrayBuilder`] of this [`Array`].
     ///
     /// We constriant the associated type so that `Self::Builder::Array = Self`.
+    /// TODO(pgao): remove this builder, builder should be constructed with runtime datatype.
     type Builder: ArrayBuilder<Array = Self>;
 
     /// The owned item of this array.

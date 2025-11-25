@@ -4,14 +4,15 @@
 
 use std::collections::HashMap;
 
-use mojito_common::array::{ArrayImpl, StringArray, chunk::DataChunk};
+use mojito_common::array::chunk::DataChunk;
+use mojito_common::array::{ArrayImpl, StringArray};
+use mojito_common::data_type::DataType;
 
-use crate::{
-    define_function,
-    error::EvalError,
-    func::sig::FuncDef,
-    impl_::{EvalCtx, func_executor::UnaryExecutor},
-};
+use crate::define_function;
+use crate::error::EvalError;
+use crate::func::sig::FuncDef;
+use crate::impl_::EvalCtx;
+use crate::impl_::func_executor::UnaryExecutor;
 
 fn string_upper(s: &str) -> String {
     s.to_uppercase()
@@ -24,14 +25,14 @@ fn string_lower(s: &str) -> String {
 fn upper_function(input: &DataChunk, _ctx: &EvalCtx) -> Result<ArrayImpl, EvalError> {
     let arg: &StringArray = input.columns[0].as_ref().into();
 
-    let res: StringArray = UnaryExecutor::execute_simple::<String, String, _>(arg, string_upper)?;
+    let res: StringArray = UnaryExecutor::execute_simple::<String, String, _>(arg, string_upper, DataType::String)?;
     Ok(res.into())
 }
 
 fn lower_function(input: &DataChunk, _ctx: &EvalCtx) -> Result<ArrayImpl, EvalError> {
     let arg: &StringArray = input.columns[0].as_ref().into();
 
-    let res: StringArray = UnaryExecutor::execute_simple::<String, String, _>(arg, string_lower)?;
+    let res: StringArray = UnaryExecutor::execute_simple::<String, String, _>(arg, string_lower, DataType::String)?;
     Ok(res.into())
 }
 
