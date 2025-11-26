@@ -47,7 +47,8 @@ impl<'a> PropertyMapRef<'a> {
 
     pub fn meta(&self) -> &[EntryMeta] {
         unsafe {
-            let ptr = self.data.as_ptr().add(2) as *const EntryMeta;
+            let meta_bytes = &self.data[2..2 + self.len * size_of::<EntryMeta>()];
+            let ptr = meta_bytes.as_ptr() as *const EntryMeta;
             std::slice::from_raw_parts(ptr, self.len)
         }
     }

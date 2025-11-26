@@ -33,12 +33,15 @@ impl<'a> EntryRef<'a> {
             INTEGER_TAG => EntryValueRef::Integer(self.meta.as_integer()),
             FLOAT_TAG => EntryValueRef::Float(self.meta.as_float()),
             STRING_TAG => EntryValueRef::String(unsafe {
-                let len = (&self.data[self.meta.offset()..4 + self.meta.offset()]).get_u32_le() as usize;
-                std::str::from_utf8_unchecked(&self.data[self.meta.offset()..self.meta.offset() + len])
+                let data_slice = &self.data[self.meta.offset()..];
+                let len = (&data_slice[..4]).get_u32_le() as usize;
+                std::str::from_utf8_unchecked(&data_slice[4..4 + len])
             }),
             LIST_BOOL_TAG => {
-                let len = (&self.data[self.meta.offset()..4 + self.meta.offset()]).get_u32_le() as usize;
-                EntryValueRef::ListBool(unsafe { std::mem::transmute::<&[u8], &[bool]>(&self.data[4..4 + len]) })
+                let data_slice = &self.data[self.meta.offset()..];
+                let len = (&data_slice[..4]).get_u32_le() as usize;
+                let data_slice = &data_slice[4..];
+                EntryValueRef::ListBool(unsafe { std::mem::transmute::<&[u8], &[bool]>(&data_slice[..len]) })
             }
             LIST_INTEGER_TAG => EntryValueRef::ListInteger(PrimitiveListRef::new(&self.data[self.meta.offset()..])),
             LIST_FLOAT_TAG => EntryValueRef::ListFloat(PrimitiveListRef::new(&self.data[self.meta.offset()..])),
@@ -207,6 +210,7 @@ impl EntryValueMut {
     }
 
     pub fn set_string(&mut self, value: &str) {
+        self.buffer.put_u32_le(value.len() as u32);
         self.buffer.put_slice(value.as_bytes());
     }
 
@@ -250,7 +254,7 @@ impl EntryMut {
 
     pub fn list_string(key_id: u16, value: &[String]) -> Self {
         let key = EntryMeta::default().with_key_id(key_id).with_list_string();
-        let cap = value.iter().map(|x| x.len()).sum::<usize>() + size_of::<u32>() * value.len();
+        let cap = size_of::<u32>() + value.iter().map(|x| x.len()).sum::<usize>() + size_of::<u32>() * value.len();
         let mut val = EntryValueMut::with_capacity(cap);
         val.set_list_string(value);
         Self { key, val: Some(val) }
