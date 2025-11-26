@@ -3,6 +3,7 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 use crate::entry::{EntryMut, EntryRef};
 use crate::meta::EntryMeta;
 
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct PropertyMap {
     // #layout
     // | len(u16)  | entry * len | value heap |
@@ -10,6 +11,7 @@ pub struct PropertyMap {
     pub(crate) data: Box<[u8]>,
 }
 impl PropertyMap {
+    // number of entries in map
     pub fn len(&self) -> usize {
         (&self.data[0..2]).get_u16_le() as usize
     }
@@ -17,11 +19,25 @@ impl PropertyMap {
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    pub fn as_ref(&self) -> PropertyMapRef<'_> {
+        PropertyMapRef::new(self.data.as_ref())
+    }
+
+    pub fn bytes(&self) -> usize {
+        self.data.len()
+    }
+
+    pub fn write<T: BufMut>(&self, buf: &mut T) {
+        buf.put_slice(&self.data);
+    }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct PropertyMapRef<'a> {
     // pointer to start of property map
     data: &'a [u8],
+    // number of entries in map
     len: usize,
 }
 
@@ -31,6 +47,10 @@ impl<'a> PropertyMapRef<'a> {
             data,
             len: (&data[0..2]).get_u16_le() as usize,
         }
+    }
+
+    pub fn bytes(&self) -> usize {
+        self.data.len()
     }
 
     pub fn len(&self) -> usize {
@@ -55,6 +75,12 @@ impl<'a> PropertyMapRef<'a> {
 
     pub fn iter(&self) -> impl ExactSizeIterator<Item = EntryRef<'_>> {
         self.meta().iter().map(|meta| EntryRef::new(self.heap(), meta))
+    }
+
+    pub fn to_owned(&self) -> PropertyMap {
+        PropertyMap {
+            data: self.data.to_vec().into_boxed_slice(),
+        }
     }
 }
 

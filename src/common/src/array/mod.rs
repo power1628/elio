@@ -22,6 +22,7 @@ pub mod prop_map;
 pub mod rel;
 pub mod string;
 pub use boolean::*;
+use enum_as_inner::EnumAsInner;
 pub use iterator::*;
 pub use primitive::*;
 pub use string::*;
@@ -146,7 +147,7 @@ pub trait ArrayBuilder {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, EnumAsInner)]
 pub enum ArrayImpl {
     Bool(BoolArray),
     Integer(IntegerArray),
@@ -168,7 +169,8 @@ impl ArrayImpl {
     }
 }
 
-#[derive(Clone, Debug)]
+// TODO(pgao): remove this, this enum as inner does the same thing
+#[derive(Clone, Debug, EnumAsInner)]
 pub enum ArrayImplRef<'a> {
     Bool(&'a BoolArray),
     Integer(&'a IntegerArray),

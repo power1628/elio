@@ -6,4 +6,3 @@ edition.workspace = true
 [dependencies]
 bytes = { workspace = true }
 itertools = { workspace = true }
-mojito_common = { workspace = true }

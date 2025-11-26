@@ -2,7 +2,6 @@ use core::panic;
 use std::marker::PhantomData;
 
 use bytes::{Buf, BufMut, BytesMut};
-use mojito_common::PropertyKeyId;
 
 use crate::meta::{
     BOOL_TAG, EntryMeta, FLOAT_TAG, INTEGER_TAG, LIST_BOOL_TAG, LIST_FLOAT_TAG, LIST_INTEGER_TAG, LIST_STRING_TAG,
@@ -22,7 +21,7 @@ impl<'a> EntryRef<'a> {
         Self { data, meta }
     }
 
-    pub fn key(&self) -> PropertyKeyId {
+    pub fn key(&self) -> u16 {
         self.meta.key_id()
     }
 

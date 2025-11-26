@@ -3,11 +3,14 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use mojito_common::array::chunk::DataChunk;
+use mojito_common::array::list::ListArray;
+use mojito_common::array::prop_map::PropertyMapArray;
+use mojito_common::array::NodeIdArray;
 
 use crate::cf_property;
 use crate::dict::IdStore;
 use crate::error::GraphStoreError;
-use crate::transaction::node::batch_node_scan;
+use crate::transaction::node::{batch_node_create, batch_node_scan};
 
 mod node;
 // mod relationship;
@@ -25,8 +28,8 @@ pub trait Transaction {
     fn rel_scan(&self, opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError>;
     fn node_scan(&self, opts: &NodeScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError>;
     // read-write
-    fn node_create(&self, node: &DataChunk) -> Result<(), GraphStoreError>;
-    fn relationship_create(&self, rel: &DataChunk) -> Result<(), GraphStoreError>;
+    fn node_create(&self, label: &ListArray, prop: &PropertyMapArray) -> Result<NodeIdArray, GraphStoreError>;
+    fn relationship_create(&self, rel: &DataChunk) -> Result<DataChunk, GraphStoreError>;
     fn node_delete(&self, node: &DataChunk) -> Result<(), GraphStoreError>;
     fn relationship_delete(&self, rel: &DataChunk) -> Result<(), GraphStoreError>;
     // commit
@@ -59,14 +62,14 @@ impl Transaction for RoTransaction {
         batch_node_scan(&self.inner, opts)
     }
 
-    fn node_create(&self, _node: &DataChunk) -> Result<(), GraphStoreError> {
+    fn node_create(&self, _label: &ListArray, _prop: &PropertyMapArray) -> Result<NodeIdArray, GraphStoreError> {
         // readonly transaction, not allowed to create node
         Err(GraphStoreError::internal(
             "readonly transaction, not allowed to create node",
         ))
     }
 
-    fn relationship_create(&self, _rel: &DataChunk) -> Result<(), GraphStoreError> {
+    fn relationship_create(&self, _rel: &DataChunk) -> Result<DataChunk, GraphStoreError> {
         // readonly transaction, not allowed to create relationship
         Err(GraphStoreError::internal(
             "readonly transaction, not allowed to create relationship",
@@ -98,7 +101,7 @@ impl Transaction for RoTransaction {
 
 pub struct RwTransaction {
     // rocksdb transaction
-    inner: OwnedTransaction,
+    pub(crate) inner: OwnedTransaction,
     dict: Arc<IdStore>,
 }
 
@@ -120,11 +123,11 @@ impl Transaction for RwTransaction {
         batch_node_scan(&self.inner, opts)
     }
 
-    fn node_create(&self, _node: &DataChunk) -> Result<(), GraphStoreError> {
-        todo!()
+    fn node_create(&self, label: &ListArray, prop: &PropertyMapArray) -> Result<NodeIdArray, GraphStoreError> {
+        batch_node_create(self, label, prop)
     }
 
-    fn relationship_create(&self, _rel: &DataChunk) -> Result<(), GraphStoreError> {
+    fn relationship_create(&self, _rel: &DataChunk) -> Result<DataChunk, GraphStoreError> {
         todo!()
     }
 

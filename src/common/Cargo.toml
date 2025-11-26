@@ -4,7 +4,10 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+mojito_propb = { workspace = true }
+
 bytes = { workspace = true }
 derive_more = { workspace = true, features = ["full"] }
+enum-as-inner = { workspace = true }
 itertools = { workspace = true }
 ordered-float = { workspace = true }
