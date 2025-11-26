@@ -1,12 +1,9 @@
-use mojito_common::{
-    array::{ArrayImpl, chunk::DataChunk},
-    data_type::DataType,
-};
+use mojito_common::array::ArrayImpl;
+use mojito_common::array::chunk::DataChunk;
+use mojito_common::data_type::DataType;
 
-use crate::{
-    error::EvalError,
-    impl_::{EvalCtx, Expression},
-};
+use crate::error::EvalError;
+use crate::impl_::{EvalCtx, Expression};
 
 // used to invoke the function call
 pub type FunctionImpl = fn(&DataChunk, &EvalCtx) -> Result<ArrayImpl, EvalError>;
@@ -28,7 +25,8 @@ impl Expression for FuncCallExpr {
             .iter()
             .map(|e| e.eval_batch(chunk, ctx))
             .collect::<Result<Vec<_>, _>>()?;
-        let chunk = DataChunk::new(args);
+        let len = args[0].len();
+        let chunk = DataChunk::new(args, len);
         (self.func)(&chunk, ctx)
     }
 }

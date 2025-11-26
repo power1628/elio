@@ -23,14 +23,14 @@ fn string_lower(s: &str) -> String {
 }
 
 fn upper_function(input: &DataChunk, _ctx: &EvalCtx) -> Result<ArrayImpl, EvalError> {
-    let arg: &StringArray = input.columns[0].as_ref().into();
+    let arg: &StringArray = input.column(0).as_ref().into();
 
     let res: StringArray = UnaryExecutor::execute_simple::<String, String, _>(arg, string_upper, DataType::String)?;
     Ok(res.into())
 }
 
 fn lower_function(input: &DataChunk, _ctx: &EvalCtx) -> Result<ArrayImpl, EvalError> {
-    let arg: &StringArray = input.columns[0].as_ref().into();
+    let arg: &StringArray = input.column(0).as_ref().into();
 
     let res: StringArray = UnaryExecutor::execute_simple::<String, String, _>(arg, string_lower, DataType::String)?;
     Ok(res.into())

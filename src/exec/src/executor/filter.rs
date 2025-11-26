@@ -9,8 +9,19 @@ pub struct FilterExecutor {
     filter: Box<dyn Expression>,
 }
 
-impl Executor for FilterExecutor {
-    fn build(self, _ctx: &Arc<TaskExecContext>) -> Result<SendableDataChunkStream, ExecError> {
+impl FilterExecutor {
+    async fn execute(
+        self,
+        input: SendableDataChunkStream,
+        ctx: &Arc<TaskExecContext>,
+    ) -> Result<SendableDataChunkStream, ExecError> {
         todo!()
+    }
+}
+
+impl Executor for FilterExecutor {
+    fn build(self, ctx: &Arc<TaskExecContext>) -> Result<SendableDataChunkStream, ExecError> {
+        let input = self.build(ctx)?;
+        self.execute(input, ctx)
     }
 }

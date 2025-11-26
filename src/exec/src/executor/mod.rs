@@ -8,6 +8,7 @@ use mojito_cypher::plan_node::PlanExpr;
 use crate::error::ExecError;
 use crate::task::TaskExecContext;
 
+pub mod create_node;
 pub mod filter;
 pub mod relscan;
 

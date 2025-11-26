@@ -20,7 +20,7 @@ impl DataChunk {
         self.cardinality == 0
     }
 
-    pub fn column(&self, idx: usize) -> ArrayImpl {
-        self.columns[idx].clone()
+    pub fn column(&self, idx: usize) -> &ArrayImpl {
+        &self.columns[idx]
     }
 }

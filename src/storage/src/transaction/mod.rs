@@ -2,10 +2,10 @@ use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use mojito_common::array::NodeIdArray;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::array::list::ListArray;
 use mojito_common::array::prop_map::PropertyMapArray;
-use mojito_common::array::NodeIdArray;
 
 use crate::cf_property;
 use crate::dict::IdStore;
@@ -23,6 +23,7 @@ pub trait DataChunkIterator: Send {
     fn next_batch(&mut self) -> Result<Option<DataChunk>, GraphStoreError>;
 }
 
+#[async_trait]
 pub trait Transaction {
     // readonly
     fn rel_scan(&self, opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError>;
