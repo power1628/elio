@@ -42,6 +42,12 @@ pub enum EntityKind {
 #[repr(transparent)]
 pub struct NodeId(pub u64);
 
+impl NodeId {
+    pub fn from_le_bytes(bytes: [u8; 8]) -> Self {
+        Self(u64::from_le_bytes(bytes))
+    }
+}
+
 #[derive(
     derive_more::Display,
     derive_more::Deref,

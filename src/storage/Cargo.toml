@@ -8,6 +8,7 @@ edition.workspace = true
 async-trait = { workspace = true }
 bytes = { workspace = true }
 mojito_common = { workspace = true }
+mojito_propb = { workspace = true }
 thiserror = { workspace = true }
 
 # local

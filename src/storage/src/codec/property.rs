@@ -32,14 +32,14 @@
 //!             v------------------++------------------+   v
 //!             |key_id value_bytes||key_id value_bytes|....
 //!             +------------------++------------------+
-//!```
+//! ```
 //!
 //! For fixed size value, we embed the value in the key_and_value_size_array
 //! For variable size value, we store the value in the value_data
-//!
 
 use bytes::{BufMut, BytesMut};
-use mojito_common::{PropertyKeyId, store_types::PropertyValue};
+use mojito_common::PropertyKeyId;
+use mojito_common::store_types::PropertyValue;
 
 use crate::codec::DataTypeCodec;
 

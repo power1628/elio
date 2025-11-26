@@ -1,5 +1,4 @@
 //！NodeKey ::= <node_id>
-//!
 //! NodeValue ::= <NodeHeader> <LabelBlocks> <PropertyBlock>
 //!
 //! Nodeheader ::= <NumLabels> <PropertySize>
@@ -11,9 +10,9 @@
 //! PropertySize ::= u32 // size of property block
 
 use bytes::{BufMut, Bytes, BytesMut};
-use mojito_common::{LabelId, NodeId, PropertyKeyId, store_types::PropertyValue};
-
-use crate::codec::{NODE_KEY_PREFIX, PropertyWriter};
+use mojito_common::scalar::PropertyMapValue;
+use mojito_common::store_types::PropertyValue;
+use mojito_common::{LabelId, NodeId, PropertyKeyId, TokenId};
 
 const NUM_LABELS_SIZE: usize = 2;
 const PROPERTY_SIZE_SIZE: usize = 4;
@@ -24,15 +23,29 @@ pub struct NodeFormat;
 impl NodeFormat {
     pub fn encode_node_key(node_id: NodeId) -> Bytes {
         let mut key = BytesMut::new();
-        key.put_u8(NODE_KEY_PREFIX);
-        key.put_u64_le(node_id);
+        key.put_u8(crate::cf_property::NODE_KEY_PREFIX);
+        key.put_u64_le(*node_id);
         key.freeze()
     }
 
     pub fn decode_node_key(buf: &[u8]) -> NodeId {
         assert_eq!(buf.len(), 9);
-        u64::from_le_bytes(buf[1..9].try_into().unwrap())
+        NodeId::from_le_bytes(buf[1..9].try_into().unwrap())
     }
+}
+
+pub fn encode_node_value(labels: &[LabelId], property_map: PropertyMapValue) -> Bytes {
+    let mut buf = BytesMut::new();
+    // put header
+    buf.put_u16_le(labels.len() as u16);
+    buf.put_u32_le(property_map.size() as u32);
+    // put labels
+    for label_id in labels {
+        buf.put_u16_le(*label_id);
+    }
+    // put properties
+    buf.put(property_map.buffer);
+    buf.freeze()
 }
 
 #[repr(C, packed(1))]

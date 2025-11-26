@@ -2,7 +2,7 @@ use mojito_common::array::ArrayImpl;
 
 use crate::cf_property;
 use crate::error::GraphStoreError;
-use crate::transaction::{DataChunkIterator, NodeScanOptions, OwnedTransaction, RwTransaction, TxRead};
+use crate::transaction::{DataChunkIterator, NodeScanOptions, RwTransaction, TxRead};
 
 // expected input columns
 // label: Vec<LabelId> | ListArray<u16>

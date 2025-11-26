@@ -1,0 +1,1 @@
+Entity property binary repr
