@@ -4,7 +4,7 @@ use rocksdb::{self};
 
 use crate::dict::IdStore;
 use crate::token::TokenStore;
-use crate::transaction::{RoTransaction, RwTransaction, Transaction};
+use crate::transaction::{Transaction, TransactionImpl};
 
 // metadata store
 pub const CF_META: &str = "cf_meta";
@@ -33,10 +33,7 @@ impl GraphStore {
         // Self { db: Arc::new(db) }
     }
 
-    pub fn transaction(&self, mode: TransactionMode) -> Box<dyn Transaction> {
-        match mode {
-            TransactionMode::ReadOnly => Box::new(RoTransaction::new(self.db.clone(), self.dict.clone())),
-            TransactionMode::ReadWrite => Box::new(RwTransaction::new(self.db.clone(), self.dict.clone())),
-        }
+    pub fn transaction(&self) -> Box<dyn Transaction> {
+        Box::new(TransactionImpl::new(self.db.clone(), self.dict.clone()))
     }
 }

@@ -1,9 +1,11 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
+use std::sync::Arc;
 
-use mojito_common::value::Value;
+use mojito_common::scalar::Datum;
 use mojito_storage::graph::GraphStore;
 
-use crate::{error::Error, result::ResultHandle};
+use crate::error::Error;
+use crate::result::ResultHandle;
 
 pub struct DbConfig {
     store_path: String,
@@ -23,7 +25,7 @@ impl DbEnv {
 }
 
 impl DbEnv {
-    pub fn execute(self: &Arc<Self>, _query: String, _params: HashMap<String, Value>) -> Result<ResultHandle, Error> {
+    pub fn execute(self: &Arc<Self>, _query: String, _params: HashMap<String, Datum>) -> Result<ResultHandle, Error> {
         todo!()
     }
 }

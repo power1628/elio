@@ -6,14 +6,14 @@ use mojito_common::data_type::DataType;
 use crate::cf_property;
 use crate::codec::NodeFormat;
 use crate::error::GraphStoreError;
-use crate::transaction::{DataChunkIterator, NodeScanOptions, RwTransaction, TxRead};
+use crate::transaction::{DataChunkIterator, NodeScanOptions, TransactionImpl, TxRead};
 
 // expected input columns
 // label: Vec<LabelId> | ListArray<u16>
 // properties: Vec<(PropertyKeyId, PropertyValue)> | AnyMapArray
 // node -> encoding -> rocksdb write batch
 pub(crate) fn batch_node_create(
-    tx: &RwTransaction,
+    tx: &TransactionImpl,
     labels: &ListArray,
     props: &PropertyMapArray,
 ) -> Result<NodeIdArray, GraphStoreError> {
@@ -39,9 +39,11 @@ pub(crate) fn batch_node_create(
 
     // construct batch
     let cf = tx.inner._db.cf_handle(cf_property::CF_NAME).unwrap();
+    let mut guard = tx.write_state.lock().unwrap();
     for (k, v) in keys.iter().zip(values.iter()) {
-        tx.inner.put_cf(&cf, k, v)?;
+        guard.batch.put_cf(&cf, k, v);
     }
+    drop(guard);
 
     // create node ids array
     let mut ids = NodeIdArrayBuilder::with_capacity(len, DataType::NodeId);

@@ -12,13 +12,11 @@ pub mod create_node;
 pub mod filter;
 pub mod relscan;
 
-pub trait DataChunkStream: Stream<Item = Result<DataChunk, ExecError>> {}
-
-pub type SendableDataChunkStream = Pin<Box<dyn DataChunkStream + Send>>;
+pub type DataChunkStream = Pin<Box<dyn Stream<Item = Result<DataChunk, ExecError>> + Send>>;
 
 pub trait Executor: Send + Sync {
     /// Build the output data chunk stream
-    fn build(self, ctx: &Arc<TaskExecContext>) -> Result<SendableDataChunkStream, ExecError>;
+    fn build_stream(self: Box<Self>, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError>;
 }
 
 pub type BoxedExecutor = Box<dyn Executor>;

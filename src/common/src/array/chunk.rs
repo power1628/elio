@@ -23,4 +23,8 @@ impl DataChunk {
     pub fn column(&self, idx: usize) -> &ArrayImpl {
         &self.columns[idx]
     }
+
+    pub fn add_column(&mut self, col: ArrayImpl) {
+        self.columns.push(col);
+    }
 }

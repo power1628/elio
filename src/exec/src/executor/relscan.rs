@@ -2,7 +2,7 @@ use super::*;
 pub struct AllRelScanExecutor {}
 
 impl Executor for AllRelScanExecutor {
-    fn build(self, _ctx: &Arc<TaskExecContext>) -> Result<SendableDataChunkStream, ExecError> {
+    fn build_stream(self: Box<Self>, _ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
         todo!()
     }
 }

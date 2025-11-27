@@ -1,5 +1,5 @@
 use std::ops::{Deref, DerefMut};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use mojito_common::array::NodeIdArray;
@@ -10,7 +10,6 @@ use mojito_common::array::prop_map::PropertyMapArray;
 use crate::cf_property;
 use crate::dict::IdStore;
 use crate::error::GraphStoreError;
-use crate::transaction::node::{batch_node_create, batch_node_scan};
 
 mod node;
 // mod relationship;
@@ -24,7 +23,7 @@ pub trait DataChunkIterator: Send {
 }
 
 #[async_trait]
-pub trait Transaction {
+pub trait Transaction: Send + Sync {
     // readonly
     fn rel_scan(&self, opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError>;
     fn node_scan(&self, opts: &NodeScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError>;
@@ -38,94 +37,42 @@ pub trait Transaction {
     fn abort(self) -> Result<(), GraphStoreError>;
 }
 
-/// impl Transaction for RoTransaction
-pub struct RoTransaction {
-    // snapshot
+// Simple transaction implementation with snapshot and write batch buffer
+pub struct TransactionImpl {
     inner: OwnedSnapshot,
     dict: Arc<IdStore>,
+    // write buffer
+    write_state: Mutex<WriteState>,
 }
 
-impl RoTransaction {
+#[derive(Default)]
+pub struct WriteState {
+    pub(crate) batch: rocksdb::WriteBatch,
+    // TODO(pgao): local buffer
+    // local_cache: HashMap<Vec<u8>, Option<Vec<u8>>>,
+}
+
+impl TransactionImpl {
     pub fn new(db: Arc<rocksdb::TransactionDB>, dict: Arc<IdStore>) -> Self {
         Self {
             inner: OwnedSnapshot::new(db),
             dict,
+            write_state: WriteState::default().into(),
         }
     }
 }
 
-impl Transaction for RoTransaction {
+impl Transaction for TransactionImpl {
     fn rel_scan(&self, _opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
         todo!()
     }
 
-    fn node_scan(&self, opts: &NodeScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
-        batch_node_scan(&self.inner, opts)
+    fn node_scan(&self, _opts: &NodeScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
+        todo!()
     }
 
     fn node_create(&self, _label: &ListArray, _prop: &PropertyMapArray) -> Result<NodeIdArray, GraphStoreError> {
-        // readonly transaction, not allowed to create node
-        Err(GraphStoreError::internal(
-            "readonly transaction, not allowed to create node",
-        ))
-    }
-
-    fn relationship_create(&self, _rel: &DataChunk) -> Result<DataChunk, GraphStoreError> {
-        // readonly transaction, not allowed to create relationship
-        Err(GraphStoreError::internal(
-            "readonly transaction, not allowed to create relationship",
-        ))
-    }
-
-    fn node_delete(&self, _node: &DataChunk) -> Result<(), GraphStoreError> {
-        // readonly transaction, not allowed to delete node
-        Err(GraphStoreError::internal(
-            "readonly transaction, not allowed to delete node",
-        ))
-    }
-
-    fn relationship_delete(&self, _rel: &DataChunk) -> Result<(), GraphStoreError> {
-        // readonly transaction, not allowed to delete relationship
-        Err(GraphStoreError::internal(
-            "readonly transaction, not allowed to delete relationship",
-        ))
-    }
-
-    fn commit(self) -> Result<(), GraphStoreError> {
         todo!()
-    }
-
-    fn abort(self) -> Result<(), GraphStoreError> {
-        todo!()
-    }
-}
-
-pub struct RwTransaction {
-    // rocksdb transaction
-    pub(crate) inner: OwnedTransaction,
-    dict: Arc<IdStore>,
-}
-
-impl RwTransaction {
-    pub fn new(db: Arc<rocksdb::TransactionDB>, dict: Arc<IdStore>) -> Self {
-        Self {
-            inner: OwnedTransaction::new(db),
-            dict,
-        }
-    }
-}
-
-impl Transaction for RwTransaction {
-    fn rel_scan(&self, _opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
-        todo!()
-    }
-
-    fn node_scan(&self, opts: &NodeScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
-        batch_node_scan(&self.inner, opts)
-    }
-
-    fn node_create(&self, label: &ListArray, prop: &PropertyMapArray) -> Result<NodeIdArray, GraphStoreError> {
-        batch_node_create(self, label, prop)
     }
 
     fn relationship_create(&self, _rel: &DataChunk) -> Result<DataChunk, GraphStoreError> {
@@ -148,6 +95,117 @@ impl Transaction for RwTransaction {
         todo!()
     }
 }
+
+// /// impl Transaction for RoTransaction
+// pub struct RoTransaction {
+//     // snapshot
+//     inner: OwnedSnapshot,
+//     dict: Arc<IdStore>,
+// }
+
+// impl RoTransaction {
+//     pub fn new(db: Arc<rocksdb::TransactionDB>, dict: Arc<IdStore>) -> Self {
+//         Self {
+//             inner: OwnedSnapshot::new(db),
+//             dict,
+//         }
+//     }
+// }
+
+// impl Transaction for RoTransaction {
+//     fn rel_scan(&self, _opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
+//         todo!()
+//     }
+
+//     fn node_scan(&self, opts: &NodeScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
+//         batch_node_scan(&self.inner, opts)
+//     }
+
+//     fn node_create(&self, _label: &ListArray, _prop: &PropertyMapArray) -> Result<NodeIdArray, GraphStoreError> {
+//         // readonly transaction, not allowed to create node
+//         Err(GraphStoreError::internal(
+//             "readonly transaction, not allowed to create node",
+//         ))
+//     }
+
+//     fn relationship_create(&self, _rel: &DataChunk) -> Result<DataChunk, GraphStoreError> {
+//         // readonly transaction, not allowed to create relationship
+//         Err(GraphStoreError::internal(
+//             "readonly transaction, not allowed to create relationship",
+//         ))
+//     }
+
+//     fn node_delete(&self, _node: &DataChunk) -> Result<(), GraphStoreError> {
+//         // readonly transaction, not allowed to delete node
+//         Err(GraphStoreError::internal(
+//             "readonly transaction, not allowed to delete node",
+//         ))
+//     }
+
+//     fn relationship_delete(&self, _rel: &DataChunk) -> Result<(), GraphStoreError> {
+//         // readonly transaction, not allowed to delete relationship
+//         Err(GraphStoreError::internal(
+//             "readonly transaction, not allowed to delete relationship",
+//         ))
+//     }
+
+//     fn commit(self) -> Result<(), GraphStoreError> {
+//         todo!()
+//     }
+
+//     fn abort(self) -> Result<(), GraphStoreError> {
+//         todo!()
+//     }
+// }
+
+// pub struct RwTransaction {
+//     // rocksdb transaction
+//     pub(crate) inner: OwnedTransaction,
+//     dict: Arc<IdStore>,
+// }
+
+// impl RwTransaction {
+//     pub fn new(db: Arc<rocksdb::TransactionDB>, dict: Arc<IdStore>) -> Self {
+//         Self {
+//             inner: OwnedTransaction::new(db),
+//             dict,
+//         }
+//     }
+// }
+
+// impl Transaction for RwTransaction {
+//     fn rel_scan(&self, _opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
+//         todo!()
+//     }
+
+//     fn node_scan(&self, opts: &NodeScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
+//         batch_node_scan(&self.inner, opts)
+//     }
+
+//     fn node_create(&self, label: &ListArray, prop: &PropertyMapArray) -> Result<NodeIdArray, GraphStoreError> {
+//         batch_node_create(self, label, prop)
+//     }
+
+//     fn relationship_create(&self, _rel: &DataChunk) -> Result<DataChunk, GraphStoreError> {
+//         todo!()
+//     }
+
+//     fn node_delete(&self, _node: &DataChunk) -> Result<(), GraphStoreError> {
+//         todo!()
+//     }
+
+//     fn relationship_delete(&self, _rel: &DataChunk) -> Result<(), GraphStoreError> {
+//         todo!()
+//     }
+
+//     fn commit(self) -> Result<(), GraphStoreError> {
+//         todo!()
+//     }
+
+//     fn abort(self) -> Result<(), GraphStoreError> {
+//         todo!()
+//     }
+// }
 
 pub(crate) struct OwnedTransaction {
     pub(crate) _db: Arc<rocksdb::TransactionDB>,
