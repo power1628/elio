@@ -2,7 +2,7 @@ use crate::array::mask::{Mask, MaskMut};
 use crate::array::{Array, ArrayBuilder, ArrayIterator};
 use crate::data_type::DataType;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct BoolArray {
     bits: Mask,
     valid: Mask,

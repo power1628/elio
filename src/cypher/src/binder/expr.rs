@@ -1,19 +1,20 @@
 use core::f64;
-use paste::paste;
 
 use itertools::Itertools;
 use mojito_catalog::FunctionCatalog;
-use mojito_common::data_type::DataType;
+use mojito_common::data_type::{DataType, F64};
 use mojito_expr::func::sig::FuncImpl;
 use mojito_parser::ast;
 use mojito_storage::codec::TokenKind;
+use ordered_float::Float;
+use paste::paste;
 
-use crate::{
-    binder::{BindContext, scope::Scope},
-    error::{PlanError, SemanticError},
-    expr::{AggCall, Expr, ExprNode, FilterExprs, FuncCall, IrToken, PropertyAccess, VariableRef, value::Constant},
-    not_supported,
-};
+use crate::binder::BindContext;
+use crate::binder::scope::Scope;
+use crate::error::{PlanError, SemanticError};
+use crate::expr::value::Constant;
+use crate::expr::{AggCall, Expr, ExprNode, FilterExprs, FuncCall, IrToken, PropertyAccess, VariableRef};
+use crate::not_supported;
 
 #[derive(Clone)]
 pub struct ExprContext<'a> {
@@ -49,6 +50,7 @@ macro_rules! impl_sema_flag {
 
 impl ExprSemanticFlag {
     impl_sema_flag!(reject_outer_reference, EXPR_REJECT_OUTER_REFERENCE);
+
     impl_sema_flag!(reject_aggregate, EXPR_REJECT_AGGREGATE);
 }
 
@@ -69,7 +71,7 @@ pub fn bind_expr(ectx: &ExprContext, outer_scope: &[Scope], expr: &ast::Expr) ->
             // resolve property keys
             let token: IrToken = ectx.bctx.catalog().get_token_id(key, TokenKind::PropertyKey).into();
             // TODO(pgao): maybe we can resolve the property types here
-            let pa = PropertyAccess::new_unchecked(expr.boxed(), &token, &DataType::Any);
+            let pa = PropertyAccess::new_unchecked(expr.boxed(), &token, &DataType::Property);
             Ok(pa.into())
         }
         ast::Expr::Unary { op, oprand } => bind_unary(ectx, outer_scope, op, oprand),
@@ -90,14 +92,14 @@ fn bind_constant(_ectx: &ExprContext, lit: &ast::Literal) -> Result<Constant, Pl
         }
         ast::Literal::Float(f) => {
             if let Ok(f) = f.parse::<f64>() {
-                Ok(Constant::float(f))
+                Ok(Constant::float(f.into()))
             } else {
                 Err(SemanticError::invalid_literal(&DataType::Float, &lit.to_string()).into())
             }
         }
         ast::Literal::String(s) => Ok(Constant::string(s.clone())),
         ast::Literal::Null => Ok(Constant::null()),
-        ast::Literal::Inf => Ok(Constant::float(f64::INFINITY)),
+        ast::Literal::Inf => Ok(Constant::float(F64::infinity())),
     }
 }
 

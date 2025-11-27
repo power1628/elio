@@ -1,46 +1,46 @@
-use mojito_common::{data_type::DataType, value::Value};
-use ordered_float::OrderedFloat;
+use mojito_common::data_type::{DataType, F64};
+use mojito_common::scalar::ScalarImpl;
 
 use crate::expr::{Expr, ExprNode};
 
 #[derive(Debug, Hash, Clone, Eq, PartialEq)]
 pub struct Constant {
-    pub data: Value,
+    pub data: Option<ScalarImpl>,
     pub typ: DataType,
 }
 
 impl Constant {
     pub fn boolean(b: bool) -> Self {
         Self {
-            data: Value::Boolean(b),
+            data: Some(ScalarImpl::Bool(b)),
             typ: DataType::Bool,
         }
     }
 
     pub fn integer(i: i64) -> Self {
         Self {
-            data: Value::Integer(i),
+            data: Some(ScalarImpl::Integer(i)),
             typ: DataType::Integer,
         }
     }
 
-    pub fn float(f: f64) -> Self {
+    pub fn float(f: F64) -> Self {
         Self {
-            data: Value::Float(OrderedFloat(f)),
+            data: Some(ScalarImpl::Float(f)),
             typ: DataType::Float,
         }
     }
 
     pub fn string(s: String) -> Self {
         Self {
-            data: Value::String(s),
+            data: Some(ScalarImpl::String(s)),
             typ: DataType::String,
         }
     }
 
     pub fn null() -> Self {
         Self {
-            data: Value::Null,
+            data: None,
             typ: DataType::Null,
         }
     }

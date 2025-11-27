@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use indexmap::IndexMap;
 use itertools::Itertools;
 use mojito_catalog::FunctionCatalog;
+use mojito_common::scalar::ScalarImpl;
 use mojito_common::schema::Variable;
 use mojito_parser::ast::{self, ReturnItem};
 
@@ -306,7 +307,7 @@ pub fn bind_pagination(
         ectx.sema_flags.reject_outer_reference();
         let expr = bind_expr(&ectx, &bctx.outer_scopes, skip)?;
         if let Expr::Constant(Constant {
-            data: Value::Integer(i),
+            data: Some(ScalarImpl::Integer(i)),
             ..
         }) = expr
         {
@@ -322,7 +323,7 @@ pub fn bind_pagination(
         ectx.sema_flags.reject_outer_reference();
         let expr = bind_expr(&ectx, &bctx.outer_scopes, limit)?;
         if let Expr::Constant(Constant {
-            data: Value::Integer(i),
+            data: Some(ScalarImpl::Integer(i)),
             ..
         }) = expr
         {

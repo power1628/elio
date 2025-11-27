@@ -9,6 +9,7 @@
 //! This file is derived from https://github.com/skyzh/type-exercise-in-rust
 
 use crate::array::Array;
+use crate::data_type::F64;
 use crate::scalar::list::{ListValue, ListValueRef};
 use crate::store_types::PropertyValue;
 use crate::{NodeId, RelationshipId};
@@ -19,6 +20,7 @@ pub mod prop_map;
 pub mod prop_value;
 pub mod rel;
 pub use node::*;
+use ordered_float::OrderedFloat;
 pub use prop_map::*;
 pub use rel::*;
 
@@ -46,11 +48,11 @@ pub trait ScalarRef<'a>: std::fmt::Debug + Clone + Copy + Send + 'a + Into<Scala
     fn to_owned_scalar(&self) -> Self::ScalarType;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum ScalarImpl {
     Bool(bool),
     Integer(i64),
-    Float(f64),
+    Float(OrderedFloat<f64>),
     String(String),
     U16(u16),
     NodeId(NodeId),
@@ -62,11 +64,11 @@ pub enum ScalarImpl {
     PropertyMap(PropertyMapValue),
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ScalarRefImpl<'a> {
     Bool(bool),
     Integer(i64),
-    Float(f64),
+    Float(F64),
     String(&'a str),
     U16(u16),
     NodeId(NodeId),

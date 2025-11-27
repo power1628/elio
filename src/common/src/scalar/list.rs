@@ -2,7 +2,7 @@ use crate::array::list::ListArray;
 use crate::array::{ArrayImpl, ArrayImplRef};
 use crate::scalar::{Scalar, ScalarRef, ScalarRefImpl};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ListValue(Box<ArrayImpl>);
 
 impl Scalar for ListValue {
@@ -18,7 +18,7 @@ impl Scalar for ListValue {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct ListValueRef<'a> {
     data: &'a ArrayImpl,
     start: u32,

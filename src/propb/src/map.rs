@@ -3,7 +3,7 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 use crate::entry::{EntryMut, EntryRef};
 use crate::meta::EntryMeta;
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub struct PropertyMap {
     // #layout
     // | len(u16)  | entry * len | value heap |
@@ -33,7 +33,7 @@ impl PropertyMap {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct PropertyMapRef<'a> {
     // pointer to start of property map
     data: &'a [u8],

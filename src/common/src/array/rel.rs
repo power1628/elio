@@ -7,7 +7,7 @@ use crate::array::{
 use crate::data_type::DataType;
 use crate::scalar::rel::{RelValue, RelValueRef};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct RelArray {
     id: RelIdArray,
     reltype: U16Array,

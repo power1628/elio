@@ -38,6 +38,7 @@ pub enum EntityKind {
     Eq,
     PartialOrd,
     Ord,
+    Hash,
 )]
 #[repr(transparent)]
 pub struct NodeId(pub u64);
@@ -61,6 +62,7 @@ impl NodeId {
     Eq,
     PartialOrd,
     Ord,
+    Hash,
 )]
 #[repr(transparent)]
 pub struct RelationshipId(pub u64);

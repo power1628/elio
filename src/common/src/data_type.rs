@@ -1,5 +1,7 @@
 use derive_more::Display;
 
+pub type F64 = ordered_float::OrderedFloat<f64>;
+
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Display)]
 pub enum DataType {
     Null,

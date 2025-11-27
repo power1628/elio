@@ -1,15 +1,17 @@
-#[derive(Clone, Debug, PartialEq)]
+use crate::data_type::F64;
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum PropertyValue {
     // TODO(pgao): maybe get rid of null here?
     Null,
     Boolean(bool),
     Integer(i64),
-    Float(f64),
+    Float(F64),
     String(String),
     // list
     ListBool(Vec<bool>),
     ListInteger(Vec<i64>),
-    ListFloat(Vec<f64>),
+    ListFloat(Vec<F64>),
     ListString(Vec<String>),
 }
 

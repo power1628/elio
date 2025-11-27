@@ -5,7 +5,7 @@ use crate::array::{Array, ArrayBuilder, NodeIdArray, NodeIdArrayBuilder};
 use crate::data_type::DataType;
 use crate::scalar::node::{NodeValue, NodeValueRef};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct NodeArray {
     id: NodeIdArray,
     labels: ListArray,

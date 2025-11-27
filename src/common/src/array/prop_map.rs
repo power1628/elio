@@ -11,7 +11,7 @@ use crate::data_type::DataType;
 use crate::scalar::prop_map::PropertyMapValue;
 use crate::scalar::{PropertyMapValueRef, Scalar, ScalarRef};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct PropertyMapArray {
     data: Arc<[PropertyMapValue]>,
     valid: Mask,
@@ -86,15 +86,12 @@ impl ArrayBuilder for PropertyMapArrayBuilder {
 
 #[cfg(test)]
 mod tests {
-    
 
     use itertools::Itertools;
 
     use super::*;
     use crate::array::{Array, ArrayBuilder};
     use crate::data_type::DataType;
-    
-    
 
     // #[test]
     // fn test_prop_map_array_builder_and_get() {

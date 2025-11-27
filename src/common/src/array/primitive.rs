@@ -1,11 +1,11 @@
 use crate::array::buffer::{Buffer, BufferMut};
 use crate::array::mask::{Mask, MaskMut};
 use crate::array::{Array, ArrayBuilder, ArrayImpl, ArrayIterator, PrimitiveArrayElementType};
-use crate::data_type::DataType;
+use crate::data_type::{DataType, F64};
 use crate::scalar::{Scalar, ScalarRef};
 use crate::{NodeId, RelationshipId};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct PrimitiveArray<T: PrimitiveArrayElementType> {
     data: Buffer<T>,
     valid: Mask,
@@ -104,8 +104,8 @@ where
 pub type IntegerArray = PrimitiveArray<i64>;
 pub type IntegerArrayBuilder = PrimitiveArrayBuilder<i64>;
 
-pub type FloatArray = PrimitiveArray<f64>;
-pub type FloatArrayBuilder = PrimitiveArrayBuilder<f64>;
+pub type FloatArray = PrimitiveArray<F64>;
+pub type FloatArrayBuilder = PrimitiveArrayBuilder<F64>;
 
 pub type U16Array = PrimitiveArray<u16>;
 pub type U16ArrayBuilder = PrimitiveArrayBuilder<u16>;
@@ -150,16 +150,16 @@ mod tests {
 
     #[test]
     fn test_primitive_array_all_valid() {
-        let mut builder = PrimitiveArrayBuilder::<f64>::with_capacity(3, DataType::Float);
-        builder.push(Some(1.1));
-        builder.push(Some(2.2));
-        builder.push(Some(3.3));
+        let mut builder = PrimitiveArrayBuilder::<F64>::with_capacity(3, DataType::Float);
+        builder.push(Some(1.1.into()));
+        builder.push(Some(2.2.into()));
+        builder.push(Some(3.3.into()));
         let arr = builder.finish();
 
         assert_eq!(arr.len(), 3);
-        assert_eq!(arr.get(0), Some(1.1));
-        assert_eq!(arr.get(1), Some(2.2));
-        assert_eq!(arr.get(2), Some(3.3));
+        assert_eq!(arr.get(0), Some(1.1.into()));
+        assert_eq!(arr.get(1), Some(2.2.into()));
+        assert_eq!(arr.get(2), Some(3.3.into()));
     }
 
     #[test]

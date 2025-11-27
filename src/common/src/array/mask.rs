@@ -1,6 +1,6 @@
 use bytes::{Bytes, BytesMut};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Mask {
     bits: Bytes,
     len: usize,

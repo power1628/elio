@@ -2,7 +2,7 @@ use crate::array::rel::RelArray;
 use crate::scalar::{PropertyMapValue, PropertyMapValueRef, Scalar, ScalarRef};
 use crate::{NodeId, RelationshipId, RelationshipTypeId};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct RelValue {
     pub id: RelationshipId,
     pub reltype: RelationshipTypeId,
@@ -26,7 +26,7 @@ impl Scalar for RelValue {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct RelValueRef<'scalar> {
     pub id: RelationshipId,
     pub reltype: RelationshipTypeId,

@@ -4,7 +4,7 @@ use crate::array::{Array, ArrayBuilder, ArrayIterator};
 use crate::data_type::DataType;
 use crate::store_types::PropertyValue;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PropertyArray {
     data: Arc<[PropertyValue]>,
 }
@@ -80,7 +80,7 @@ mod tests {
         let prop1 = PropertyValue::Integer(123);
         let prop2 = PropertyValue::String("test".to_string());
         let prop3 = PropertyValue::Null;
-        let prop4 = PropertyValue::Float(45.67);
+        let prop4 = PropertyValue::Float(45.67.into());
 
         builder.push(Some(&prop1));
         builder.push(Some(&prop2));

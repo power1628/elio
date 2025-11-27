@@ -5,7 +5,16 @@ use crate::scalar::{Scalar, ScalarRef};
 // use crate::store_types::PropertyValue;
 
 #[derive(
-    Clone, Debug, Default, derive_more::DerefMut, derive_more::Deref, derive_more::From, derive_more::Into, PartialEq,
+    Clone,
+    Debug,
+    Default,
+    derive_more::DerefMut,
+    derive_more::Deref,
+    derive_more::From,
+    derive_more::Into,
+    PartialEq,
+    Eq,
+    Hash,
 )]
 // pub struct PropertyMapValue(pub Vec<(PropertyKeyId, PropertyValue)>);
 pub struct PropertyMapValue(pub PropertyMap);
@@ -20,7 +29,16 @@ impl Scalar for PropertyMapValue {
 }
 
 #[derive(
-    Clone, Copy, Debug, derive_more::DerefMut, derive_more::Deref, derive_more::From, derive_more::Into, PartialEq,
+    Clone,
+    Copy,
+    Debug,
+    derive_more::DerefMut,
+    derive_more::Deref,
+    derive_more::From,
+    derive_more::Into,
+    PartialEq,
+    Eq,
+    Hash,
 )]
 // pub struct PropertyMapValueRef<'a>(pub &'a [(PropertyKeyId, PropertyValue)]);
 pub struct PropertyMapValueRef<'a>(PropertyMapRef<'a>);

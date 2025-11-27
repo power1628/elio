@@ -24,6 +24,7 @@ pub mod string;
 pub use boolean::*;
 use enum_as_inner::EnumAsInner;
 pub use iterator::*;
+use ordered_float::OrderedFloat;
 pub use primitive::*;
 pub use string::*;
 
@@ -40,7 +41,7 @@ use crate::{NodeId, RelationshipId};
 pub mod mask;
 
 pub trait PrimitiveArrayElementType:
-    BufferElementType + Clone + Copy + std::fmt::Debug + Sized + Send + Sync + Default
+    BufferElementType + Clone + Copy + std::fmt::Debug + Sized + Send + Sync + Default + PartialEq + Eq + std::hash::Hash
 {
     fn data_type() -> DataType;
 }
@@ -58,7 +59,7 @@ impl PrimitiveArrayElementType for i64 {
 }
 // impl PrimitiveType for u64 {}
 // impl PrimitiveType for f32 {}
-impl PrimitiveArrayElementType for f64 {
+impl PrimitiveArrayElementType for OrderedFloat<f64> {
     fn data_type() -> DataType {
         DataType::Float
     }
@@ -147,7 +148,7 @@ pub trait ArrayBuilder {
     }
 }
 
-#[derive(Clone, Debug, EnumAsInner)]
+#[derive(Clone, Debug, EnumAsInner, PartialEq, Eq, Hash)]
 pub enum ArrayImpl {
     Bool(BoolArray),
     Integer(IntegerArray),

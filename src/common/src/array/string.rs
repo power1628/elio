@@ -3,7 +3,7 @@ use crate::array::mask::{Mask, MaskMut};
 use crate::array::{Array, ArrayBuilder, ArrayIterator};
 use crate::data_type::DataType;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct StringArray {
     // string content
     data: Buffer<u8>,
@@ -159,7 +159,7 @@ mod tests {
         assert_eq!(arr.get(0), Some(""));
         assert_eq!(arr.get(1), Some("not empty"));
     }
-    
+
     #[test]
     fn test_all_nulls() {
         let mut builder = StringArrayBuilder::with_capacity(3, DataType::String);

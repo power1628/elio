@@ -3,6 +3,7 @@ use std::mem::size_of;
 use std::ops::Range;
 
 use bytes::{Bytes, BytesMut};
+use ordered_float::OrderedFloat;
 
 use crate::{NodeId, RelationshipId};
 
@@ -14,13 +15,13 @@ impl BufferElementType for u32 {}
 impl BufferElementType for usize {}
 impl BufferElementType for i64 {}
 impl BufferElementType for u64 {}
-impl BufferElementType for f64 {}
+impl BufferElementType for OrderedFloat<f64> {}
 impl BufferElementType for NodeId {}
 impl BufferElementType for RelationshipId {}
 
 // Typed buffer for storing elements of type T.
 // Require T must be primitive types
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Buffer<T: BufferElementType> {
     data: Bytes,
     len: usize,

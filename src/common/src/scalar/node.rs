@@ -1,9 +1,9 @@
+use crate::NodeId;
 use crate::array::node::NodeArray;
 use crate::scalar::list::{ListValue, ListValueRef};
 use crate::scalar::{PropertyMapValue, PropertyMapValueRef, Scalar, ScalarRef};
-use crate::NodeId;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct NodeValue {
     pub id: NodeId,
     pub labels: ListValue,
@@ -23,7 +23,7 @@ impl Scalar for NodeValue {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct NodeValueRef<'a> {
     pub id: NodeId,
     pub labels: ListValueRef<'a>,
