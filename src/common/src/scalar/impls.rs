@@ -13,24 +13,26 @@ use crate::scalar::{Scalar, ScalarImpl, ScalarRef, ScalarRefImpl};
 macro_rules! impl_scalar_dispatch {
     ([], $( { $Abc:ident, $abc:ident, $AbcArray:ty, $AbcArrayBuilder:ty, $Owned:ty, $Ref:ty } ),*) => {
         impl ScalarImpl {
-            /// Get physical type of the current scalar
-            pub fn data_type(&self) -> DataType{
+
+            pub fn as_scalar_ref(&self) -> ScalarRefImpl<'_> {
                 match self {
                     $(
-                        Self::$Abc(_) => DataType::$Abc,
+                        Self::$Abc(abc) => ScalarRefImpl::$Abc(abc.as_scalar_ref()),
                     )*
                 }
             }
+
         }
     }
 }
 
-// for_all_variants! { impl_scalar_dispatch }
+for_all_variants! { impl_scalar_dispatch }
 
 /// Implements dispatch functions for [`ScalarRef`]
 macro_rules! impl_scalar_ref_dispatch {
     ([], $( { $Abc:ident, $abc:ident, $AbcArray:ty, $AbcArrayBuilder:ty, $Owned:ty, $Ref:ty } ),*) => {
         impl <'a> ScalarRefImpl<'a> {
+
             /// Get physical type of the current scalar
             pub fn data_type(&self) -> DataType{
                 match self {

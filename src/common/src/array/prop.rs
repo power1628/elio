@@ -37,6 +37,7 @@ impl Array for PropertyArray {
     }
 }
 
+#[derive(Debug)]
 pub struct PropertyArrayBuilder {
     buffer: Vec<PropertyValue>,
 }
@@ -51,9 +52,10 @@ impl ArrayBuilder for PropertyArrayBuilder {
         }
     }
 
-    fn push(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>) {
+    fn append_n(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>, repeat: usize) {
         assert!(value.is_some());
-        self.buffer.push(value.unwrap().clone());
+        self.buffer
+            .extend(std::iter::repeat_n(value.unwrap().clone(), repeat));
     }
 
     fn finish(self) -> Self::Array {
@@ -82,10 +84,10 @@ mod tests {
         let prop3 = PropertyValue::Null;
         let prop4 = PropertyValue::Float(45.67.into());
 
-        builder.push(Some(&prop1));
-        builder.push(Some(&prop2));
-        builder.push(Some(&prop3));
-        builder.push(Some(&prop4));
+        builder.append(Some(&prop1));
+        builder.append(Some(&prop2));
+        builder.append(Some(&prop3));
+        builder.append(Some(&prop4));
 
         assert_eq!(builder.len(), 4);
 
@@ -113,9 +115,9 @@ mod tests {
         let prop2 = PropertyValue::Null;
         let prop3 = PropertyValue::String("another".to_string());
 
-        builder.push(Some(&prop1));
-        builder.push(Some(&prop2));
-        builder.push(Some(&prop3));
+        builder.append(Some(&prop1));
+        builder.append(Some(&prop2));
+        builder.append(Some(&prop3));
 
         let arr = builder.finish();
         let mut iter = arr.iter();
@@ -145,6 +147,6 @@ mod tests {
     #[should_panic(expected = "assertion failed: value.is_some()")]
     fn test_pushing_none_panics() {
         let mut builder = PropertyArrayBuilder::with_capacity(1, DataType::Property);
-        builder.push(None);
+        builder.append(None);
     }
 }

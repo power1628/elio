@@ -25,8 +25,8 @@ impl UnaryExecutor {
         let mut builder = <O::ArrayType as Array>::Builder::with_capacity(input.len(), typ);
         for item in input.iter() {
             match item {
-                Some(arg) => builder.push(Some(func(arg).as_scalar_ref())),
-                None => builder.push(None),
+                Some(arg) => builder.append(Some(func(arg).as_scalar_ref())),
+                None => builder.append(None),
             }
         }
         Ok(builder.finish())

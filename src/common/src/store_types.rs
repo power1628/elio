@@ -1,5 +1,9 @@
+use itertools::Itertools;
+use mojito_propb::entry::EntryValueRef;
+
 use crate::data_type::F64;
 
+// TODO(pgao): binary representation
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum PropertyValue {
     // TODO(pgao): maybe get rid of null here?
@@ -36,6 +40,22 @@ impl PropertyValue {
             PropertyValue::ListInteger(_) => StoreDataType::List(Box::new(StoreDataType::Integer)),
             PropertyValue::ListFloat(_) => StoreDataType::List(Box::new(StoreDataType::Float)),
             PropertyValue::ListString(_) => StoreDataType::List(Box::new(StoreDataType::String)),
+        }
+    }
+}
+
+impl PropertyValue {
+    pub fn from_map_entry_value(entry_value: EntryValueRef<'_>) -> Self {
+        match entry_value {
+            EntryValueRef::Null => PropertyValue::Null,
+            EntryValueRef::Bool(b) => PropertyValue::Boolean(b),
+            EntryValueRef::Integer(i) => PropertyValue::Integer(i),
+            EntryValueRef::Float(f) => PropertyValue::Float(F64::from(f)),
+            EntryValueRef::String(s) => PropertyValue::String(s.to_string()),
+            EntryValueRef::ListBool(b) => PropertyValue::ListBool(b.to_vec()),
+            EntryValueRef::ListInteger(i) => PropertyValue::ListInteger(i.iter().collect_vec()),
+            EntryValueRef::ListFloat(f) => PropertyValue::ListFloat(f.iter().map(F64::from).collect_vec()),
+            EntryValueRef::ListString(s) => PropertyValue::ListString(s.iter().map(|s| s.to_string()).collect_vec()),
         }
     }
 }

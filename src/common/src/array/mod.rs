@@ -135,8 +135,12 @@ pub trait ArrayBuilder {
     fn with_capacity(capacity: usize, typ: DataType) -> Self;
 
     /// Append a value to builder.
-    fn push(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>);
+    fn append_n(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>, repeat: usize);
     // fn push(&mut self, value: Option<<<Self::Array as Array>::OwnedItem as Scalar>::RefType<'_>>);
+
+    fn append(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>) {
+        self.append_n(value, 1);
+    }
 
     /// Finish build and return a new array.
     fn finish(self) -> Self::Array;
@@ -188,6 +192,7 @@ pub enum ArrayImplRef<'a> {
 }
 
 /// Encapsules all variants of array builders in this library.
+#[derive(Debug, EnumAsInner)]
 pub enum ArrayBuilderImpl {
     Bool(BoolArrayBuilder),
     String(StringArrayBuilder),
@@ -207,7 +212,6 @@ impl ArrayBuilderImpl {
     // TODO(pgao): needs to be refactored, use macro rules
     pub fn with_capacity(capacity: usize, typ: DataType) -> Self {
         match typ {
-            DataType::Null => unreachable!("null type is not supported"),
             DataType::Bool => Self::Bool(BoolArrayBuilder::with_capacity(capacity, typ)),
             DataType::Integer => Self::Integer(IntegerArrayBuilder::with_capacity(capacity, typ)),
             DataType::Float => Self::Float(FloatArrayBuilder::with_capacity(capacity, typ)),

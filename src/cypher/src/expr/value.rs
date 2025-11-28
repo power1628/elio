@@ -1,11 +1,11 @@
 use mojito_common::data_type::{DataType, F64};
-use mojito_common::scalar::ScalarImpl;
+use mojito_common::scalar::{Datum, ScalarImpl};
 
 use crate::expr::{Expr, ExprNode};
 
 #[derive(Debug, Hash, Clone, Eq, PartialEq)]
 pub struct Constant {
-    pub data: Option<ScalarImpl>,
+    pub data: Datum,
     pub typ: DataType,
 }
 
@@ -38,11 +38,8 @@ impl Constant {
         }
     }
 
-    pub fn null() -> Self {
-        Self {
-            data: None,
-            typ: DataType::Null,
-        }
+    pub fn null(typ: DataType) -> Self {
+        Self { data: None, typ }
     }
 }
 

@@ -59,8 +59,8 @@ impl<'a> ScalarRef<'a> for ListValueRef<'a> {
 
     fn to_owned_scalar(&self) -> Self::ScalarType {
         let mut builder = self.data.new_builder(self.len());
-        for value in self.data.iter() {
-            builder.push(value);
+        for value in self.data.iter().skip(self.start as usize).take(self.len()) {
+            builder.append(value);
         }
         ListValue(Box::new(builder.finish()))
     }

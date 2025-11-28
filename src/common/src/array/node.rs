@@ -52,6 +52,7 @@ impl Array for NodeArray {
     }
 }
 
+#[derive(Debug)]
 pub struct NodeArrayBuilder {
     id: NodeIdArrayBuilder,
     labels: ListArrayBuilder,
@@ -72,19 +73,19 @@ impl ArrayBuilder for NodeArrayBuilder {
         }
     }
 
-    fn push(&mut self, value: Option<NodeValueRef<'_>>) {
+    fn append_n(&mut self, value: Option<NodeValueRef<'_>>, repeat: usize) {
         match value {
             Some(NodeValueRef { id, labels, properties }) => {
-                self.valid.push(true);
-                self.id.push(Some(id));
-                self.labels.push(Some(labels));
-                self.properties.push(Some(properties));
+                self.valid.append_n(true, repeat);
+                self.id.append_n(Some(id), repeat);
+                self.labels.append_n(Some(labels), repeat);
+                self.properties.append_n(Some(properties), repeat);
             }
             None => {
-                self.valid.push(false);
-                self.id.push(None);
-                self.labels.push(None);
-                self.properties.push(None);
+                self.valid.append_n(false, repeat);
+                self.id.append_n(None, repeat);
+                self.labels.append_n(None, repeat);
+                self.properties.append_n(None, repeat);
             }
         }
     }

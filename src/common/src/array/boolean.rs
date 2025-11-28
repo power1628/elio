@@ -38,6 +38,7 @@ impl Array for BoolArray {
     }
 }
 
+#[derive(Debug)]
 pub struct BoolArrayBuilder {
     data: MaskMut,
     valid: MaskMut,
@@ -54,15 +55,15 @@ impl ArrayBuilder for BoolArrayBuilder {
         }
     }
 
-    fn push(&mut self, value: Option<<Self::Array as super::Array>::RefItem<'_>>) {
+    fn append_n(&mut self, value: Option<<Self::Array as super::Array>::RefItem<'_>>, repeat: usize) {
         match value {
             Some(v) => {
-                self.data.push(v);
-                self.valid.push(true);
+                self.data.append_n(v, repeat);
+                self.valid.append_n(true, repeat);
             }
             None => {
-                self.data.push(false);
-                self.valid.push(false);
+                self.data.append_n(false, repeat);
+                self.valid.append_n(false, repeat);
             }
         }
     }
@@ -88,11 +89,11 @@ mod tests {
     #[test]
     fn test_bool_array_builder_push_and_finish() {
         let mut builder = BoolArrayBuilder::with_capacity(5, DataType::Bool);
-        builder.push(Some(true));
-        builder.push(Some(false));
-        builder.push(None);
-        builder.push(Some(true));
-        builder.push(None);
+        builder.append(Some(true));
+        builder.append(Some(false));
+        builder.append(None);
+        builder.append(Some(true));
+        builder.append(None);
 
         let arr = builder.finish();
 
@@ -118,9 +119,9 @@ mod tests {
     #[test]
     fn test_bool_array_all_valid() {
         let mut builder = BoolArrayBuilder::with_capacity(3, DataType::Bool);
-        builder.push(Some(true));
-        builder.push(Some(false));
-        builder.push(Some(true));
+        builder.append(Some(true));
+        builder.append(Some(false));
+        builder.append(Some(true));
         let arr = builder.finish();
 
         assert_eq!(arr.len(), 3);
@@ -132,9 +133,9 @@ mod tests {
     #[test]
     fn test_bool_array_all_invalid() {
         let mut builder = BoolArrayBuilder::with_capacity(3, DataType::Bool);
-        builder.push(None);
-        builder.push(None);
-        builder.push(None);
+        builder.append(None);
+        builder.append(None);
+        builder.append(None);
         let arr = builder.finish();
 
         assert_eq!(arr.len(), 3);
@@ -146,11 +147,11 @@ mod tests {
     #[test]
     fn test_bool_array_iter() {
         let mut builder = BoolArrayBuilder::with_capacity(5, DataType::Bool);
-        builder.push(Some(true));
-        builder.push(Some(false));
-        builder.push(None);
-        builder.push(Some(true));
-        builder.push(None);
+        builder.append(Some(true));
+        builder.append(Some(false));
+        builder.append(None);
+        builder.append(Some(true));
+        builder.append(None);
         let arr = builder.finish();
 
         let mut iter = arr.iter();
@@ -169,7 +170,7 @@ mod tests {
         assert!(arr.is_empty());
 
         let mut builder = BoolArrayBuilder::with_capacity(1, DataType::Bool);
-        builder.push(Some(true));
+        builder.append(Some(true));
         let arr = builder.finish();
         assert!(!arr.is_empty());
     }

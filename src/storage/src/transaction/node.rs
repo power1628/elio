@@ -48,7 +48,7 @@ pub(crate) fn batch_node_create(
     // create node ids array
     let mut ids = NodeIdArrayBuilder::with_capacity(len, DataType::NodeId);
     for id in node_ids.iter() {
-        ids.push(Some(*id));
+        ids.append(Some(*id));
     }
     let ids = ids.finish();
     Ok(ids)

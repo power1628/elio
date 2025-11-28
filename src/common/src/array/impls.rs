@@ -152,12 +152,23 @@ macro_rules! impl_array_builder_dispatch {
     ([], $( { $Abc:ident, $abc:ident, $AbcArray:ty, $AbcArrayBuilder:ty, $Owned:ty, $Ref:ty } ),*) => {
         impl ArrayBuilderImpl {
 
-            /// Appends an element to the back of array.
-            pub fn push(&mut self, v: Option<ScalarRefImpl<'_>>) {
+            pub fn append_n(&mut self, v: Option<ScalarRefImpl<'_>>, repeat: usize) {
                 match (self, v) {
                     $(
-                        (Self::$Abc(a), Some(ScalarRefImpl::$Abc(v))) => a.push(Some(v)),
-                        (Self::$Abc(a), None) => a.push(None),
+                        (Self::$Abc(a), Some(ScalarRefImpl::$Abc(v))) => a.append_n(Some(v), repeat),
+                        (Self::$Abc(a), None) => a.append_n(None, repeat),
+                    )*
+                    // (a, Some(b)) => panic!("type mismatch {}, expected {}", b.data_type(), a.data_type()),
+                    (_, Some(_)) => panic!("type mismatch"),
+                }
+            }
+
+            /// Appends an element to the back of array.
+            pub fn append(&mut self, v: Option<ScalarRefImpl<'_>>) {
+                match (self, v) {
+                    $(
+                        (Self::$Abc(a), Some(ScalarRefImpl::$Abc(v))) => a.append(Some(v)),
+                        (Self::$Abc(a), None) => a.append(None),
                     )*
                     // (a, Some(b)) => panic!("type mismatch {}, expected {}", b.data_type(), a.data_type()),
                     (_, Some(_)) => panic!("type mismatch"),

@@ -1,10 +1,19 @@
 use derive_more::Display;
 
+use crate::array::list::ListArrayBuilder;
+use crate::array::node::NodeArrayBuilder;
+use crate::array::prop::PropertyArrayBuilder;
+use crate::array::prop_map::PropertyMapArrayBuilder;
+use crate::array::rel::RelArrayBuilder;
+use crate::array::{
+    ArrayBuilder, ArrayBuilderImpl, BoolArrayBuilder, FloatArrayBuilder, IntegerArrayBuilder, NodeIdArrayBuilder,
+    RelIdArrayBuilder, StringArrayBuilder, U16ArrayBuilder,
+};
+
 pub type F64 = ordered_float::OrderedFloat<f64>;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, Display)]
 pub enum DataType {
-    Null,
     Bool,
     Integer,
     Float,
@@ -36,12 +45,8 @@ impl DataType {
     pub fn is_primitive(&self) -> bool {
         matches!(
             self,
-            DataType::Null
-                | DataType::Bool
-                | DataType::Integer
-                | DataType::Float
-                // | DataType::String
-                | DataType::U16
+            // DataType::Null
+            DataType::Bool | DataType::Integer | DataType::Float | DataType::U16 | DataType::NodeId | DataType::RelId
         )
     }
 
@@ -55,5 +60,25 @@ impl DataType {
 
     pub fn is_entity(&self) -> bool {
         self.is_node() || self.is_rel()
+    }
+}
+
+impl DataType {
+    pub fn array_builder(&self, capacity: usize) -> ArrayBuilderImpl {
+        match self {
+            DataType::Bool => BoolArrayBuilder::with_capacity(capacity, self.clone()).into(),
+            DataType::Integer => IntegerArrayBuilder::with_capacity(capacity, self.clone()).into(),
+            DataType::Float => FloatArrayBuilder::with_capacity(capacity, self.clone()).into(),
+            DataType::String => StringArrayBuilder::with_capacity(capacity, self.clone()).into(),
+            DataType::U16 => U16ArrayBuilder::with_capacity(capacity, self.clone()).into(),
+            DataType::NodeId => NodeIdArrayBuilder::with_capacity(capacity, self.clone()).into(),
+            DataType::RelId => RelIdArrayBuilder::with_capacity(capacity, self.clone()).into(),
+            DataType::List(_) => ListArrayBuilder::with_capacity(capacity, self.clone()).into(),
+            DataType::Node => NodeArrayBuilder::with_capacity(capacity, self.clone()).into(),
+            DataType::Rel => RelArrayBuilder::with_capacity(capacity, self.clone()).into(),
+            DataType::Path => todo!(),
+            DataType::Property => PropertyArrayBuilder::with_capacity(capacity, self.clone()).into(),
+            DataType::PropertyMap => PropertyMapArrayBuilder::with_capacity(capacity, self.clone()).into(),
+        }
     }
 }

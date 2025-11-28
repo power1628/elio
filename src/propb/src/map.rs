@@ -1,6 +1,6 @@
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
-use crate::entry::{EntryMut, EntryRef};
+use crate::entry::{EntryMut, EntryRef, EntryValueRef};
 use crate::meta::EntryMeta;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
@@ -81,6 +81,11 @@ impl<'a> PropertyMapRef<'a> {
         PropertyMap {
             data: self.data.to_vec().into_boxed_slice(),
         }
+    }
+
+    // TODO(pgao): use binary search
+    pub fn get(&self, key_id: u16) -> Option<EntryValueRef<'_>> {
+        self.iter().find(|x| x.key() == key_id).map(|x| x.value())
     }
 }
 

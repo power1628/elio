@@ -51,6 +51,7 @@ impl Array for RelArray {
     }
 }
 
+#[derive(Debug)]
 pub struct RelArrayBuilder {
     id: RelIdArrayBuilder,
     reltype: U16ArrayBuilder,
@@ -75,23 +76,23 @@ impl ArrayBuilder for RelArrayBuilder {
         }
     }
 
-    fn push(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>) {
+    fn append_n(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>, repeat: usize) {
         match value {
             None => {
-                self.id.push(None);
-                self.reltype.push(None);
-                self.start.push(None);
-                self.end.push(None);
-                self.properties.push(None);
-                self.valid.push(false);
+                self.id.append_n(None, repeat);
+                self.reltype.append_n(None, repeat);
+                self.start.append_n(None, repeat);
+                self.end.append_n(None, repeat);
+                self.properties.append_n(None, repeat);
+                self.valid.append_n(false, repeat);
             }
             Some(value) => {
-                self.id.push(Some(value.id));
-                self.reltype.push(Some(value.reltype));
-                self.start.push(Some(value.start));
-                self.end.push(Some(value.end));
-                self.properties.push(Some(value.properties));
-                self.valid.push(true);
+                self.id.append_n(Some(value.id), repeat);
+                self.reltype.append_n(Some(value.reltype), repeat);
+                self.start.append_n(Some(value.start), repeat);
+                self.end.append_n(Some(value.end), repeat);
+                self.properties.append_n(Some(value.properties), repeat);
+                self.valid.append_n(true, repeat);
             }
         }
     }

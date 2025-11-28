@@ -52,6 +52,7 @@ impl<T: PrimitiveArrayElementType> PrimitiveArray<T> {
     }
 }
 
+#[derive(Debug)]
 pub struct PrimitiveArrayBuilder<T: PrimitiveArrayElementType> {
     data: BufferMut<T>,
     valid: MaskMut,
@@ -77,15 +78,15 @@ where
         }
     }
 
-    fn push(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>) {
+    fn append_n(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>, repeat: usize) {
         if let Some(value) = value {
-            self.data.push(value);
-            self.valid.push(true);
+            self.data.push_n(value, repeat);
+            self.valid.append_n(true, repeat);
         } else {
             // Push a dummy value for nulls, as it won't be read by `get` due to `valid` mask.
             // This maintains `data` and `valid` lengths consistency.
-            self.data.push(T::default());
-            self.valid.push(false);
+            self.data.push_n(T::default(), repeat);
+            self.valid.append_n(false, repeat);
         }
     }
 
@@ -124,11 +125,11 @@ mod tests {
     #[test]
     fn test_primitive_array_builder_push_and_finish() {
         let mut builder = PrimitiveArrayBuilder::<i64>::with_capacity(5, DataType::Integer);
-        builder.push(Some(10));
-        builder.push(Some(20));
-        builder.push(None);
-        builder.push(Some(30));
-        builder.push(None);
+        builder.append(Some(10));
+        builder.append(Some(20));
+        builder.append(None);
+        builder.append(Some(30));
+        builder.append(None);
 
         let arr = builder.finish();
 
@@ -151,9 +152,9 @@ mod tests {
     #[test]
     fn test_primitive_array_all_valid() {
         let mut builder = PrimitiveArrayBuilder::<F64>::with_capacity(3, DataType::Float);
-        builder.push(Some(1.1.into()));
-        builder.push(Some(2.2.into()));
-        builder.push(Some(3.3.into()));
+        builder.append(Some(1.1.into()));
+        builder.append(Some(2.2.into()));
+        builder.append(Some(3.3.into()));
         let arr = builder.finish();
 
         assert_eq!(arr.len(), 3);
@@ -165,9 +166,9 @@ mod tests {
     #[test]
     fn test_primitive_array_all_invalid() {
         let mut builder = PrimitiveArrayBuilder::<u16>::with_capacity(3, DataType::U16);
-        builder.push(None);
-        builder.push(None);
-        builder.push(None);
+        builder.append(None);
+        builder.append(None);
+        builder.append(None);
         let arr = builder.finish();
 
         assert_eq!(arr.len(), 3);
@@ -179,11 +180,11 @@ mod tests {
     #[test]
     fn test_primitive_array_iter() {
         let mut builder = PrimitiveArrayBuilder::<i64>::with_capacity(5, DataType::Integer);
-        builder.push(Some(1));
-        builder.push(Some(2));
-        builder.push(None);
-        builder.push(Some(4));
-        builder.push(None);
+        builder.append(Some(1));
+        builder.append(Some(2));
+        builder.append(None);
+        builder.append(Some(4));
+        builder.append(None);
         let arr = builder.finish();
 
         let mut iter = arr.iter();
@@ -202,7 +203,7 @@ mod tests {
         assert!(arr.is_empty());
 
         let mut builder = PrimitiveArrayBuilder::<i64>::with_capacity(1, DataType::Integer);
-        builder.push(Some(100));
+        builder.append(Some(100));
         let arr = builder.finish();
         assert!(!arr.is_empty());
     }
@@ -210,9 +211,9 @@ mod tests {
     #[test]
     fn test_primitive_array_as_slice() {
         let mut builder = PrimitiveArrayBuilder::<i64>::with_capacity(3, DataType::Integer);
-        builder.push(Some(1));
-        builder.push(Some(2));
-        builder.push(Some(3));
+        builder.append(Some(1));
+        builder.append(Some(2));
+        builder.append(Some(3));
         let arr = builder.finish();
 
         assert_eq!(arr.as_slice(), &[1, 2, 3]);

@@ -81,6 +81,7 @@ impl<T: BufferElementType> std::ops::Index<Range<usize>> for Buffer<T> {
     }
 }
 
+#[derive(Debug)]
 pub struct BufferMut<T> {
     data: BytesMut,
     len: usize,
@@ -132,14 +133,26 @@ impl<T: BufferElementType> BufferMut<T> {
         self.data.reserve(additional * size_of::<T>());
     }
 
+    pub fn push_n(&mut self, value: T, repeat: usize)
+    where
+        T: Copy,
+    {
+        // Reserve space once to avoid repeated reallocations
+        self.data.reserve(repeat * size_of::<T>());
+        // Extend with raw bytes from the repeated value
+        let value_bytes = unsafe { std::slice::from_raw_parts(&value as *const T as *const u8, size_of::<T>()) };
+        // Use the reserved capacity efficiently by extending in chunks
+        for _ in 0..repeat {
+            self.data.extend_from_slice(value_bytes);
+        }
+        self.len += repeat;
+    }
+
     pub fn push(&mut self, value: T)
     where
         T: Copy,
     {
-        // convert T to &[u8]
-        let extend = unsafe { std::slice::from_raw_parts(&value as *const T as *const u8, size_of::<T>()) };
-        self.data.extend_from_slice(extend);
-        self.len += 1;
+        self.push_n(value, 1);
     }
 
     pub fn extend_from_slice(&mut self, slice: &[T])

@@ -45,6 +45,7 @@ impl Array for ListArray {
     }
 }
 
+#[derive(Debug)]
 pub struct ListArrayBuilder {
     data: Box<ArrayBuilderImpl>,
     offsets: BufferMut<u32>,
@@ -70,18 +71,20 @@ impl ArrayBuilder for ListArrayBuilder {
         }
     }
 
-    fn push(&mut self, value: Option<ListValueRef<'_>>) {
+    fn append_n(&mut self, value: Option<ListValueRef<'_>>, repeat: usize) {
         match value {
             Some(list) => {
-                for item in list.iter() {
-                    self.data.push(item);
+                for _ in 0..repeat {
+                    for item in list.iter() {
+                        self.data.append(item);
+                    }
+                    self.offsets.push(self.data.len() as u32);
                 }
-                self.offsets.push(self.data.len() as u32);
-                self.valid.push(true);
+                self.valid.append_n(true, repeat);
             }
             None => {
-                self.offsets.push(self.data.len() as u32);
-                self.valid.push(false);
+                self.offsets.push_n(self.data.len() as u32, repeat);
+                self.valid.append_n(false, repeat);
             }
         }
     }

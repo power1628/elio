@@ -98,7 +98,8 @@ fn bind_constant(_ectx: &ExprContext, lit: &ast::Literal) -> Result<Constant, Pl
             }
         }
         ast::Literal::String(s) => Ok(Constant::string(s.clone())),
-        ast::Literal::Null => Ok(Constant::null()),
+        // TODO(pgao): double check
+        ast::Literal::Null => Ok(Constant::null(DataType::Property)),
         ast::Literal::Inf => Ok(Constant::float(F64::infinity())),
     }
 }

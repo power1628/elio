@@ -46,6 +46,7 @@ impl Array for StringArray {
     }
 }
 
+#[derive(Debug)]
 pub struct StringArrayBuilder {
     data: BufferMut<u8>,
     offsets: BufferMut<u32>,
@@ -66,14 +67,17 @@ impl ArrayBuilder for StringArrayBuilder {
         }
     }
 
-    fn push(&mut self, value: Option<<Self::Array as super::Array>::RefItem<'_>>) {
+    fn append_n(&mut self, value: Option<<Self::Array as super::Array>::RefItem<'_>>, repeat: usize) {
         if let Some(value) = value {
-            self.data.extend_from_slice(value.as_bytes());
-            self.offsets.push(self.data.len() as u32);
-            self.valid.push(true);
+            let bytes = value.as_bytes();
+            for _ in 0..repeat {
+                self.data.extend_from_slice(bytes);
+                self.offsets.push(self.data.len() as u32);
+            }
+            self.valid.append_n(true, repeat);
         } else {
-            self.offsets.push(self.data.len() as u32);
-            self.valid.push(false);
+            self.offsets.push_n(self.data.len() as u32, repeat);
+            self.valid.append_n(false, repeat);
         }
     }
 
@@ -97,11 +101,11 @@ mod tests {
     #[test]
     fn test_string_array_builder() {
         let mut builder = StringArrayBuilder::with_capacity(5, DataType::String);
-        builder.push(Some("hello"));
-        builder.push(Some("world"));
-        builder.push(None);
-        builder.push(Some("!"));
-        builder.push(None);
+        builder.append(Some("hello"));
+        builder.append(Some("world"));
+        builder.append(None);
+        builder.append(Some("!"));
+        builder.append(None);
 
         assert_eq!(builder.len(), 5);
 
@@ -128,9 +132,9 @@ mod tests {
     #[test]
     fn test_string_array_iter() {
         let mut builder = StringArrayBuilder::with_capacity(3, DataType::String);
-        builder.push(Some("first"));
-        builder.push(None);
-        builder.push(Some("third"));
+        builder.append(Some("first"));
+        builder.append(None);
+        builder.append(Some("third"));
         let arr = builder.finish();
 
         let mut iter = arr.iter();
@@ -151,8 +155,8 @@ mod tests {
     #[test]
     fn test_string_array_with_empty_string() {
         let mut builder = StringArrayBuilder::with_capacity(2, DataType::String);
-        builder.push(Some(""));
-        builder.push(Some("not empty"));
+        builder.append(Some(""));
+        builder.append(Some("not empty"));
         let arr = builder.finish();
 
         assert_eq!(arr.len(), 2);
@@ -163,9 +167,9 @@ mod tests {
     #[test]
     fn test_all_nulls() {
         let mut builder = StringArrayBuilder::with_capacity(3, DataType::String);
-        builder.push(None);
-        builder.push(None);
-        builder.push(None);
+        builder.append(None);
+        builder.append(None);
+        builder.append(None);
         let arr = builder.finish();
         assert_eq!(arr.len(), 3);
         assert_eq!(arr.get(0), None);

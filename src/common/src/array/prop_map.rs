@@ -43,6 +43,7 @@ impl Array for PropertyMapArray {
     }
 }
 
+#[derive(Debug)]
 pub struct PropertyMapArrayBuilder {
     buffer: Vec<PropertyMapValue>,
     valid: MaskMut,
@@ -59,15 +60,16 @@ impl ArrayBuilder for PropertyMapArrayBuilder {
         }
     }
 
-    fn push(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>) {
+    fn append_n(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>, repeat: usize) {
         match value {
             Some(v) => {
-                self.buffer.push(v.to_owned_scalar());
-                self.valid.push(true);
+                self.buffer.extend(std::iter::repeat_n(v.to_owned_scalar(), repeat));
+                self.valid.append_n(true, repeat);
             }
             None => {
-                self.buffer.push(PropertyMapValue::default());
-                self.valid.push(false);
+                self.buffer
+                    .extend(std::iter::repeat_n(PropertyMapValue::default(), repeat));
+                self.valid.append_n(false, repeat);
             }
         }
     }
@@ -165,8 +167,7 @@ mod tests {
     #[test]
     fn test_all_nulls_prop_map_array() {
         let mut builder = PropertyMapArrayBuilder::with_capacity(3, DataType::PropertyMap);
-        builder.push(None);
-        builder.push(None);
+        builder.append_n(None, 2);
         let arr = builder.finish();
         assert_eq!(arr.len(), 2);
         assert_eq!(arr.get(0), None);

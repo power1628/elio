@@ -1,7 +1,8 @@
 use mojito_common::TokenId;
 use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::{ArrayBuilder, ArrayImpl};
+use mojito_common::array::{Array, ArrayBuilder, ArrayImpl};
 use mojito_common::data_type::DataType;
+use mojito_common::store_types::PropertyValue;
 
 use crate::error::EvalError;
 use crate::impl_::{BoxedExpression, EvalCtx, Expression};
@@ -21,8 +22,18 @@ impl Expression for PropertyAccessExpr {
         let input = self.input.eval_batch(chunk, ctx)?;
         assert_eq!(input.data_type(), DataType::PropertyMap);
         let input = input.as_property_map().unwrap();
-        // i think we should refactory or array system and type systems
-        // use the arrow-rs as physical type and arrays
-        todo!()
+        let mut builder = self.typ().array_builder(input.len()).into_property().unwrap();
+        for item in input.iter() {
+            match item {
+                Some(map_value) => builder.append(
+                    map_value
+                        .get(self.key)
+                        .map(PropertyValue::from_map_entry_value)
+                        .as_ref(),
+                ),
+                None => builder.append(None),
+            }
+        }
+        Ok(builder.finish().into())
     }
 }

@@ -1,5 +1,6 @@
 use bytes::{Bytes, BytesMut};
 
+
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Mask {
     bits: Bytes,
@@ -102,6 +103,7 @@ impl Mask {
     }
 }
 
+#[derive(Debug)]
 pub struct MaskMut {
     bits: BytesMut,
     len: usize,
@@ -151,26 +153,43 @@ impl MaskMut {
         self.bits.len() * 8
     }
 
-    pub fn push(&mut self, value: bool) {
+    pub fn append_n(&mut self, value: bool, repeat: usize) {
         if self.len == 0 {
             self.all_set = Some(value);
         } else if self.all_set.is_some_and(|v| v != value) {
             self.all_set = None;
         }
 
-        let byte_idx = self.len / 8;
+        // Ensure we have enough bytes
+        let required_bytes = (self.len + repeat).div_ceil(8);
+        if self.bits.len() < required_bytes {
+            self.bits.resize(required_bytes, if value { 0xFF } else { 0x00 });
+        }
+
+        // If we're filling whole bytes and the value matches the current all_set, we can just extend
         let bit_idx = self.len % 8;
-
-        if bit_idx == 0 {
-            self.bits.resize(byte_idx + 1, 0);
+        if bit_idx == 0 && self.all_set == Some(value) {
+            // All bits are already the desired value, just increase length
+            self.len += repeat;
+            return;
         }
 
-        if value {
-            self.bits[byte_idx] |= 0x01 << bit_idx;
-        } else {
-            self.bits[byte_idx] &= !(0x01 << bit_idx);
+        // Otherwise, we need to set bits individually
+        for _ in 0..repeat {
+            let byte_idx = self.len / 8;
+            let bit_idx = self.len % 8;
+
+            if value {
+                self.bits[byte_idx] |= 0x01 << bit_idx;
+            } else {
+                self.bits[byte_idx] &= !(0x01 << bit_idx);
+            }
+            self.len += 1;
         }
-        self.len += 1;
+    }
+
+    pub fn append(&mut self, value: bool) {
+        self.append_n(value, 1);
     }
 
     pub fn freeze(self) -> Mask {
@@ -233,16 +252,16 @@ mod tests {
     #[test]
     fn test_mask_from_mut() {
         let mut mask_mut = MaskMut::with_capacity(10);
-        mask_mut.push(true);
-        mask_mut.push(false);
-        mask_mut.push(true);
-        mask_mut.push(true);
-        mask_mut.push(false);
-        mask_mut.push(false);
-        mask_mut.push(true);
-        mask_mut.push(false);
-        mask_mut.push(true);
-        mask_mut.push(true);
+        mask_mut.append(true);
+        mask_mut.append(false);
+        mask_mut.append(true);
+        mask_mut.append(true);
+        mask_mut.append(false);
+        mask_mut.append(false);
+        mask_mut.append(true);
+        mask_mut.append(false);
+        mask_mut.append(true);
+        mask_mut.append(true);
 
         let mask = mask_mut.freeze();
         assert_eq!(mask.len(), 10);
@@ -267,9 +286,9 @@ mod tests {
     #[test]
     fn test_mask_unset_count_partial_byte() {
         let mut mask_mut = MaskMut::with_capacity(3);
-        mask_mut.push(true);
-        mask_mut.push(false);
-        mask_mut.push(true);
+        mask_mut.append(true);
+        mask_mut.append(false);
+        mask_mut.append(true);
 
         let mask = mask_mut.freeze();
         assert_eq!(mask.len(), 3);
@@ -282,27 +301,27 @@ mod tests {
         let mut mask_mut = MaskMut::with_capacity(4);
         assert_eq!(mask_mut.all_set, None);
 
-        mask_mut.push(true);
+        mask_mut.append(true);
         assert_eq!(mask_mut.all_set, Some(true));
-        mask_mut.push(true);
+        mask_mut.append(true);
         assert_eq!(mask_mut.all_set, Some(true));
 
         let mask = mask_mut.freeze();
         assert!(mask.all_set());
 
         let mut mask_mut = MaskMut::with_capacity(4);
-        mask_mut.push(false);
+        mask_mut.append(false);
         assert_eq!(mask_mut.all_set, Some(false));
-        mask_mut.push(false);
+        mask_mut.append(false);
         assert_eq!(mask_mut.all_set, Some(false));
         let mask = mask_mut.freeze();
         assert!(!mask.all_set());
         assert!(mask.all_unset());
 
         let mut mask_mut = MaskMut::with_capacity(4);
-        mask_mut.push(true);
+        mask_mut.append(true);
         assert_eq!(mask_mut.all_set, Some(true));
-        mask_mut.push(false);
+        mask_mut.append(false);
         assert_eq!(mask_mut.all_set, None);
         let mask = mask_mut.freeze();
         assert!(!mask.all_set());
@@ -314,20 +333,20 @@ mod tests {
         let mut mask_mut = MaskMut::new_set(5);
         assert_eq!(mask_mut.len(), 5);
         assert_eq!(mask_mut.all_set, Some(true));
-        mask_mut.push(true);
+        mask_mut.append(true);
         assert_eq!(mask_mut.len(), 6);
         assert_eq!(mask_mut.all_set, Some(true));
-        mask_mut.push(false);
+        mask_mut.append(false);
         assert_eq!(mask_mut.len(), 7);
         assert_eq!(mask_mut.all_set, None);
 
         let mut mask_mut = MaskMut::new_unset(5);
         assert_eq!(mask_mut.len(), 5);
         assert_eq!(mask_mut.all_set, Some(false));
-        mask_mut.push(false);
+        mask_mut.append(false);
         assert_eq!(mask_mut.len(), 6);
         assert_eq!(mask_mut.all_set, Some(false));
-        mask_mut.push(true);
+        mask_mut.append(true);
         assert_eq!(mask_mut.len(), 7);
         assert_eq!(mask_mut.all_set, None);
     }
