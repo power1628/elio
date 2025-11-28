@@ -1,19 +1,18 @@
 use std::sync::Arc;
 
-use crate::expr::Expr;
-use crate::expr::ExprNode;
 use mojito_common::data_type::DataType;
-use mojito_common::schema::Schema;
-use mojito_common::{schema::Variable, variable::VariableName};
+use mojito_common::schema::{Schema, Variable};
+use mojito_common::variable::VariableName;
 
-use crate::{
-    plan_context::PlanContext,
-    plan_node::plan_base::{PlanBase, PlanNodeId},
-};
+use crate::expr::{Expr, ExprNode};
+use crate::plan_context::PlanContext;
+use crate::plan_node::plan_base::{PlanBase, PlanNodeId};
 
 pub mod all_node_scan;
 pub mod apply;
 pub mod argument;
+pub mod create_node;
+pub mod create_rel;
 pub mod empty;
 pub mod expand;
 pub mod filter;
@@ -25,6 +24,8 @@ pub mod sort;
 pub use all_node_scan::*;
 pub use apply::*;
 pub use argument::*;
+pub use create_node::*;
+pub use create_rel::*;
 pub use empty::*;
 pub use expand::*;
 pub use filter::*;
@@ -41,6 +42,9 @@ pub enum PlanExpr {
     Expand(Expand),
     Apply(Apply),
     Argument(Argument),
+    // graph-modify
+    CreateNode(CreateNode),
+    CreateRel(CreateRel),
     // relational
     Project(Project),
     Sort(Sort),
@@ -112,6 +116,8 @@ impl_plan_node!(
     Expand,
     Apply,
     Argument,
+    CreateNode,
+    CreateRel,
     Project,
     Sort,
     Filter,
@@ -149,6 +155,8 @@ impl_plan_node_for_expr!(
     Expand,
     Apply,
     Argument,
+    CreateNode,
+    CreateRel,
     Project,
     Sort,
     Filter,

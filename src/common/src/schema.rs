@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use crate::{data_type::DataType, variable::VariableName};
+use crate::data_type::DataType;
+use crate::variable::VariableName;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Schema {
@@ -14,6 +15,10 @@ impl Schema {
 
     pub fn from_arc(arc: Arc<Schema>) -> Self {
         (*arc).clone()
+    }
+
+    pub fn add_column(&mut self, var: Variable) {
+        self.fields.push(var);
     }
 }
 

@@ -1,5 +1,6 @@
 use enum_as_inner::EnumAsInner;
-use mojito_common::{data_type::DataType, schema::Variable};
+use mojito_common::data_type::DataType;
+use mojito_common::schema::Variable;
 
 pub mod agg_call;
 pub mod filters;
@@ -29,7 +30,10 @@ pub enum Expr {
     AggCall(AggCall),
     Subquery(Subquery),
     Label(LabelExpr),
+    // TODO(pgao): CreateMap
 }
+
+pub type BoxedExpr = Box<Expr>;
 
 pub trait ExprNode: std::fmt::Debug + Clone {
     fn typ(&self) -> DataType;
