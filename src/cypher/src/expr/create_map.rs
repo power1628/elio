@@ -1,15 +1,15 @@
 use mojito_common::data_type::DataType;
 
-use crate::expr::{BoxedExpr, Expr, ExprNode, IrToken};
+use crate::expr::{Expr, ExprNode, IrToken};
 
 /// Create Property Map
 #[derive(Debug, Hash, Clone, Eq, PartialEq)]
 pub struct CreateMap {
-    pub properties: Vec<(IrToken, BoxedExpr)>,
+    pub properties: Vec<(IrToken, Expr)>,
 }
 
 impl CreateMap {
-    pub fn new(properties: Vec<(IrToken, BoxedExpr)>) -> Self {
+    pub fn new(properties: Vec<(IrToken, Expr)>) -> Self {
         Self { properties }
     }
 }

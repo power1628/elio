@@ -13,7 +13,7 @@ use crate::binder::BindContext;
 use crate::binder::scope::Scope;
 use crate::error::{PlanError, SemanticError};
 use crate::expr::value::Constant;
-use crate::expr::{AggCall, Expr, ExprNode, FilterExprs, FuncCall, IrToken, PropertyAccess, VariableRef};
+use crate::expr::{AggCall, BoxedExpr, Expr, ExprNode, FilterExprs, FuncCall, IrToken, PropertyAccess, VariableRef};
 use crate::not_supported;
 
 #[derive(Clone)]

@@ -1,22 +1,19 @@
 use std::collections::HashSet;
 
-use mojito_common::{EntityKind, data_type::DataType};
+use mojito_common::EntityKind;
+use mojito_common::data_type::DataType;
 use mojito_parser::ast::{self, NodePattern, RelationshipPattern, UpdatePattern};
 use mojito_storage::codec::TokenKind;
 
-use crate::{
-    binder::{
-        BindContext,
-        builder::IrSingleQueryBuilder,
-        expr::{ExprContext, bind_map_expr_to_property_map},
-        pattern::PatternContext,
-        query::ClauseKind,
-        scope::{Scope, ScopeItem},
-    },
-    error::{PlanError, SemanticError},
-    expr::{Expr, IrToken},
-    ir::mutating_pattern::{CreateNode, CreatePattern, CreateRel},
-};
+use crate::binder::BindContext;
+use crate::binder::builder::IrSingleQueryBuilder;
+use crate::binder::expr::{ExprContext, bind_map_expr_to_property_map};
+use crate::binder::pattern::PatternContext;
+use crate::binder::query::ClauseKind;
+use crate::binder::scope::{Scope, ScopeItem};
+use crate::error::{PlanError, SemanticError};
+use crate::expr::{CreateMap, Expr, IrToken};
+use crate::ir::mutating_pattern::{CreateNode, CreatePattern, CreateRel};
 
 pub fn bind_create(
     bctx: &BindContext,
@@ -44,9 +41,8 @@ pub fn bind_create(
 /// 1. Create pattern must not contain qpp
 /// 2. Relationships must be typed and with single type
 /// 3. Relationships must be directed
-/// 4. Nodes cannot be created multiple times
-///    EXPLAIN CREATE (n:Actor), (n)-[r:B]->(c) RETURN *; this is valid
-///    EXPLAIN CREATE (n:Actor), (n:Actor)-[r:B]->(c) RETURN *; this is invalid
+/// 4. Nodes cannot be created multiple times EXPLAIN CREATE (n:Actor), (n)-[r:B]->(c) RETURN *; this is valid EXPLAIN
+///    CREATE (n:Actor), (n:Actor)-[r:B]->(c) RETURN *; this is invalid
 fn bind_create_pattern(
     pctx: &PatternContext,
     builder: &mut IrSingleQueryBuilder,
@@ -227,16 +223,13 @@ fn bind_label_expr_for_create(
     Ok(tokens)
 }
 
-fn bind_properties_for_create(
-    ectx: &ExprContext,
-    properties: Option<&ast::Expr>,
-) -> Result<Vec<(IrToken, Expr)>, PlanError> {
+fn bind_properties_for_create(ectx: &ExprContext, properties: Option<&ast::Expr>) -> Result<CreateMap, PlanError> {
     let props = if let Some(ast::Expr::MapExpression { keys, values }) = properties {
         // do not allow referece outer scope
-        
         bind_map_expr_to_property_map(ectx, &[], keys, values)?
     } else {
         vec![]
     };
-    Ok(props)
+
+    Ok(CreateMap::new(props))
 }
