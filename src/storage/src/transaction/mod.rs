@@ -2,6 +2,7 @@ use std::ops::{Deref, DerefMut};
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
+use mojito_common::LabelId;
 use mojito_common::array::NodeIdArray;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::array::list::ListArray;
@@ -10,6 +11,7 @@ use mojito_common::array::prop_map::PropertyMapArray;
 use crate::cf_property;
 use crate::dict::IdStore;
 use crate::error::GraphStoreError;
+use crate::transaction::node::batch_node_create;
 
 mod node;
 // mod relationship;
@@ -28,7 +30,7 @@ pub trait Transaction: Send + Sync {
     fn rel_scan(&self, opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError>;
     fn node_scan(&self, opts: &NodeScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError>;
     // read-write
-    fn node_create(&self, label: &ListArray, prop: &PropertyMapArray) -> Result<NodeIdArray, GraphStoreError>;
+    fn node_create(&self, label: &[LabelId], prop: &PropertyMapArray) -> Result<NodeIdArray, GraphStoreError>;
     fn relationship_create(&self, rel: &DataChunk) -> Result<DataChunk, GraphStoreError>;
     fn node_delete(&self, node: &DataChunk) -> Result<(), GraphStoreError>;
     fn relationship_delete(&self, rel: &DataChunk) -> Result<(), GraphStoreError>;
@@ -71,8 +73,8 @@ impl Transaction for TransactionImpl {
         todo!()
     }
 
-    fn node_create(&self, _label: &ListArray, _prop: &PropertyMapArray) -> Result<NodeIdArray, GraphStoreError> {
-        todo!()
+    fn node_create(&self, label: &[LabelId], prop: &PropertyMapArray) -> Result<NodeIdArray, GraphStoreError> {
+        batch_node_create(self, label, prop)
     }
 
     fn relationship_create(&self, _rel: &DataChunk) -> Result<DataChunk, GraphStoreError> {

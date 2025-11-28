@@ -3,6 +3,7 @@ use mojito_common::data_type::DataType;
 use mojito_common::schema::Variable;
 
 pub mod agg_call;
+pub mod create_map;
 pub mod filters;
 /// Logical expr
 pub mod func_call;
@@ -13,6 +14,7 @@ pub mod utils;
 pub mod value;
 pub mod variable_ref;
 pub use agg_call::*;
+pub use create_map::*;
 pub use filters::*;
 pub use func_call::*;
 pub use label::*;
@@ -30,7 +32,7 @@ pub enum Expr {
     AggCall(AggCall),
     Subquery(Subquery),
     Label(LabelExpr),
-    // TODO(pgao): CreateMap
+    CreateMap(CreateMap),
 }
 
 pub type BoxedExpr = Box<Expr>;
@@ -61,7 +63,8 @@ impl_expr_node_for_enum!(
     FuncCall,
     AggCall,
     Subquery,
-    Label
+    Label,
+    CreateMap
 );
 
 impl Expr {

@@ -5,3 +5,5 @@ pub mod order;
 pub mod path_pattern;
 pub mod query;
 pub mod query_graph;
+
+pub use mutating_pattern::*;

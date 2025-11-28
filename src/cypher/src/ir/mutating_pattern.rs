@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use mojito_common::variable::VariableName;
 use mojito_parser::ast::SemanticDirection;
 
-use crate::expr::{Expr, IrToken};
+use crate::expr::{CreateMap, Expr, IrToken};
 
 pub enum MutatingPattern {
     Create(CreatePattern),
@@ -23,7 +23,7 @@ pub struct CreateNode {
     pub labels: HashSet<IrToken>,
     // CREATE (a:{name: "Bob"})
     // properties: (name, "bob")
-    pub properties: Vec<(IrToken, Expr)>,
+    pub properties: CreateMap,
 }
 
 /// Relationship vairables MUST NOT reference previous pattern.
@@ -34,7 +34,7 @@ pub struct CreateRel {
     pub right: VariableName,
     pub reltype: IrToken,
     pub direction: SemanticDirection,
-    pub properties: Vec<(IrToken, Expr)>,
+    pub properties: CreateMap,
 }
 
 impl CreateRel {

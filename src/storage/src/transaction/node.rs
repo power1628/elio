@@ -1,4 +1,4 @@
-use mojito_common::array::list::ListArray;
+use mojito_common::LabelId;
 use mojito_common::array::prop_map::PropertyMapArray;
 use mojito_common::array::{Array, ArrayBuilder, NodeIdArray, NodeIdArrayBuilder};
 use mojito_common::data_type::DataType;
@@ -14,7 +14,7 @@ use crate::transaction::{DataChunkIterator, NodeScanOptions, TransactionImpl, Tx
 // node -> encoding -> rocksdb write batch
 pub(crate) fn batch_node_create(
     tx: &TransactionImpl,
-    labels: &ListArray,
+    labels: &[LabelId],
     props: &PropertyMapArray,
 ) -> Result<NodeIdArray, GraphStoreError> {
     assert_eq!(labels.len(), props.len());
@@ -26,14 +26,12 @@ pub(crate) fn batch_node_create(
     let mut keys = Vec::with_capacity(len);
     let mut values = Vec::with_capacity(len);
 
-    for (node_id, (label, prop)) in node_ids.iter().zip(labels.iter().zip(props.iter())) {
+    for (node_id, prop) in node_ids.iter().zip(props.iter()) {
         let key = NodeFormat::encode_node_key(*node_id);
         keys.push(key);
         // labels and props must not be null
-        let label = label.unwrap();
-        let label = label.as_u16_slice().unwrap();
         let prop = prop.unwrap();
-        let value = NodeFormat::encode_node_value(label, prop);
+        let value = NodeFormat::encode_node_value(labels, prop);
         values.push(value);
     }
 

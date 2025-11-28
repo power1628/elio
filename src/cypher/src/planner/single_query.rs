@@ -1,9 +1,12 @@
-use crate::{
-    error::PlanError,
-    ir::query::{IrSingleQuery, IrSingleQueryPart},
-    plan_node::PlanExpr,
-    planner::{PlannerContext, horizon::plan_horizon, match_::plan_match},
-};
+use crate::error::PlanError;
+use crate::ir::mutating_pattern::MutatingPattern;
+use crate::ir::query::{IrSingleQuery, IrSingleQueryPart};
+use crate::ir::query_graph;
+use crate::plan_node::PlanExpr;
+use crate::planner::PlannerContext;
+use crate::planner::create::plan_create;
+use crate::planner::horizon::plan_horizon;
+use crate::planner::match_::plan_match;
 
 pub fn plan_single_query(
     ctx: &mut PlannerContext,
@@ -28,16 +31,27 @@ pub fn plan_single_query(
 
 fn plan_head(
     ctx: &mut PlannerContext,
-    part @ IrSingleQueryPart {
-        query_graph: _,
-        horizon,
-    }: &IrSingleQueryPart,
+    part @ IrSingleQueryPart { query_graph, horizon }: &IrSingleQueryPart,
 ) -> Result<Box<PlanExpr>, PlanError> {
     // plan match
     let mut root = plan_match(ctx, part)?;
+    // plan updating pattern
+    for mutating_pattern in query_graph.mutating_patterns.iter() {
+        root = plan_mutating_pattern(ctx, root, mutating_pattern)?;
+    }
     // plan horizon
     root = plan_horizon(ctx, root, horizon)?;
     Ok(root)
+}
+
+fn plan_mutating_pattern(
+    ctx: &mut PlannerContext,
+    root: Box<PlanExpr>,
+    mutating_pattern: &MutatingPattern,
+) -> Result<Box<PlanExpr>, PlanError> {
+    match mutating_pattern {
+        MutatingPattern::Create(create) => plan_create(ctx, root, create),
+    }
 }
 
 fn plan_tail_part(

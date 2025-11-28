@@ -1,7 +1,6 @@
 use std::collections::VecDeque;
 
 use indexmap::IndexSet;
-use itertools::Itertools;
 use mojito_common::data_type::DataType;
 use mojito_common::schema::Variable;
 use mojito_common::variable::VariableName;

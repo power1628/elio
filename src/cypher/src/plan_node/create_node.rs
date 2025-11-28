@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
-use mojito_common::LabelId;
 use mojito_common::schema::{Schema, Variable};
 
-use crate::expr::BoxedExpr;
+use crate::expr::{BoxedExpr, IrToken};
 use crate::plan_node::plan_base::PlanBase;
 use crate::plan_node::{InnerNode, PlanExpr, PlanNode};
 
@@ -13,12 +12,21 @@ pub struct CreateNode {
     inner: CreateNodeInner,
 }
 
+impl CreateNode {
+    pub fn new(inner: CreateNodeInner) -> Self {
+        Self {
+            base: inner.build_base(),
+            inner,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct CreateNodeInner {
-    input: Box<PlanExpr>,
-    labels: Vec<LabelId>,
-    properties: BoxedExpr,
-    variable: Variable,
+    pub(crate) input: Box<PlanExpr>,
+    pub(crate) labels: Vec<IrToken>,
+    pub(crate) properties: BoxedExpr,
+    pub(crate) variable: Variable,
 }
 
 impl CreateNodeInner {

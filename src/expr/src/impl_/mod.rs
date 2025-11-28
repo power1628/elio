@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use mojito_common::array::ArrayImpl;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::data_type::DataType;
@@ -11,11 +13,12 @@ pub mod label;
 pub mod property_access;
 pub mod variable_ref;
 
-pub struct ExecCtx;
+pub struct EvalCtx {}
 
-pub struct EvalCtx {
-    // ExecCtx
-    pub ectx: ExecCtx,
+impl EvalCtx {
+    pub fn new() -> Self {
+        Self {}
+    }
 }
 
 // an evaluatable expression

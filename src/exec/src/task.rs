@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use mojito_catalog::Catalog;
 use mojito_common::array::chunk::DataChunk;
 use mojito_cypher::planner::RootPlan;
 use mojito_storage::graph::GraphStore;
@@ -11,6 +12,7 @@ use crate::executor::BoxedExecutor;
 
 // global execution context
 pub struct ExecContext {
+    catalog: Arc<Catalog>,
     // global resources here
     store: Arc<GraphStore>,
 }
