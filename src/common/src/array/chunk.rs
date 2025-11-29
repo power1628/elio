@@ -8,6 +8,11 @@ pub struct DataChunk {
 }
 
 impl DataChunk {
+    // return one empty row
+    pub fn unit() -> Self {
+        Self::new(vec![], 1)
+    }
+
     pub fn new(columns: Vec<ArrayImpl>, cardinality: usize) -> Self {
         Self { columns, cardinality }
     }

@@ -6,7 +6,7 @@ use crate::variable::VariableName;
 
 pub type Name2ColumnMap = HashMap<VariableName, usize>;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct Schema {
     pub fields: Vec<Variable>,
 }

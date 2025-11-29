@@ -6,6 +6,7 @@ use mojito_cypher::planner::RootPlan;
 
 use crate::builder::expression::{BuildExprContext, build_expression};
 use crate::executor::create_node::CreateNodeExectuor;
+use crate::executor::unit::UnitExecutor;
 use crate::executor::{BoxedExecutor, Executor};
 use crate::task::TaskExecContext;
 
@@ -23,17 +24,17 @@ pub struct ExecutorBuildContext {
     ctx: Arc<TaskExecContext>,
 }
 
-pub fn build_root(
-    _ctx: &mut ExecutorBuildContext,
-    _root @ RootPlan { plan, names }: &RootPlan,
-) -> Result<BoxedExecutor, BuildError> {
-    let _inputs = plan.inputs();
-    match plan.as_ref() {
-        PlanExpr::CreateNode(_create_node) => todo!(),
-        PlanExpr::CreateRel(_create_rel) => todo!(),
-        PlanExpr::Unit(_unit) => todo!(),
-        _ => todo!(),
+impl ExecutorBuildContext {
+    pub fn new(ctx: Arc<TaskExecContext>) -> Self {
+        Self { ctx }
     }
+}
+
+pub fn build_executor(
+    ctx: &mut ExecutorBuildContext,
+    _root @ RootPlan { plan, .. }: &RootPlan,
+) -> Result<BoxedExecutor, BuildError> {
+    build_node(ctx, plan)
 }
 
 fn build_node(ctx: &mut ExecutorBuildContext, node: &PlanExpr) -> Result<BoxedExecutor, BuildError> {
@@ -49,7 +50,7 @@ fn build_node(ctx: &mut ExecutorBuildContext, node: &PlanExpr) -> Result<BoxedEx
         PlanExpr::Expand(_expand) => todo!(),
         PlanExpr::Apply(_apply) => todo!(),
         PlanExpr::Argument(_argument) => todo!(),
-        PlanExpr::Unit(_unit) => todo!(),
+        PlanExpr::Unit(_unit) => Ok(UnitExecutor::default().boxed()),
         PlanExpr::CreateNode(create_node) => build_create_node(ctx, create_node, inputs),
         PlanExpr::CreateRel(_create_rel) => todo!(),
         PlanExpr::Project(_project) => todo!(),
