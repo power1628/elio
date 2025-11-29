@@ -1,9 +1,8 @@
 use std::collections::HashSet;
 
 use mojito_common::data_type::DataType;
-use mojito_common::{EntityKind, IrToken};
+use mojito_common::{EntityKind, IrToken, TokenKind};
 use mojito_parser::ast::{self, NodePattern, RelationshipPattern, UpdatePattern};
-use mojito_storage::codec::TokenKind;
 
 use crate::binder::BindContext;
 use crate::binder::builder::IrSingleQueryBuilder;

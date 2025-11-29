@@ -1,5 +1,6 @@
 use crate::array::list::ListArray;
 use crate::array::{ArrayImpl, ArrayImplRef};
+use crate::data_type::F64;
 use crate::scalar::{Scalar, ScalarRef, ScalarRefImpl};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -46,6 +47,26 @@ impl<'a> ListValueRef<'a> {
         let array_ref = self.data.as_ref();
         let range = self.start as usize..self.end as usize;
         if let ArrayImplRef::U16(inner) = array_ref {
+            Some(&(inner.as_slice()[range]))
+        } else {
+            None
+        }
+    }
+
+    pub fn as_integer_slice(&self) -> Option<&[i64]> {
+        let array_ref = self.data.as_ref();
+        let range = self.start as usize..self.end as usize;
+        if let ArrayImplRef::Integer(inner) = array_ref {
+            Some(&(inner.as_slice()[range]))
+        } else {
+            None
+        }
+    }
+
+    pub fn as_float_slice(&self) -> Option<&[F64]> {
+        let array_ref = self.data.as_ref();
+        let range = self.start as usize..self.end as usize;
+        if let ArrayImplRef::Float(inner) = array_ref {
             Some(&(inner.as_slice()[range]))
         } else {
             None

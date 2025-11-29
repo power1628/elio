@@ -1,6 +1,5 @@
-use mojito_propb::map::{PropertyMap, PropertyMapRef};
-
 use crate::array::prop_map::PropertyMapArray;
+use crate::mapb::{PropertyMap, PropertyMapRef};
 use crate::scalar::{Scalar, ScalarRef};
 // use crate::store_types::PropertyValue;
 

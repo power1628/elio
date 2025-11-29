@@ -4,6 +4,7 @@ use mojito_common::data_type::DataType;
 use crate::expr::{Expr, ExprNode};
 
 /// Create Property Map
+/// TODO(pgao): should guaranteee Expr return type is only can be viewed as propety value types
 #[derive(Debug, Hash, Clone, Eq, PartialEq)]
 pub struct CreateMap {
     pub properties: Vec<(IrToken, Expr)>,

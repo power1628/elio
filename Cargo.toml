@@ -7,7 +7,6 @@ members = [
     "src/exec",
     "src/expr",
     "src/parser",
-    "src/propb",
     "src/storage",
 ]
 resolver = "2"
@@ -24,7 +23,6 @@ mojito_db = { path = "src/core" }
 mojito_exec = { path = "src/exec" }
 mojito_expr = { path = "src/expr" }
 mojito_parser = { path = "src/parser" }
-mojito_propb = { path = "src/propb" }
 mojito_storage = { path = "src/storage" }
 
 # other

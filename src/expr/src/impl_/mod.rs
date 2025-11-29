@@ -28,7 +28,7 @@ pub mod variable_ref;
 // }
 
 pub trait EvalCtx {
-    fn get_or_create_token(&self, token: &IrToken, kind: TokenKind) -> Result<TokenId, EvalError>;
+    fn get_or_create_token(&self, token: &str, kind: TokenKind) -> Result<TokenId, EvalError>;
 }
 
 // an evaluatable expression

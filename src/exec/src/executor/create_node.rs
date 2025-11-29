@@ -1,6 +1,6 @@
 use async_stream::try_stream;
 use futures::StreamExt;
-use mojito_cypher::expr::IrToken;
+use mojito_common::IrToken;
 use mojito_expr::impl_::{BoxedExpression, EvalCtx};
 
 use super::*;
@@ -21,7 +21,7 @@ impl Executor for CreateNodeExectuor {
 impl CreateNodeExectuor {
     fn execute(self: Box<CreateNodeExectuor>, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
         let stream = try_stream! {
-            let eval_ctx = EvalCtx::new();
+            let eval_ctx = ctx.derive_eval_ctx();
 
             // create string to token mapping
             let mut labels = vec![];

@@ -1,7 +1,7 @@
 use itertools::Itertools;
-use mojito_propb::entry::EntryValueRef;
 
 use crate::data_type::F64;
+use crate::mapb::entry::EntryValueRef;
 
 // TODO(pgao): binary representation
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]

@@ -2,12 +2,11 @@ use std::collections::HashSet;
 use std::ops::Range;
 
 use indexmap::IndexSet;
-use mojito_common::IrToken;
 use mojito_common::data_type::DataType;
 use mojito_common::schema::Variable;
 use mojito_common::variable::VariableName;
+use mojito_common::{IrToken, TokenKind};
 use mojito_parser::ast::{self, NodePattern, RelationshipPattern};
-use mojito_storage::codec::TokenKind;
 
 use crate::binder::BindContext;
 use crate::binder::expr::{ExprContext, bind_expr};

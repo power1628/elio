@@ -80,7 +80,7 @@ impl TokenStore {
 }
 
 impl TokenStore {
-    fn get_or_create_token(&self, token: &str, token_kind: TokenKind) -> Result<u16, GraphStoreError> {
+    pub fn get_or_create_token(&self, token: &str, token_kind: TokenKind) -> Result<u16, GraphStoreError> {
         let mut tokens = match token_kind {
             TokenKind::Label => self.labels.write().unwrap(),
             TokenKind::RelationshipType => self.reltypes.write().unwrap(),

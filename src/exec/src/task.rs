@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use mojito_catalog::Catalog;
 use mojito_common::array::chunk::DataChunk;
+use mojito_common::{TokenId, TokenKind};
 use mojito_cypher::planner::RootPlan;
+use mojito_expr::error::EvalError;
+use mojito_expr::impl_::EvalCtx;
 use mojito_storage::graph::GraphStore;
 use mojito_storage::transaction::Transaction;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
@@ -27,6 +30,18 @@ impl ExecContext {
     }
 }
 
+pub struct EvalCtxImpl {
+    pub catalog: Arc<Catalog>,
+}
+
+impl EvalCtx for EvalCtxImpl {
+    fn get_or_create_token(&self, token: &str, kind: TokenKind) -> Result<TokenId, EvalError> {
+        self.catalog
+            .get_or_create_token(token, kind)
+            .map_err(|e| EvalError::GetOrCreateTokenError(e.to_string()))
+    }
+}
+
 /// Task execution context contains the global resources needed by the task execution
 pub struct TaskExecContext {
     exec_ctx: Arc<ExecContext>,
@@ -45,6 +60,12 @@ impl TaskExecContext {
 
     pub fn tx(&self) -> &Arc<dyn Transaction> {
         &self.tx
+    }
+
+    pub fn derive_eval_ctx(&self) -> EvalCtxImpl {
+        EvalCtxImpl {
+            catalog: self.exec_ctx.catalog().clone(),
+        }
     }
 }
 

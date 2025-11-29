@@ -2,11 +2,10 @@ use core::f64;
 
 use itertools::Itertools;
 use mojito_catalog::FunctionCatalog;
-use mojito_common::IrToken;
 use mojito_common::data_type::{DataType, F64};
+use mojito_common::{IrToken, TokenKind};
 use mojito_expr::func::sig::FuncImpl;
 use mojito_parser::ast;
-use mojito_storage::codec::TokenKind;
 use ordered_float::Float;
 use paste::paste;
 
