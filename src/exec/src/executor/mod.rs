@@ -3,8 +3,6 @@ use std::sync::Arc;
 
 use futures::Stream;
 use mojito_common::array::chunk::DataChunk;
-use mojito_cypher::plan_node::PlanExpr;
-use mojito_cypher::planner::RootPlan;
 
 use crate::error::ExecError;
 use crate::task::TaskExecContext;
@@ -21,19 +19,3 @@ pub trait Executor: Send + Sync {
 }
 
 pub type BoxedExecutor = Box<dyn Executor>;
-
-pub struct ExecutorBuilder {
-    ctx: Arc<TaskExecContext>,
-}
-
-impl ExecutorBuilder {
-    pub fn build(&self, _root @ RootPlan { plan, names }: &RootPlan) -> Result<BoxedExecutor, ExecError> {
-        let _inputs = plan.inputs();
-        match plan.as_ref() {
-            PlanExpr::CreateNode(_create_node) => todo!(),
-            PlanExpr::CreateRel(_create_rel) => todo!(),
-            PlanExpr::Unit(_unit) => todo!(),
-            _ => todo!(),
-        }
-    }
-}

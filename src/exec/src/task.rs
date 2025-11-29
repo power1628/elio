@@ -17,6 +17,16 @@ pub struct ExecContext {
     store: Arc<GraphStore>,
 }
 
+impl ExecContext {
+    pub fn catalog(&self) -> &Arc<Catalog> {
+        &self.catalog
+    }
+
+    pub fn store(&self) -> &Arc<GraphStore> {
+        &self.store
+    }
+}
+
 /// Task execution context contains the global resources needed by the task execution
 pub struct TaskExecContext {
     exec_ctx: Arc<ExecContext>,
@@ -25,8 +35,12 @@ pub struct TaskExecContext {
 }
 
 impl TaskExecContext {
+    pub fn catalog(&self) -> &Arc<Catalog> {
+        self.exec_ctx.catalog()
+    }
+
     pub fn store(&self) -> &Arc<GraphStore> {
-        &self.exec_ctx.store
+        &self.exec_ctx.store()
     }
 
     pub fn tx(&self) -> &Arc<dyn Transaction> {

@@ -7,10 +7,17 @@ use mojito_common::store_types::PropertyValue;
 use crate::error::EvalError;
 use crate::impl_::{BoxedExpression, EvalCtx, Expression};
 
+// This is the property read operation, so token must be exists
 pub struct PropertyAccessExpr {
     pub input: BoxedExpression,
     // currently only allow property access by token id
     key: TokenId,
+}
+
+impl PropertyAccessExpr {
+    pub fn new(input: BoxedExpression, key: TokenId) -> Self {
+        Self { input, key }
+    }
 }
 
 impl Expression for PropertyAccessExpr {
@@ -18,7 +25,7 @@ impl Expression for PropertyAccessExpr {
         DataType::Property
     }
 
-    fn eval_batch(&self, chunk: &DataChunk, ctx: &EvalCtx) -> Result<ArrayImpl, EvalError> {
+    fn eval_batch(&self, chunk: &DataChunk, ctx: &dyn EvalCtx) -> Result<ArrayImpl, EvalError> {
         let input = self.input.eval_batch(chunk, ctx)?;
         assert_eq!(input.data_type(), DataType::PropertyMap);
         let input = input.as_property_map().unwrap();

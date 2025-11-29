@@ -1,24 +1,11 @@
 use std::collections::HashSet;
 
 use educe::Educe;
-use mojito_common::{TokenId, data_type::DataType};
+use enum_as_inner::EnumAsInner;
+use mojito_common::data_type::DataType;
+use mojito_common::{IrToken, TokenId};
 
 use crate::expr::{Expr, ExprNode};
-
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub enum IrToken {
-    Resolved(TokenId),
-    Unresolved(String),
-}
-
-impl From<Option<TokenId>> for IrToken {
-    fn from(token: Option<TokenId>) -> Self {
-        match token {
-            Some(token) => Self::Resolved(token),
-            None => Self::Unresolved("".to_string()),
-        }
-    }
-}
 
 #[derive(Debug, Hash, Clone, Eq, PartialEq)]
 pub struct LabelExpr {

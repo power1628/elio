@@ -1,7 +1,7 @@
+use mojito_common::IrToken;
 use mojito_parser::ast::SemanticDirection;
 
 use super::*;
-use crate::expr::IrToken;
 
 #[derive(Debug, Clone, Copy)]
 pub enum ExpandKind {

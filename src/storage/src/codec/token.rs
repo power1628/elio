@@ -1,3 +1,5 @@
+use mojito_common::TokenKind;
+
 use crate::cf_meta::{LABEL_KEY_PREFIX, PROPERTY_KEY_PREFIX, RELTYPE_KEY_PREFIX};
 
 /// Storage
@@ -10,12 +12,6 @@ use crate::cf_meta::{LABEL_KEY_PREFIX, PROPERTY_KEY_PREFIX, RELTYPE_KEY_PREFIX};
 ///   - value := <next_id>
 pub struct TokenCodec;
 
-#[derive(Copy, Clone)]
-pub enum TokenKind {
-    Label,
-    RelationshipType,
-    PropertyKey,
-}
 impl TokenCodec {
     pub fn data_key(kind: &TokenKind, token: &str) -> Vec<u8> {
         let mut key = Vec::with_capacity(1 + token.len());

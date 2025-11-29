@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
+use mojito_common::IrToken;
 use mojito_common::schema::{Schema, Variable};
 
-use crate::expr::{BoxedExpr, IrToken};
+use crate::expr::BoxedExpr;
 use crate::plan_node::plan_base::PlanBase;
 use crate::plan_node::{InnerNode, PlanExpr, PlanNode};
 

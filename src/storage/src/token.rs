@@ -2,10 +2,10 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicU16, Ordering};
 use std::sync::{Arc, RwLock};
 
-use mojito_common::{LabelId, PropertyKeyId, RelationshipTypeId, TokenId};
+use mojito_common::{LabelId, PropertyKeyId, RelationshipTypeId, TokenId, TokenKind};
 
 use crate::cf_meta;
-use crate::codec::{TokenCodec, TokenKind};
+use crate::codec::TokenCodec;
 use crate::error::GraphStoreError;
 
 pub struct TokenStore {

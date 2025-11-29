@@ -22,14 +22,14 @@ fn string_lower(s: &str) -> String {
     s.to_lowercase()
 }
 
-fn upper_function(input: &DataChunk, _ctx: &EvalCtx) -> Result<ArrayImpl, EvalError> {
+fn upper_function(input: &DataChunk, _ctx: &dyn EvalCtx) -> Result<ArrayImpl, EvalError> {
     let arg: &StringArray = input.column(0).as_ref().into();
 
     let res: StringArray = UnaryExecutor::execute_simple::<String, String, _>(arg, string_upper, DataType::String)?;
     Ok(res.into())
 }
 
-fn lower_function(input: &DataChunk, _ctx: &EvalCtx) -> Result<ArrayImpl, EvalError> {
+fn lower_function(input: &DataChunk, _ctx: &dyn EvalCtx) -> Result<ArrayImpl, EvalError> {
     let arg: &StringArray = input.column(0).as_ref().into();
 
     let res: StringArray = UnaryExecutor::execute_simple::<String, String, _>(arg, string_lower, DataType::String)?;

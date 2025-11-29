@@ -6,7 +6,7 @@ use crate::error::EvalError;
 use crate::impl_::{EvalCtx, Expression};
 
 // used to invoke the function call
-pub type FunctionImpl = fn(&DataChunk, &EvalCtx) -> Result<ArrayImpl, EvalError>;
+pub type FunctionImpl = fn(&DataChunk, &dyn EvalCtx) -> Result<ArrayImpl, EvalError>;
 
 pub struct FuncCallExpr {
     pub inputs: Vec<Box<dyn Expression>>,
@@ -19,7 +19,7 @@ impl Expression for FuncCallExpr {
         self.typ.clone()
     }
 
-    fn eval_batch(&self, chunk: &DataChunk, ctx: &EvalCtx) -> Result<ArrayImpl, EvalError> {
+    fn eval_batch(&self, chunk: &DataChunk, ctx: &dyn EvalCtx) -> Result<ArrayImpl, EvalError> {
         let args = self
             .inputs
             .iter()

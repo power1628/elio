@@ -7,8 +7,8 @@ use crate::error::EvalError;
 use crate::impl_::{EvalCtx, Expression};
 
 pub struct ConstantExpr {
-    value: Datum,
-    typ: DataType,
+    pub value: Datum,
+    pub typ: DataType,
 }
 
 impl Expression for ConstantExpr {
@@ -16,7 +16,7 @@ impl Expression for ConstantExpr {
         self.typ.clone()
     }
 
-    fn eval_batch(&self, chunk: &DataChunk, _ctx: &EvalCtx) -> Result<ArrayImpl, EvalError> {
+    fn eval_batch(&self, chunk: &DataChunk, _ctx: &dyn EvalCtx) -> Result<ArrayImpl, EvalError> {
         let mut builder = self.typ.array_builder(chunk.len());
         builder.append_n(self.value.clone().as_ref().map(|x| x.as_scalar_ref()), chunk.len());
         Ok(builder.finish())

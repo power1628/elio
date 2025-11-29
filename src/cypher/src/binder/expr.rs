@@ -2,6 +2,7 @@ use core::f64;
 
 use itertools::Itertools;
 use mojito_catalog::FunctionCatalog;
+use mojito_common::IrToken;
 use mojito_common::data_type::{DataType, F64};
 use mojito_expr::func::sig::FuncImpl;
 use mojito_parser::ast;
@@ -13,7 +14,7 @@ use crate::binder::BindContext;
 use crate::binder::scope::Scope;
 use crate::error::{PlanError, SemanticError};
 use crate::expr::value::Constant;
-use crate::expr::{AggCall, Expr, ExprNode, FilterExprs, FuncCall, IrToken, PropertyAccess, VariableRef};
+use crate::expr::{AggCall, Expr, ExprNode, FilterExprs, FuncCall, PropertyAccess, VariableRef};
 use crate::not_supported;
 
 #[derive(Clone)]

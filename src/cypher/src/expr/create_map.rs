@@ -1,6 +1,7 @@
+use mojito_common::IrToken;
 use mojito_common::data_type::DataType;
 
-use crate::expr::{Expr, ExprNode, IrToken};
+use crate::expr::{Expr, ExprNode};
 
 /// Create Property Map
 #[derive(Debug, Hash, Clone, Eq, PartialEq)]

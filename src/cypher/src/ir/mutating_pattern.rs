@@ -1,9 +1,10 @@
 use std::collections::HashSet;
 
+use mojito_common::IrToken;
 use mojito_common::variable::VariableName;
 use mojito_parser::ast::SemanticDirection;
 
-use crate::expr::{CreateMap, IrToken};
+use crate::expr::CreateMap;
 
 pub enum MutatingPattern {
     Create(CreatePattern),

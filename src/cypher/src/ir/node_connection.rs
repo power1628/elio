@@ -1,9 +1,10 @@
+use educe::{self, Educe};
 use indexmap::IndexSet;
+use mojito_common::IrToken;
 use mojito_common::variable::{PathElement, VariableName};
 use mojito_parser::ast::SemanticDirection;
 
-use crate::expr::{FilterExprs, IrToken};
-use educe::{self, Educe};
+use crate::expr::FilterExprs;
 
 #[derive(Clone, Hash, Eq, PartialEq)]
 pub struct RelPattern {

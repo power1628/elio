@@ -1,7 +1,10 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::data_type::DataType;
 use crate::variable::VariableName;
+
+pub type Name2ColumnMap = HashMap<VariableName, usize>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Schema {
@@ -19,6 +22,18 @@ impl Schema {
 
     pub fn add_column(&mut self, var: Variable) {
         self.fields.push(var);
+    }
+
+    pub fn name_to_col_map(&self) -> Name2ColumnMap {
+        let mut map = HashMap::new();
+        for (i, var) in self.fields.iter().enumerate() {
+            map.insert(var.name.clone(), i);
+        }
+        map
+    }
+
+    pub fn column(&self, idx: usize) -> &Variable {
+        &self.fields[idx]
     }
 }
 

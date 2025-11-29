@@ -1,4 +1,5 @@
 use enum_as_inner::EnumAsInner;
+use mojito_common::IrToken;
 use mojito_common::data_type::DataType;
 use mojito_common::schema::Variable;
 

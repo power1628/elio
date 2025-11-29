@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::ops::Range;
 
 use indexmap::IndexSet;
+use mojito_common::IrToken;
 use mojito_common::data_type::DataType;
 use mojito_common::schema::Variable;
 use mojito_common::variable::VariableName;
@@ -15,7 +16,7 @@ use crate::binder::query::ClauseKind;
 use crate::binder::scope::{Scope, ScopeItem};
 use crate::error::PlanError;
 use crate::expr::property_access::PropertyAccess;
-use crate::expr::{Expr, ExprNode, FilterExprs, IrToken};
+use crate::expr::{Expr, ExprNode, FilterExprs};
 use crate::ir::node_connection::{
     ExhaustiveNodeConnection, NodeBinding, PatternLength, QuantifiedPathPattern, RelPattern, Repetition,
     VariableGrouping,

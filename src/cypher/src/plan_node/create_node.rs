@@ -1,15 +1,17 @@
 use std::sync::Arc;
 
+use mojito_common::IrToken;
 use mojito_common::schema::{Schema, Variable};
 
-use crate::expr::{BoxedExpr, IrToken};
+use crate::expr::BoxedExpr;
 use crate::plan_node::plan_base::PlanBase;
 use crate::plan_node::{InnerNode, PlanExpr};
 
 #[derive(Clone, Debug)]
 pub struct CreateNode {
     pub base: PlanBase,
-    pub(crate) inner: CreateNodeInner,
+    pub inner: CreateNodeInner,
+    _priv: (),
 }
 
 impl CreateNode {
@@ -17,16 +19,17 @@ impl CreateNode {
         Self {
             base: inner.build_base(),
             inner,
+            _priv: (),
         }
     }
 }
 
 #[derive(Clone, Debug)]
 pub struct CreateNodeInner {
-    pub(crate) input: Box<PlanExpr>,
-    pub(crate) labels: Vec<IrToken>,
-    pub(crate) properties: BoxedExpr,
-    pub(crate) variable: Variable,
+    pub input: Box<PlanExpr>,
+    pub labels: Vec<IrToken>,
+    pub properties: BoxedExpr,
+    pub variable: Variable,
 }
 
 impl CreateNodeInner {

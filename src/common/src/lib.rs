@@ -1,3 +1,5 @@
+use enum_as_inner::EnumAsInner;
+
 pub mod array;
 pub mod data_type;
 mod macros;
@@ -15,6 +17,28 @@ pub type TokenId = u16;
 pub type LabelId = TokenId;
 pub type RelationshipTypeId = TokenId;
 pub type PropertyKeyId = TokenId;
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq, EnumAsInner)]
+pub enum IrToken {
+    Resolved(TokenId),
+    Unresolved(String),
+}
+
+impl From<Option<TokenId>> for IrToken {
+    fn from(token: Option<TokenId>) -> Self {
+        match token {
+            Some(token) => Self::Resolved(token),
+            None => Self::Unresolved("".to_string()),
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
+pub enum TokenKind {
+    Label,
+    RelationshipType,
+    PropertyKey,
+}
 
 pub type PropertyKey = String;
 pub type Label = String;

@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
-use mojito_common::EntityKind;
 use mojito_common::data_type::DataType;
+use mojito_common::{EntityKind, IrToken};
 use mojito_parser::ast::{self, NodePattern, RelationshipPattern, UpdatePattern};
 use mojito_storage::codec::TokenKind;
 
@@ -12,7 +12,7 @@ use crate::binder::pattern::PatternContext;
 use crate::binder::query::ClauseKind;
 use crate::binder::scope::{Scope, ScopeItem};
 use crate::error::{PlanError, SemanticError};
-use crate::expr::{CreateMap, IrToken};
+use crate::expr::CreateMap;
 use crate::ir::mutating_pattern::{CreateNode, CreatePattern, CreateRel};
 
 pub fn bind_create(

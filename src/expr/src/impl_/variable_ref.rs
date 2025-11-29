@@ -21,7 +21,7 @@ impl Expression for VariableRefExpr {
         self.typ.clone()
     }
 
-    fn eval_batch(&self, chunk: &DataChunk, _ctx: &EvalCtx) -> Result<ArrayImpl, EvalError> {
+    fn eval_batch(&self, chunk: &DataChunk, _ctx: &dyn EvalCtx) -> Result<ArrayImpl, EvalError> {
         Ok(chunk.column(self.idx).clone())
     }
 }
