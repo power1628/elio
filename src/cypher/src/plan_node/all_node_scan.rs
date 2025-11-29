@@ -7,7 +7,7 @@ use super::*;
 #[derive(Debug, Clone)]
 pub struct AllNodeScan {
     pub base: PlanBase,
-    inner: AllNodeScanInner,
+    pub(crate) inner: AllNodeScanInner,
 }
 
 impl AllNodeScan {
@@ -44,5 +44,9 @@ impl InnerNode for AllNodeScanInner {
     fn build_base(&self) -> PlanBase {
         let schema = self.build_schema();
         PlanBase::new(schema, self.ctx.clone())
+    }
+
+    fn inputs(&self) -> Vec<&PlanExpr> {
+        vec![]
     }
 }

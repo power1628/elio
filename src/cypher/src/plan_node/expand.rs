@@ -14,7 +14,7 @@ pub enum ExpandKind {
 #[derive(Clone, Debug)]
 pub struct Expand {
     pub base: PlanBase,
-    inner: ExpandInner,
+    pub(crate) inner: ExpandInner,
 }
 
 impl Expand {
@@ -57,5 +57,9 @@ impl InnerNode for ExpandInner {
     fn build_base(&self) -> PlanBase {
         let schema = self.build_schema();
         PlanBase::new(schema, self.input.ctx())
+    }
+
+    fn inputs(&self) -> Vec<&PlanExpr> {
+        vec![&self.input]
     }
 }

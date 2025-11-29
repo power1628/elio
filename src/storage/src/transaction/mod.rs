@@ -5,7 +5,6 @@ use async_trait::async_trait;
 use mojito_common::LabelId;
 use mojito_common::array::NodeIdArray;
 use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::list::ListArray;
 use mojito_common::array::prop_map::PropertyMapArray;
 
 use crate::cf_property;

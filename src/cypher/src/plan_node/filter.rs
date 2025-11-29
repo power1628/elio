@@ -1,11 +1,10 @@
-use crate::expr::FilterExprs;
-
 use super::*;
+use crate::expr::FilterExprs;
 
 #[derive(Debug, Clone)]
 pub struct Filter {
     pub base: PlanBase,
-    inner: FilterInner,
+    pub(crate) inner: FilterInner,
 }
 
 impl Filter {
@@ -33,5 +32,9 @@ impl InnerNode for FilterInner {
     fn build_base(&self) -> PlanBase {
         let schema = self.build_schema();
         PlanBase::new(schema, self.input.ctx())
+    }
+
+    fn inputs(&self) -> Vec<&PlanExpr> {
+        vec![&self.input]
     }
 }

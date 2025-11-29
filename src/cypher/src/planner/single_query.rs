@@ -1,7 +1,6 @@
 use crate::error::PlanError;
 use crate::ir::mutating_pattern::MutatingPattern;
 use crate::ir::query::{IrSingleQuery, IrSingleQueryPart};
-use crate::ir::query_graph;
 use crate::plan_node::PlanExpr;
 use crate::planner::PlannerContext;
 use crate::planner::create::plan_create;

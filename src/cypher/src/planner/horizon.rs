@@ -13,7 +13,7 @@ use crate::{
         },
         order::SortItem,
     },
-    plan_node::{Filter, FilterInner, PaginationInner, PlanExpr, PlanNode, Project, ProjectInner, Sort, SortInner},
+    plan_node::{Filter, FilterInner, PaginationInner, PlanExpr, Project, ProjectInner, Sort, SortInner},
     planner::PlannerContext,
 };
 

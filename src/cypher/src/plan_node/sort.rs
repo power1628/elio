@@ -1,13 +1,15 @@
 use std::sync::Arc;
 
-use mojito_common::{order::ColumnOrder, schema::Schema};
+use mojito_common::order::ColumnOrder;
+use mojito_common::schema::Schema;
 
-use crate::plan_node::{InnerNode, PlanExpr, PlanNode, plan_base::PlanBase};
+use crate::plan_node::plan_base::PlanBase;
+use crate::plan_node::{InnerNode, PlanExpr, PlanNode};
 
 #[derive(Debug, Clone)]
 pub struct Sort {
     pub base: PlanBase,
-    inner: SortInner,
+    pub(crate) inner: SortInner,
 }
 
 impl Sort {
@@ -33,5 +35,9 @@ impl SortInner {
 impl InnerNode for SortInner {
     fn build_base(&self) -> PlanBase {
         PlanBase::new(self.build_schema(), self.input.ctx())
+    }
+
+    fn inputs(&self) -> Vec<&PlanExpr> {
+        vec![&self.input]
     }
 }

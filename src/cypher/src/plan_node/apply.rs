@@ -3,7 +3,7 @@ use super::*;
 #[derive(Debug, Clone)]
 pub struct Apply {
     pub base: PlanBase,
-    inner: ApplyInner,
+    pub(crate) inner: ApplyInner,
 }
 
 impl Apply {
@@ -40,5 +40,9 @@ impl ApplyInner {
 impl InnerNode for ApplyInner {
     fn build_base(&self) -> PlanBase {
         PlanBase::new(self.build_schema(), self.left.ctx())
+    }
+
+    fn inputs(&self) -> Vec<&PlanExpr> {
+        vec![&self.left, &self.right]
     }
 }

@@ -4,12 +4,12 @@ use mojito_common::schema::{Schema, Variable};
 
 use crate::expr::{BoxedExpr, IrToken};
 use crate::plan_node::plan_base::PlanBase;
-use crate::plan_node::{InnerNode, PlanExpr, PlanNode};
+use crate::plan_node::{InnerNode, PlanExpr};
 
 #[derive(Clone, Debug)]
 pub struct CreateNode {
     pub base: PlanBase,
-    inner: CreateNodeInner,
+    pub(crate) inner: CreateNodeInner,
 }
 
 impl CreateNode {
@@ -40,5 +40,9 @@ impl InnerNode for CreateNodeInner {
     fn build_base(&self) -> PlanBase {
         let schema = self.build_schema();
         PlanBase::new(schema, self.input.ctx())
+    }
+
+    fn inputs(&self) -> Vec<&PlanExpr> {
+        vec![&self.input]
     }
 }

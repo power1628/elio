@@ -7,15 +7,18 @@ use crate::plan_context::PlanContext;
 use crate::plan_node::plan_base::PlanBase;
 use crate::plan_node::{InnerNode, PlanExpr};
 
+/// Generate one empty row
+/// used to drive the create node/rel
+
 #[derive(Debug, Clone)]
-pub struct Empty {
+pub struct Unit {
     pub base: PlanBase,
-    pub(crate) inner: EmptyInner,
+    pub(crate) inner: UnitInner,
 }
 
-impl Empty {
+impl Unit {
     pub fn new(ctx: Arc<PlanContext>) -> Self {
-        let inner = EmptyInner { ctx };
+        let inner = UnitInner { ctx };
         Self {
             base: inner.build_base(),
             inner,
@@ -25,14 +28,14 @@ impl Empty {
 
 #[derive(Educe)]
 #[educe(Debug, Clone)]
-pub struct EmptyInner {
+pub struct UnitInner {
     #[educe(Debug(ignore))]
     ctx: Arc<PlanContext>,
 }
 
-impl InnerNode for EmptyInner {
+impl InnerNode for UnitInner {
     fn build_base(&self) -> PlanBase {
-        PlanBase::new(Schema::empty().into(), self.ctx.clone())
+        PlanBase::new(Arc::new(Schema::empty()), self.ctx.clone())
     }
 
     fn inputs(&self) -> Vec<&PlanExpr> {

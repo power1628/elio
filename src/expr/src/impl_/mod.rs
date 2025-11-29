@@ -1,4 +1,3 @@
-use std::sync::Arc;
 
 use mojito_common::array::ArrayImpl;
 use mojito_common::array::chunk::DataChunk;
@@ -14,6 +13,12 @@ pub mod property_access;
 pub mod variable_ref;
 
 pub struct EvalCtx {}
+
+impl Default for EvalCtx {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl EvalCtx {
     pub fn new() -> Self {

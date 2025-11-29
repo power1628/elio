@@ -5,7 +5,7 @@ use super::*;
 #[derive(Debug, Clone)]
 pub struct Project {
     pub base: PlanBase,
-    inner: ProjectInner,
+    pub(crate) inner: ProjectInner,
 }
 
 impl Project {
@@ -65,5 +65,9 @@ impl ProjectInner {
 impl InnerNode for ProjectInner {
     fn build_base(&self) -> PlanBase {
         PlanBase::new(self.build_schema(), self.input.ctx())
+    }
+
+    fn inputs(&self) -> Vec<&PlanExpr> {
+        vec![&self.input]
     }
 }

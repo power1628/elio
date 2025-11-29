@@ -3,7 +3,7 @@ use super::*;
 #[derive(Debug, Clone)]
 pub struct Pagination {
     pub base: PlanBase,
-    inner: PaginationInner,
+    pub(crate) inner: PaginationInner,
 }
 
 impl Pagination {
@@ -26,5 +26,9 @@ pub struct PaginationInner {
 impl InnerNode for PaginationInner {
     fn build_base(&self) -> PlanBase {
         PlanBase::new(self.input.schema(), self.input.ctx())
+    }
+
+    fn inputs(&self) -> Vec<&PlanExpr> {
+        vec![&self.input]
     }
 }

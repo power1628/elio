@@ -21,6 +21,7 @@ pub mod pagination;
 pub mod plan_base;
 pub mod project;
 pub mod sort;
+pub mod unit;
 pub use all_node_scan::*;
 pub use apply::*;
 pub use argument::*;
@@ -33,6 +34,7 @@ pub use get_prop::*;
 pub use pagination::*;
 pub use project::*;
 pub use sort::*;
+pub use unit::*;
 
 #[derive(Clone, Debug)]
 pub enum PlanExpr {
@@ -42,6 +44,7 @@ pub enum PlanExpr {
     Expand(Expand),
     Apply(Apply),
     Argument(Argument),
+    Unit(Unit),
     // graph-modify
     CreateNode(CreateNode),
     CreateRel(CreateRel),
@@ -68,93 +71,110 @@ impl PlanExpr {
 }
 
 pub trait PlanNode {
-    fn id(&self) -> PlanNodeId;
-    fn schema(&self) -> Arc<Schema>;
-    fn ctx(&self) -> Arc<PlanContext>;
+    type Inner: InnerNode;
+
+    fn inner(&self) -> &Self::Inner;
+
+    fn inputs(&self) -> Vec<&PlanExpr> {
+        self.inner().inputs()
+    }
 }
 
 pub trait InnerNode {
     fn build_base(&self) -> PlanBase;
+    fn inputs(&self) -> Vec<&PlanExpr>;
 }
 
-macro_rules! impl_plan_node {
-    ($($plan_node:ident),*) => {
-        $(
-            impl PlanNode for $plan_node {
-                fn id(&self) -> PlanNodeId {
-                    self.base.id()
-                }
+macro_rules! impl_plan_node_common {
+    ($plan_node:ident, $inner:ident) => {
+        impl PlanNode for $plan_node {
+            type Inner = $inner;
 
-                fn schema(&self) -> Arc<Schema> {
-                    self.base.schema().clone()
-                }
+            fn inner(&self) -> &Self::Inner {
+                &self.inner
+            }
+        }
 
-                fn ctx(&self) -> Arc<PlanContext> {
-                    self.base.ctx()
-                }
+        impl $plan_node {
+            pub fn id(&self) -> PlanNodeId {
+                self.base.id()
             }
 
-            // impl To for plan_node
-            impl From<$plan_node> for PlanExpr {
-                fn from(value: $plan_node) -> Self {
-                    Self::$plan_node(value)
-                }
+            pub fn schema(&self) -> Arc<Schema> {
+                self.base.schema().clone()
             }
 
-            impl From<$plan_node> for Box<PlanExpr> {
-                fn from(value: $plan_node) -> Self {
-                    Box::new(PlanExpr::$plan_node(value))
-                }
+            pub fn ctx(&self) -> Arc<PlanContext> {
+                self.base.ctx()
             }
-        )*
+        }
+
+        // impl To for plan_node
+        impl From<$plan_node> for PlanExpr {
+            fn from(value: $plan_node) -> Self {
+                Self::$plan_node(value)
+            }
+        }
+
+        impl From<$plan_node> for Box<PlanExpr> {
+            fn from(value: $plan_node) -> Self {
+                Box::new(PlanExpr::$plan_node(value))
+            }
+        }
     };
 }
 
-impl_plan_node!(
-    AllNodeScan,
-    GetProperty,
-    Expand,
-    Apply,
-    Argument,
-    CreateNode,
-    CreateRel,
-    Project,
-    Sort,
-    Filter,
-    Pagination,
-    Empty
-);
+impl_plan_node_common!(AllNodeScan, AllNodeScanInner);
+impl_plan_node_common!(GetProperty, GetPropertyInner);
+impl_plan_node_common!(Expand, ExpandInner);
+impl_plan_node_common!(Apply, ApplyInner);
+impl_plan_node_common!(Argument, ArgumentInner);
+impl_plan_node_common!(Unit, UnitInner);
+impl_plan_node_common!(CreateNode, CreateNodeInner);
+impl_plan_node_common!(CreateRel, CreateRelInner);
+impl_plan_node_common!(Project, ProjectInner);
+impl_plan_node_common!(Sort, SortInner);
+impl_plan_node_common!(Filter, FilterInner);
+impl_plan_node_common!(Pagination, PaginationInner);
+impl_plan_node_common!(Empty, EmptyInner);
 
-macro_rules! impl_plan_node_for_expr {
+macro_rules! impl_plan_expr_dispatch {
     ($($plan_node:ident),*) => {
-        impl PlanNode for PlanExpr {
-            fn id(&self) -> PlanNodeId {
+        impl PlanExpr {
+            pub fn id(&self) -> PlanNodeId {
                 match self {
                     $(PlanExpr::$plan_node(p) => p.id(),)*
                 }
             }
 
-            fn schema(&self) -> Arc<Schema> {
+            pub fn schema(&self) -> Arc<Schema> {
                 match self {
                     $(PlanExpr::$plan_node(p) => p.schema(),)*
                 }
             }
 
-            fn ctx(&self) -> Arc<PlanContext>{
+            pub fn ctx(&self) -> Arc<PlanContext>{
                 match self {
                     $(PlanExpr::$plan_node(p) => p.ctx(),)*
+                }
+            }
+
+            pub fn inputs(&self) -> Vec<&PlanExpr> {
+                match self {
+                    $(PlanExpr::$plan_node(p) => p.inputs(),)*
                 }
             }
         }
     };
 }
 
-impl_plan_node_for_expr!(
+impl_plan_expr_dispatch!(
     AllNodeScan,
     GetProperty,
     Expand,
     Apply,
     Argument,
+    Unit,
     CreateNode,
     CreateRel,
     Project,

@@ -12,7 +12,7 @@ use crate::binder::pattern::PatternContext;
 use crate::binder::query::ClauseKind;
 use crate::binder::scope::{Scope, ScopeItem};
 use crate::error::{PlanError, SemanticError};
-use crate::expr::{CreateMap, Expr, IrToken};
+use crate::expr::{CreateMap, IrToken};
 use crate::ir::mutating_pattern::{CreateNode, CreatePattern, CreateRel};
 
 pub fn bind_create(

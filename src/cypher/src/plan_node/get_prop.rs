@@ -1,16 +1,17 @@
 use std::sync::Arc;
 
-use mojito_common::{schema::Schema, variable::VariableName};
+use mojito_common::schema::Schema;
+use mojito_common::variable::VariableName;
 
-use crate::plan_node::PlanNode;
-use crate::plan_node::{InnerNode, PlanExpr, plan_base::PlanBase};
+use crate::plan_node::plan_base::PlanBase;
+use crate::plan_node::{InnerNode, PlanExpr};
 
 /// Fetch all properties of given entity
 /// This should be an enforce operator
 #[derive(Clone, Debug)]
 pub struct GetProperty {
     pub base: PlanBase,
-    inner: GetPropertyInner,
+    pub(crate) inner: GetPropertyInner,
 }
 
 #[derive(Clone, Debug)]
@@ -29,5 +30,9 @@ impl InnerNode for GetPropertyInner {
     fn build_base(&self) -> PlanBase {
         let schema = self.build_schema();
         PlanBase::new(schema, self.input.ctx())
+    }
+
+    fn inputs(&self) -> Vec<&PlanExpr> {
+        vec![&self.input]
     }
 }

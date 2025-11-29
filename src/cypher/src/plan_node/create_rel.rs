@@ -9,7 +9,7 @@ use crate::plan_node::{InnerNode, PlanExpr, PlanNode};
 #[derive(Clone, Debug)]
 pub struct CreateRel {
     pub base: PlanBase,
-    inner: CreateRelInner,
+    pub(crate) inner: CreateRelInner,
 }
 
 impl CreateRel {
@@ -43,5 +43,9 @@ impl InnerNode for CreateRelInner {
     fn build_base(&self) -> PlanBase {
         let schema = self.build_schema();
         PlanBase::new(schema, self.input.ctx())
+    }
+
+    fn inputs(&self) -> Vec<&PlanExpr> {
+        vec![&self.input]
     }
 }

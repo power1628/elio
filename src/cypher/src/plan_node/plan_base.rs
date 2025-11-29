@@ -4,7 +4,8 @@ use educe;
 use educe::Educe;
 use mojito_common::schema::Schema;
 
-use crate::{plan_context::PlanContext, props::order::Ordering};
+use crate::plan_context::PlanContext;
+use crate::props::order::Ordering;
 
 pub type PlanNodeId = usize;
 

@@ -10,7 +10,6 @@ use crate::{
     ir::{node_connection::RelPattern, query_graph::QueryGraph},
     plan_node::{
         AllNodeScan, AllNodeScanInner, Argument, ArgumentInner, Expand, ExpandInner, ExpandKind, Filter, FilterInner,
-        PlanNode,
     },
 };
 

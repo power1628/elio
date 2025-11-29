@@ -5,7 +5,7 @@ use super::*;
 #[derive(Debug, Clone)]
 pub struct Argument {
     pub base: PlanBase,
-    inner: ArgumentInner,
+    pub(crate) inner: ArgumentInner,
 }
 
 impl Argument {
@@ -34,5 +34,9 @@ impl ArgumentInner {
 impl InnerNode for ArgumentInner {
     fn build_base(&self) -> PlanBase {
         PlanBase::new(self.build_schema(), self.ctx.clone())
+    }
+
+    fn inputs(&self) -> Vec<&PlanExpr> {
+        vec![]
     }
 }
