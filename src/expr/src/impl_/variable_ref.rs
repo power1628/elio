@@ -5,6 +5,7 @@ use mojito_common::data_type::DataType;
 use crate::error::EvalError;
 use crate::impl_::{EvalCtx, Expression};
 
+#[derive(Debug)]
 pub struct VariableRefExpr {
     pub idx: usize,
     typ: DataType,

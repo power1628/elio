@@ -1,8 +1,16 @@
 use super::*;
-pub struct AllRelScanExecutor {}
+
+#[derive(Debug)]
+pub struct AllRelScanExecutor {
+    schema: Schema,
+}
 
 impl Executor for AllRelScanExecutor {
     fn build_stream(self: Box<Self>, _ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
         todo!()
+    }
+
+    fn schema(&self) -> &Schema {
+        &self.schema
     }
 }

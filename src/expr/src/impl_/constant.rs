@@ -6,6 +6,7 @@ use mojito_common::scalar::Datum;
 use crate::error::EvalError;
 use crate::impl_::{EvalCtx, Expression};
 
+#[derive(Debug)]
 pub struct ConstantExpr {
     pub value: Datum,
     pub typ: DataType,

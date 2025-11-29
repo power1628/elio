@@ -1,20 +1,26 @@
 use async_stream::try_stream;
 use futures::StreamExt;
 use mojito_common::IrToken;
-use mojito_expr::impl_::{BoxedExpression, EvalCtx};
+use mojito_expr::impl_::BoxedExpression;
 
 use super::*;
 
 // Input should have the schema of [List<u16>, PropertyMap]
+#[derive(Debug)]
 pub struct CreateNodeExectuor {
-    input: BoxedExecutor,
-    labels: Vec<IrToken>,
-    properties: BoxedExpression,
+    pub input: BoxedExecutor,
+    pub labels: Vec<IrToken>,
+    pub properties: BoxedExpression,
+    pub schema: Schema,
 }
 
 impl Executor for CreateNodeExectuor {
     fn build_stream(self: Box<Self>, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
         self.execute(ctx)
+    }
+
+    fn schema(&self) -> &Schema {
+        &self.schema
     }
 }
 

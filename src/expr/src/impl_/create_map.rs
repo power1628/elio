@@ -7,6 +7,7 @@ use mojito_common::{IrToken, TokenKind};
 use crate::error::EvalError;
 use crate::impl_::{BoxedExpression, EvalCtx, Expression};
 
+#[derive(Debug)]
 pub struct CreateMapExpr {
     pub properties: Vec<(IrToken, BoxedExpression)>,
 }

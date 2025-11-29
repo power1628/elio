@@ -8,6 +8,7 @@ use crate::impl_::{EvalCtx, Expression};
 // used to invoke the function call
 pub type FunctionImpl = fn(&DataChunk, &dyn EvalCtx) -> Result<ArrayImpl, EvalError>;
 
+#[derive(Debug)]
 pub struct FuncCallExpr {
     pub inputs: Vec<Box<dyn Expression>>,
     pub func: FunctionImpl,

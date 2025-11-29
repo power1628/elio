@@ -7,16 +7,16 @@ use mojito_expr::impl_::property_access::PropertyAccessExpr;
 use mojito_expr::impl_::variable_ref::VariableRefExpr;
 use mojito_expr::impl_::{BoxedExpression, Expression};
 
-use crate::builder::{BuildError, ExecutorBuilder};
+use crate::builder::{BuildError, ExecutorBuildContext};
 
 pub struct BuildExprContext<'a> {
     pub schema: &'a Schema,
     pub name2col: Name2ColumnMap,
-    pub ctx: &'a ExecutorBuilder,
+    pub ctx: &'a ExecutorBuildContext,
 }
 
 impl<'a> BuildExprContext<'a> {
-    pub fn new(schema: &'a Schema, ctx: &'a ExecutorBuilder) -> Self {
+    pub fn new(schema: &'a Schema, ctx: &'a ExecutorBuildContext) -> Self {
         let name2col = schema.name_to_col_map();
         Self { schema, name2col, ctx }
     }
@@ -27,11 +27,11 @@ pub(crate) fn build_expression(ctx: &BuildExprContext<'_>, expr: &Expr) -> Resul
         Expr::VariableRef(variable_ref) => build_variable(ctx, variable_ref),
         Expr::PropertyAccess(property_access) => build_property_access(ctx, property_access),
         Expr::Constant(constant) => build_constant(ctx, constant),
-        Expr::FuncCall(func_call) => todo!(),
-        Expr::AggCall(agg_call) => todo!(),
-        Expr::Subquery(subquery) => todo!(),
-        Expr::Label(label_expr) => todo!(),
-        Expr::CreateMap(create_map) => todo!(),
+        Expr::FuncCall(_func_call) => todo!(),
+        Expr::AggCall(_agg_call) => todo!(),
+        Expr::Subquery(_subquery) => todo!(),
+        Expr::Label(_label_expr) => todo!(),
+        Expr::CreateMap(create_map) => build_create_map(ctx, create_map),
     }
 }
 
@@ -55,7 +55,7 @@ fn build_property_access(
             return Err(BuildError::UnresolvedToken(key.clone()));
         }
     };
-    let expr = PropertyAccessExpr::new(input, token.clone());
+    let expr = PropertyAccessExpr::new(input, *token);
     Ok(expr.boxed())
 }
 

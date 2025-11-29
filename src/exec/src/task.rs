@@ -55,7 +55,7 @@ impl TaskExecContext {
     }
 
     pub fn store(&self) -> &Arc<GraphStore> {
-        &self.exec_ctx.store()
+        self.exec_ctx.store()
     }
 
     pub fn tx(&self) -> &Arc<dyn Transaction> {

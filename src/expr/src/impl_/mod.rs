@@ -1,7 +1,7 @@
 use mojito_common::array::ArrayImpl;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::data_type::DataType;
-use mojito_common::{IrToken, TokenId, TokenKind};
+use mojito_common::{TokenId, TokenKind};
 
 use crate::error::EvalError;
 
@@ -32,7 +32,7 @@ pub trait EvalCtx {
 }
 
 // an evaluatable expression
-pub trait Expression: Send + Sync + 'static {
+pub trait Expression: Send + Sync + 'static + std::fmt::Debug {
     fn typ(&self) -> DataType;
     fn eval_batch(&self, chunk: &DataChunk, ctx: &dyn EvalCtx) -> Result<ArrayImpl, EvalError>;
     fn boxed(self) -> BoxedExpression

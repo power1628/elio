@@ -8,6 +8,7 @@ use crate::error::EvalError;
 use crate::impl_::{BoxedExpression, EvalCtx, Expression};
 
 // This is the property read operation, so token must be exists
+#[derive(Debug)]
 pub struct PropertyAccessExpr {
     pub input: BoxedExpression,
     // currently only allow property access by token id
