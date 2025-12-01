@@ -19,8 +19,8 @@ use crate::result::ResultHandle;
 
 #[derive(Debug)]
 pub struct Session {
-    pub catalog: Arc<Catalog>,
-    pub exec_ctx: Arc<ExecContext>,
+    pub(crate) catalog: Arc<Catalog>,
+    pub(crate) exec_ctx: Arc<ExecContext>,
 }
 
 impl Session {

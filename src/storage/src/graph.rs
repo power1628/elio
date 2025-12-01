@@ -3,6 +3,7 @@ use std::sync::Arc;
 use rocksdb::{self};
 
 use crate::dict::IdStore;
+use crate::error::GraphStoreError;
 use crate::token::TokenStore;
 use crate::transaction::{Transaction, TransactionImpl};
 
@@ -25,12 +26,21 @@ pub enum TransactionMode {
 }
 
 impl GraphStore {
-    pub fn open(path: &str) -> Self {
-        let _db: rocksdb::TransactionDB<rocksdb::MultiThreaded> = rocksdb::TransactionDB::open_default(path).unwrap();
-        todo!()
-        // initialization:
+    pub fn open(path: &str) -> Result<Self, GraphStoreError> {
+        let db: rocksdb::TransactionDB<rocksdb::MultiThreaded> = rocksdb::TransactionDB::open_default(path).unwrap();
         // create column families
-        // Self { db: Arc::new(db) }
+        let mut opts = rocksdb::Options::default();
+        opts.create_if_missing(true);
+        opts.create_missing_column_families(true);
+        db.create_cf(CF_META, &opts)?;
+        db.create_cf(CF_TOPOLOGY, &opts)?;
+        db.create_cf(CF_PROPERTY, &opts)?;
+        let db = Arc::new(db);
+
+        let dict = Arc::new(IdStore::new(db.clone())?);
+        let token = Arc::new(TokenStore::new(db.clone())?);
+
+        Ok(Self { db, dict, token })
     }
 
     pub fn token_store(&self) -> &Arc<TokenStore> {

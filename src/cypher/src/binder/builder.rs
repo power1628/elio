@@ -16,7 +16,9 @@ impl Default for IrSingleQueryBuilder {
 
 impl IrSingleQueryBuilder {
     pub fn new() -> Self {
-        Self { parts: Vec::new() }
+        Self {
+            parts: vec![IrSingleQueryPart::empty()],
+        }
     }
 
     pub fn tail_mut(&mut self) -> Option<&mut IrSingleQueryPart> {

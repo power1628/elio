@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "src/catalog",
+    "src/cmd",
     "src/common",
     "src/core",
     "src/cypher",
@@ -29,6 +30,7 @@ mojito_storage = { path = "src/storage" }
 async-stream = "0.3.6"
 async-trait = "0.1.89"
 bytes = "1.10.1"
+clap = "4.5"
 derive_more = { version = "2", features = ["full"] }
 educe = "0.6.0"
 either = "1.15.0"

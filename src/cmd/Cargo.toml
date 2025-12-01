@@ -1,0 +1,13 @@
+[package]
+name = "cmd"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "mojito"
+path = "bin/mojito.rs"
+
+[dependencies]
+clap = { workspace = true, features = ["derive", "cargo"] }
+mojito_core = { workspace = true }
+tokio = { workspace = true }
