@@ -99,7 +99,7 @@ impl Stream for TaskHandleBridge {
 }
 
 impl ResultHandle for TaskHandleBridge {
-    fn columns(&self) -> Vec<String> {
-        self.columns.clone()
+    fn columns(&self) -> &[String] {
+        &self.columns
     }
 }

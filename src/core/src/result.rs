@@ -39,5 +39,5 @@ pub enum QueryExecutionKind {
 ///     - ...
 /// ResultHandle communicate with execution engine with QueryExecutionHandle object
 pub trait ResultHandle: Stream<Item = Result<Row, Error>> {
-    fn columns(&self) -> Vec<String>;
+    fn columns(&self) -> &[String];
 }
