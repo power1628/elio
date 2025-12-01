@@ -35,6 +35,18 @@ impl Schema {
     pub fn column(&self, idx: usize) -> &Variable {
         &self.fields[idx]
     }
+
+    pub fn len(&self) -> usize {
+        self.fields.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &Variable> {
+        self.fields.iter()
+    }
 }
 
 impl FromIterator<Variable> for Schema {

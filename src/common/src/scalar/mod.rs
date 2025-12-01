@@ -80,5 +80,27 @@ pub enum ScalarRefImpl<'a> {
     PropertyMap(PropertyMapValueRef<'a>),
 }
 
+impl<'a> ScalarRefImpl<'a> {
+    /// Convert ScalarRefImpl to ScalarImpl
+    pub fn to_owned_scalar(&self) -> ScalarImpl {
+        match self {
+            Self::Bool(b) => ScalarImpl::Bool(*b),
+            Self::Integer(i) => ScalarImpl::Integer(*i),
+            Self::Float(f) => ScalarImpl::Float(*f),
+            Self::String(s) => ScalarImpl::String(s.to_string()),
+            Self::U16(u) => ScalarImpl::U16(*u),
+            Self::NodeId(n) => ScalarImpl::NodeId(*n),
+            Self::RelId(r) => ScalarImpl::RelId(*r),
+            Self::Node(n) => ScalarImpl::Node(n.to_owned_scalar()),
+            Self::Rel(r) => ScalarImpl::Rel(r.to_owned_scalar()),
+            Self::List(l) => ScalarImpl::List(l.to_owned_scalar()),
+            Self::Property(p) => ScalarImpl::Property(p.to_owned_scalar()),
+            Self::PropertyMap(m) => ScalarImpl::PropertyMap(m.to_owned_scalar()),
+        }
+    }
+}
+
 pub type Datum = Option<ScalarImpl>;
 pub type DatumRef<'a> = Option<ScalarRefImpl<'a>>;
+
+pub type Row = Vec<Datum>;

@@ -16,7 +16,7 @@ pub const CF_PROPERTY: &str = "cf_property";
 pub struct GraphStore {
     db: Arc<rocksdb::TransactionDB>,
     dict: Arc<IdStore>,
-    tokens: Arc<TokenStore>,
+    token: Arc<TokenStore>,
 }
 
 pub enum TransactionMode {
@@ -31,6 +31,10 @@ impl GraphStore {
         // initialization:
         // create column families
         // Self { db: Arc::new(db) }
+    }
+
+    pub fn token_store(&self) -> &Arc<TokenStore> {
+        &self.token
     }
 
     pub fn transaction(&self) -> Arc<dyn Transaction> {
