@@ -36,6 +36,10 @@ impl DataChunk {
 }
 
 impl DataChunk {
+    pub fn iter(&self) -> impl Iterator<Item = Row> + '_ {
+        (0..self.cardinality).map(|idx| self.get_row_by_idx(idx))
+    }
+
     pub fn get_row_by_idx(&self, idx: usize) -> Row {
         let mut row = Row::new();
         for col in &self.columns {

@@ -72,8 +72,7 @@ impl TaskHandleBridge {
             while let Some(msg) = data.recv().await {
                 match msg {
                     Ok(chunk) => {
-                        for i in 0..chunk.len() {
-                            let row = chunk.get_row_by_idx(i);
+                        for row in chunk.iter() {
                             yield Ok(row);
                         }
                     }

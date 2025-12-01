@@ -123,14 +123,11 @@ pub async fn create_task(ectx: &Arc<ExecContext>, query_id: Arc<str>, plan: Root
 
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
 
-    let columns = {
-        let schema = root_executor.schema().clone();
-        let mut columns = Vec::with_capacity(schema.len());
-        for var in schema.iter() {
-            columns.push(plan.names.get(&var.name).unwrap().clone());
-        }
-        columns
-    };
+    let columns = root_executor
+        .schema()
+        .iter()
+        .map(|x| plan.names.get(&x.name).unwrap().clone())
+        .collect();
 
     let handle = TaskHandle {
         query_id,
