@@ -18,7 +18,7 @@ use crate::not_supported;
 
 #[derive(Clone)]
 pub struct ExprContext<'a> {
-    pub bctx: &'a BindContext<'a>,
+    pub bctx: &'a BindContext,
     pub scope: &'a Scope,
     pub name: &'a str,
     pub sema_flags: ExprSemanticFlag,

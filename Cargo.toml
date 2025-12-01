@@ -18,8 +18,8 @@ edition = "2024"
 [workspace.dependencies]
 mojito_catalog = { path = "src/catalog" }
 mojito_common = { path = "src/common" }
+mojito_core = { path = "src/core" }
 mojito_cypher = { path = "src/cypher" }
-mojito_db = { path = "src/core" }
 mojito_exec = { path = "src/exec" }
 mojito_expr = { path = "src/expr" }
 mojito_parser = { path = "src/parser" }

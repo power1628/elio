@@ -1,9 +1,12 @@
 use mojito_common::data_type::DataType;
+use mojito_parser::parser;
 use mojito_storage::error::GraphStoreError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum PlanError {
+    #[error("parse error")]
+    ParserError(String),
     #[error("meta access error")]
     MetaError(#[from] GraphStoreError),
     #[error("{}", _0.message)]
@@ -13,6 +16,10 @@ pub enum PlanError {
 }
 
 impl PlanError {
+    pub fn parse_error<T: ToString>(msg: T) -> Self {
+        Self::ParserError(msg.to_string())
+    }
+
     #[deprecated]
     pub fn semantic_err<T: ToString>(msg: T) -> Self {
         Self::SemanticError(SemanticError::new(msg.to_string()))
@@ -88,6 +95,7 @@ impl SemanticError {
         let msg = format!("Return item {} must be aliased in {}", expr, ctx);
         Self::new(msg)
     }
+
     pub fn at_least_one_return_item(ctx: &str) -> Self {
         let msg = format!("At least one return item is required in {}", ctx);
         Self::new(msg)

@@ -7,5 +7,4 @@ pub mod plan_node;
 pub mod planner;
 pub mod props;
 pub mod session;
-pub mod statement;
 pub mod variable;

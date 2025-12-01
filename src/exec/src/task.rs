@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use educe::Educe;
 use futures::StreamExt;
 use indexmap::IndexMap;
 use mojito_catalog::Catalog;
@@ -19,10 +20,19 @@ use crate::error::ExecError;
 use crate::executor::BoxedExecutor;
 
 // global execution context
+#[derive(Educe)]
+#[educe(Debug)]
 pub struct ExecContext {
     catalog: Arc<Catalog>,
     // global resources here
+    #[educe(Debug(ignore))]
     store: Arc<GraphStore>,
+}
+
+impl ExecContext {
+    pub fn new(catalog: Arc<Catalog>, store: Arc<GraphStore>) -> Self {
+        Self { catalog, store }
+    }
 }
 
 impl ExecContext {

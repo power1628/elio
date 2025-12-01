@@ -1,21 +1,19 @@
+use std::sync::Arc;
+
 use indexmap::IndexMap;
 use mojito_common::variable::VariableName;
 use mojito_parser::ast;
 
-use crate::{
-    binder::{
-        BindContext,
-        builder::IrSingleQueryBuilder,
-        create::bind_create,
-        expr::bind_where,
-        match_::bind_match,
-        project_body::{bind_order_by, bind_pagination, bind_return_items},
-        scope::Scope,
-    },
-    error::{PlanError, SemanticError},
-    ir::query::{IrQuery, IrQueryRoot, IrSingleQuery},
-    statement::StmtContext,
-};
+use crate::binder::BindContext;
+use crate::binder::builder::IrSingleQueryBuilder;
+use crate::binder::create::bind_create;
+use crate::binder::expr::bind_where;
+use crate::binder::match_::bind_match;
+use crate::binder::project_body::{bind_order_by, bind_pagination, bind_return_items};
+use crate::binder::scope::Scope;
+use crate::error::{PlanError, SemanticError};
+use crate::ir::query::{IrQuery, IrQueryRoot, IrSingleQuery};
+use crate::session::SessionContext;
 
 #[derive(Debug, Clone)]
 pub enum ClauseKind {
@@ -25,10 +23,10 @@ pub enum ClauseKind {
     Return,
 }
 
-pub fn bind_root_query(sctx: &StmtContext, query: ast::RegularQuery) -> Result<IrQueryRoot, PlanError> {
+pub fn bind_root_query(sctx: Arc<dyn SessionContext>, query: &ast::RegularQuery) -> Result<IrQueryRoot, PlanError> {
     let bctx = BindContext::new(sctx);
 
-    let (ir, scope) = bind_query(&bctx, &query)?;
+    let (ir, scope) = bind_query(&bctx, query)?;
 
     let names: IndexMap<VariableName, String> = scope
         .items

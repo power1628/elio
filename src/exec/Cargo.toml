@@ -1,11 +1,12 @@
 [package]
-name = "exec"
+name = "mojito_exec"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
 # workspace
 async-stream = { workspace = true }
+educe = { workspace = true }
 futures = { workspace = true }
 indexmap = { workspace = true }
 mojito_catalog = { workspace = true }

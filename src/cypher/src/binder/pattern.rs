@@ -24,7 +24,7 @@ use crate::ir::path_pattern::{NodeConnections, PathPattern, SingleNode};
 
 #[derive(Debug, Clone)]
 pub struct PatternContext<'a> {
-    pub bctx: &'a BindContext<'a>,
+    pub bctx: &'a BindContext,
     pub clause: ClauseKind,
     // context name, used for error messages
     pub name: &'a str,
