@@ -1,4 +1,5 @@
 use crate::array::ArrayImpl;
+use crate::scalar::Row;
 
 #[derive(Clone)]
 pub struct DataChunk {
@@ -31,5 +32,15 @@ impl DataChunk {
 
     pub fn add_column(&mut self, col: ArrayImpl) {
         self.columns.push(col);
+    }
+}
+
+impl DataChunk {
+    pub fn get_row_by_idx(&self, idx: usize) -> Row {
+        let mut row = Row::new();
+        for col in &self.columns {
+            row.push(col.get(idx).map(|x| x.to_owned_scalar()));
+        }
+        row
     }
 }

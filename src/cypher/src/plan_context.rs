@@ -31,6 +31,6 @@ impl PlanContext {
     }
 
     pub fn catalog(&self) -> &Arc<Catalog> {
-        &self.sctx.catalog()
+        self.sctx.catalog()
     }
 }

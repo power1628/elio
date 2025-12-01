@@ -5,6 +5,8 @@ edition.workspace = true
 
 [dependencies]
 # workspace
+async-stream = { workspace = true }
+futures = { workspace = true }
 mojito_catalog = { workspace = true }
 mojito_common = { workspace = true }
 mojito_cypher = { workspace = true }
@@ -12,6 +14,7 @@ mojito_exec = { workspace = true }
 mojito_parser = { workspace = true }
 mojito_storage = { workspace = true }
 thiserror = { workspace = true }
+tokio = { workspace = true }
 # other
 
 uuid = { version = "1.18.1", features = ["v4"] }

@@ -1,3 +1,8 @@
+use futures::Stream;
+use mojito_common::scalar::Row;
+
+use crate::error::Error;
+
 pub enum QueryKind {
     // read only query
     Read,
@@ -33,19 +38,6 @@ pub enum QueryExecutionKind {
 ///     - on query finished
 ///     - ...
 /// ResultHandle communicate with execution engine with QueryExecutionHandle object
-pub struct ResultHandle {
-    execution_kind: QueryExecutionKind,
-    columns: Vec<String>,
-    // TODO(pgao): output buffer channel
-}
-
-impl ResultHandle {
-    pub fn execution_kind(&self) -> &QueryExecutionKind {
-        &self.execution_kind
-    }
-
-    // result column names
-    pub fn columns(&self) -> &[String] {
-        self.columns.as_slice()
-    }
+pub trait ResultHandle: Stream<Item = Result<Row, Error>> {
+    fn columns(&self) -> Vec<String>;
 }

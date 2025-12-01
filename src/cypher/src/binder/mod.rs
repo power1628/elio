@@ -48,7 +48,7 @@ impl BindContext {
 
 impl BindContext {
     pub fn catalog(&self) -> &Arc<Catalog> {
-        &self.sctx.catalog()
+        self.sctx.catalog()
     }
 
     pub fn resolve_function(&self, name: &str) -> Option<&FuncDef> {

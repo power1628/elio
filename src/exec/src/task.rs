@@ -2,11 +2,9 @@ use std::sync::Arc;
 
 use educe::Educe;
 use futures::StreamExt;
-use indexmap::IndexMap;
 use mojito_catalog::Catalog;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::schema::Schema;
-use mojito_common::variable::VariableName;
 use mojito_common::{TokenId, TokenKind};
 use mojito_cypher::planner::RootPlan;
 use mojito_expr::error::EvalError;
@@ -88,13 +86,15 @@ impl TaskExecContext {
 // TODO(pgao): task manager
 
 /// receiver side of task
+/// TODO(pgao): separate the task result fetcher and task control logic like abort etc
+/// task manager is able to abort tasks
 pub struct TaskHandle {
     pub query_id: Arc<str>,
     pub schema: Schema,
-    pub output_names: IndexMap<VariableName, String>,
+    pub columns: Vec<String>,
 
     // pub task_id: Arc<str>,
-    recv: UnboundedReceiver<Result<DataChunk, ExecError>>,
+    pub recv: UnboundedReceiver<Result<DataChunk, ExecError>>,
     // output channnel for task results
 }
 
@@ -105,7 +105,7 @@ impl TaskHandle {
 
     // fetch next data chunk result
     pub async fn next(&mut self) -> Result<Option<DataChunk>, ExecError> {
-        todo!()
+        self.recv.recv().await.transpose()
     }
 }
 
@@ -123,11 +123,20 @@ pub async fn create_task(ectx: &Arc<ExecContext>, query_id: Arc<str>, plan: Root
 
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
 
+    let columns = {
+        let schema = root_executor.schema().clone();
+        let mut columns = Vec::with_capacity(schema.len());
+        for var in schema.iter() {
+            columns.push(plan.names.get(&var.name).unwrap().clone());
+        }
+        columns
+    };
+
     let handle = TaskHandle {
         query_id,
         recv: rx,
         schema: root_executor.schema().clone(),
-        output_names: plan.names,
+        columns,
     };
 
     let runner = TaskRunner {

@@ -3,15 +3,13 @@ use std::sync::Arc;
 
 use mojito_catalog::Catalog;
 use mojito_common::scalar::Datum;
-use mojito_cypher::binder::BindContext;
-use mojito_cypher::error::PlanError;
 use mojito_cypher::session::SessionContext;
 use mojito_exec::task::ExecContext;
-use mojito_parser::parser;
 use mojito_storage::graph::GraphStore;
 
 use crate::error::Error;
 use crate::result::ResultHandle;
+use crate::session::Session;
 
 pub struct DbConfig {
     store_path: String,
@@ -31,28 +29,19 @@ impl DbEnv {
         let me = Self { catalog, exec_ctx };
         Ok(Arc::new(me))
     }
+
+    pub fn new_session(&self) -> Arc<Session> {
+        Arc::new(Session::new(self.catalog.clone(), self.exec_ctx.clone()))
+    }
 }
 
 impl DbEnv {
-    pub fn execute(self: &Arc<Self>, stmt: String, _params: HashMap<String, Datum>) -> Result<ResultHandle, Error> {
-        let sess_ctx = SessionContext {
-            catalog: self.catalog.clone(),
-        };
-        // parse
-        let ast = {
-           parser::cypher_parser::statement(&stmt).map_err(PlanError::parse_error)?
-        };
-
-
-        // bind
-        let ir = {
-            BindContext::new(sctx)
-        }
-
-        // plan
-
-        // exec
-
-        todo!()
+    pub async fn execute(
+        self: &Arc<Self>,
+        stmt: String,
+        params: HashMap<String, Datum>,
+    ) -> Result<Box<dyn ResultHandle>, Error> {
+        let session = self.new_session();
+        session.execute(stmt, params).await
     }
 }

@@ -1,5 +1,4 @@
 use mojito_common::data_type::DataType;
-use mojito_parser::parser;
 use mojito_storage::error::GraphStoreError;
 use thiserror::Error;
 
