@@ -1,6 +1,6 @@
 use super::*;
 use crate::ir::query_graph::QueryGraph;
-use crate::plan_node::{Argument, ArgumentInner};
+use crate::plan_node::{Argument, ArgumentInner, Unit};
 use crate::planner::component::plan_qg_simple;
 
 pub fn plan_match(
@@ -22,11 +22,8 @@ fn plan_query_graph(ctx: &mut PlannerContext, qg: &QueryGraph) -> Result<Box<Pla
     }
 
     if qgs.is_empty() {
-        // put an empty argument here as the start point
-        let root = PlanExpr::Argument(Argument::new(ArgumentInner {
-            variables: vec![],
-            ctx: ctx.ctx.clone(),
-        }));
+        // put an unit here as the start point
+        let root = PlanExpr::Unit(Unit::new(ctx.ctx.clone()));
         return Ok(root.boxed());
     }
 

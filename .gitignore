@@ -3,3 +3,6 @@ src/**/target
 Cargo.lock
 .vscode/
 .kiro/
+
+# generated test db folder
+.db/
