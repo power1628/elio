@@ -1,0 +1,1 @@
+define catalog objects and basic catalog implementations

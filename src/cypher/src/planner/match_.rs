@@ -1,6 +1,6 @@
 use super::*;
 use crate::ir::query_graph::QueryGraph;
-use crate::plan_node::{Argument, ArgumentInner, Unit};
+use crate::plan_node::Unit;
 use crate::planner::component::plan_qg_simple;
 
 pub fn plan_match(

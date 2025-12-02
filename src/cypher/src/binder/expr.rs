@@ -69,7 +69,7 @@ pub fn bind_expr(ectx: &ExprContext, outer_scope: &[Scope], expr: &ast::Expr) ->
         ast::Expr::PropertyAccess { map, key } => {
             let expr = bind_expr(ectx, outer_scope, map)?;
             // resolve property keys
-            let token: IrToken = ectx.bctx.catalog().get_token_id(key, TokenKind::PropertyKey).into();
+            let token: IrToken = ectx.bctx.session().get_token_id(key, TokenKind::PropertyKey).into();
             // TODO(pgao): maybe we can resolve the property types here
             let pa = PropertyAccess::new_unchecked(expr.boxed(), &token, &DataType::Property);
             Ok(pa.into())
@@ -162,7 +162,7 @@ fn bind_func_call(
 ) -> Result<Expr, PlanError> {
     let FunctionCatalog { name, func } = ectx
         .bctx
-        .catalog()
+        .session()
         .get_function_by_name(name)
         .ok_or(PlanError::from(SemanticError::unknown_function(name, ectx.name)))?;
 
@@ -200,7 +200,7 @@ fn bind_func_call(
 fn resolve_func(ectx: &ExprContext, name: &str, args: &[Expr]) -> Result<(FuncImpl, bool, DataType), PlanError> {
     let FunctionCatalog { name, func } = ectx
         .bctx
-        .catalog()
+        .session()
         .get_function_by_name(name)
         .ok_or(PlanError::from(SemanticError::unknown_function(name, ectx.name)))?;
 
@@ -239,7 +239,7 @@ pub fn bind_map_expr_to_property_map(
 
     let tokens: Vec<IrToken> = keys
         .iter()
-        .map(|x| ectx.bctx.catalog().get_token_id(x, TokenKind::PropertyKey).into())
+        .map(|x| ectx.bctx.session().get_token_id(x, TokenKind::PropertyKey).into())
         .collect_vec();
 
     let exprs = values

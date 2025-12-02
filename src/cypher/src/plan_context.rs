@@ -1,20 +1,18 @@
 use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
 
-use mojito_catalog::Catalog;
-
 use crate::plan_node::plan_base::PlanNodeId;
-use crate::session::SessionContext;
+use crate::session::PlannerSession;
 use crate::variable::VariableGenerator;
 
 pub struct PlanContext {
-    pub sctx: Arc<dyn SessionContext>,
+    pub sctx: Arc<dyn PlannerSession>,
     plan_node_gen: AtomicUsize,
     var_gen: Arc<VariableGenerator>,
 }
 
 impl PlanContext {
-    pub fn new(sctx: Arc<dyn SessionContext>) -> Self {
+    pub fn new(sctx: Arc<dyn PlannerSession>) -> Self {
         Self {
             sctx,
             plan_node_gen: AtomicUsize::new(0),
@@ -30,7 +28,7 @@ impl PlanContext {
         &self.var_gen
     }
 
-    pub fn catalog(&self) -> &Arc<Catalog> {
-        self.sctx.catalog()
+    pub fn session(&self) -> &Arc<dyn PlannerSession> {
+        &self.sctx
     }
 }

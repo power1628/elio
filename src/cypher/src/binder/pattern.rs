@@ -318,7 +318,7 @@ fn bind_simple_pattern(
             for rtype in rel_types {
                 let token = pctx
                     .bctx
-                    .catalog()
+                    .session()
                     .get_token_id(&rtype, TokenKind::RelationshipType)
                     .into();
                 reltypes.push(token);
@@ -566,7 +566,7 @@ fn bind_properties(pctx: &PatternContext, var: &Variable, props: &ast::Expr) -> 
     let mut filter = FilterExprs::empty();
     if let ast::Expr::MapExpression { keys, values } = props {
         for (key, value) in keys.iter().zip(values.iter()) {
-            let token = pctx.bctx.catalog().get_token_id(key, TokenKind::PropertyKey).into();
+            let token = pctx.bctx.session().get_token_id(key, TokenKind::PropertyKey).into();
             let value = bind_expr(&ectx, &[], value)?;
             // TODO(pgao): maybe we can inference the properties here
             let prop = Expr::PropertyAccess(PropertyAccess::new_unchecked(

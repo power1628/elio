@@ -13,7 +13,7 @@ use crate::binder::project_body::{bind_order_by, bind_pagination, bind_return_it
 use crate::binder::scope::Scope;
 use crate::error::{PlanError, SemanticError};
 use crate::ir::query::{IrQuery, IrQueryRoot, IrSingleQuery};
-use crate::session::SessionContext;
+use crate::session::PlannerSession;
 
 #[derive(Debug, Clone)]
 pub enum ClauseKind {
@@ -23,7 +23,7 @@ pub enum ClauseKind {
     Return,
 }
 
-pub fn bind_root_query(sctx: Arc<dyn SessionContext>, query: &ast::RegularQuery) -> Result<IrQueryRoot, PlanError> {
+pub fn bind_root_query(sctx: Arc<dyn PlannerSession>, query: &ast::RegularQuery) -> Result<IrQueryRoot, PlanError> {
     let bctx = BindContext::new(sctx);
 
     let (ir, scope) = bind_query(&bctx, query)?;

@@ -213,7 +213,7 @@ fn bind_label_expr_for_create(
 
     let tokens: Vec<IrToken> = labels
         .iter()
-        .map(|token| ectx.bctx.catalog().get_token_id(token, token_kind).into())
+        .map(|token| ectx.bctx.session().get_token_id(token, token_kind).into())
         .collect::<Vec<_>>();
     if matches!(kind, EntityKind::Rel) && tokens.len() != 1 {
         return Err(SemanticError::invalid_create_entity(ectx.name).into());

@@ -1,11 +1,10 @@
 use std::sync::Arc;
 
-use mojito_catalog::Catalog;
 use mojito_expr::func::sig::FuncDef;
 
 use crate::binder::expr::ExprContext;
 use crate::binder::scope::Scope;
-use crate::session::SessionContext;
+use crate::session::PlannerSession;
 use crate::variable::VariableGenerator;
 mod builder;
 pub mod create;
@@ -20,7 +19,7 @@ pub mod scope;
 /// Context to bind a query
 #[derive(Debug, Clone)]
 pub struct BindContext {
-    pub sctx: Arc<dyn SessionContext>,
+    pub sctx: Arc<dyn PlannerSession>,
     // TODO(pgao): seems outer_scopes is not needed?
     pub outer_scopes: Vec<Scope>,
     pub variable_generator: Arc<VariableGenerator>,
@@ -28,7 +27,7 @@ pub struct BindContext {
 }
 
 impl BindContext {
-    pub fn new(sctx: Arc<dyn SessionContext>) -> Self {
+    pub fn new(sctx: Arc<dyn PlannerSession>) -> Self {
         Self {
             sctx,
             outer_scopes: Vec::new(),
@@ -47,11 +46,11 @@ impl BindContext {
 }
 
 impl BindContext {
-    pub fn catalog(&self) -> &Arc<Catalog> {
-        self.sctx.catalog()
+    pub fn session(&self) -> &Arc<dyn PlannerSession> {
+        &self.sctx
     }
 
     pub fn resolve_function(&self, name: &str) -> Option<&FuncDef> {
-        self.catalog().get_function_by_name(name).map(|x| &x.func)
+        self.session().get_function_by_name(name).map(|x| &x.func)
     }
 }

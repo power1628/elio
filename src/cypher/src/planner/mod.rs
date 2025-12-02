@@ -8,7 +8,7 @@ use crate::ir::query::{IrQuery, IrQueryRoot, IrSingleQueryPart};
 use crate::plan_context::PlanContext;
 use crate::plan_node::PlanExpr;
 use crate::planner::single_query::plan_single_query;
-use crate::session::SessionContext;
+use crate::session::PlannerSession;
 
 mod component;
 mod create;
@@ -34,7 +34,7 @@ pub struct RootPlan {
 }
 
 pub fn plan_root(
-    sctx: Arc<dyn SessionContext>,
+    sctx: Arc<dyn PlannerSession>,
     _root @ IrQueryRoot { inner, names }: &IrQueryRoot,
 ) -> Result<RootPlan, PlanError> {
     let plan_ctx = sctx.clone().derive_plan_context();

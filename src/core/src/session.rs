@@ -5,10 +5,12 @@ use async_stream::stream;
 use futures::Stream;
 use futures::stream::BoxStream;
 use mojito_catalog::Catalog;
+use mojito_catalog::error::CatalogError;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::scalar::{Datum, Row};
+use mojito_common::{TokenId, TokenKind};
 use mojito_cypher::plan_context::PlanContext;
-use mojito_cypher::session::{SessionContext, handle_query, parse_statement};
+use mojito_cypher::session::{PlannerSession, handle_query, parse_statement};
 use mojito_exec::error::ExecError;
 use mojito_exec::task::{ExecContext, create_task};
 use mojito_parser::ast;
@@ -29,13 +31,26 @@ impl Session {
     }
 }
 
-impl SessionContext for Session {
-    fn catalog(&self) -> &Arc<Catalog> {
-        &self.catalog
-    }
-
+// for Planner
+impl PlannerSession for Session {
     fn derive_plan_context(self: Arc<Self>) -> Arc<PlanContext> {
         Arc::new(PlanContext::new(self))
+    }
+
+    fn get_or_create_token(&self, token: &str, kind: TokenKind) -> Result<TokenId, CatalogError> {
+        Ok(self.catalog.get_or_create_token(token, kind)?)
+    }
+
+    fn get_function_by_name(&self, name: &str) -> Option<&mojito_catalog::FunctionCatalog> {
+        self.catalog.get_function_by_name(name)
+    }
+
+    fn get_token_id(&self, token: &str, kind: TokenKind) -> Option<TokenId> {
+        self.catalog.get_token_id(token, kind)
+    }
+
+    fn send_notification(&self, _notification: String) {
+        todo!()
     }
 }
 

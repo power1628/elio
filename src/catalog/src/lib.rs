@@ -4,15 +4,16 @@ use std::sync::Arc;
 
 use mojito_storage::token::TokenStore;
 
+pub mod error;
 pub mod func;
 pub use func::FunctionCatalog;
+
 
 /// Catalog contains
 ///  - Registered functions
 ///  - Token to TokenId Mapping
 ///  - #TODO(pgao): Constraints
 ///  - #TODO(pgao): index
-
 pub struct Catalog {
     // token store with cache
     token: Arc<TokenStore>,
