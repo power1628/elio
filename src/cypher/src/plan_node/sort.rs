@@ -3,6 +3,7 @@ use std::sync::Arc;
 use mojito_common::order::ColumnOrder;
 use mojito_common::schema::Schema;
 
+use super::*;
 use crate::plan_node::plan_base::PlanBase;
 use crate::plan_node::{InnerNode, PlanExpr, PlanNode};
 
@@ -18,6 +19,29 @@ impl Sort {
             base: inner.build_base(),
             inner,
         }
+    }
+}
+
+impl PlanNode for Sort {
+    type Inner = SortInner;
+
+    fn inner(&self) -> &Self::Inner {
+        &self.inner
+    }
+
+    fn pretty(&self) -> XmlNode<'_> {
+        let fields = vec![(
+            "items",
+            Pretty::Array(
+                self.inner
+                    .items
+                    .iter()
+                    .map(|x| Pretty::from(x.to_string()))
+                    .collect_vec(),
+            ),
+        )];
+        let children = vec![Pretty::Record(self.inner.input.pretty())];
+        XmlNode::simple_record("Sort", fields, children)
     }
 }
 

@@ -10,7 +10,7 @@ use mojito_common::array::chunk::DataChunk;
 use mojito_common::scalar::{Datum, Row};
 use mojito_common::{TokenId, TokenKind};
 use mojito_cypher::plan_context::PlanContext;
-use mojito_cypher::session::{PlannerSession, handle_query, parse_statement};
+use mojito_cypher::session::{PlannerSession, parse_statement, plan_query};
 use mojito_exec::error::ExecError;
 use mojito_exec::task::{ExecContext, create_task};
 use mojito_parser::ast;
@@ -67,7 +67,7 @@ impl Session {
     }
 
     async fn handle_query(self: &Arc<Self>, query: &ast::RegularQuery) -> Result<Box<dyn ResultHandle>, Error> {
-        let plan = handle_query(self.clone(), query)?;
+        let plan = plan_query(self.clone(), query)?;
         // execute query
         let query_id = uuid::Uuid::new_v4().to_string().into();
         let handle = create_task(&self.exec_ctx, query_id, plan).await?;

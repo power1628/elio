@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+derive_more = { workspace = true }
 educe = { workspace = true, features = ["full"] }
 enum-as-inner = { workspace = true }
 indexmap = { workspace = true }
@@ -15,5 +16,6 @@ mojito_parser = { workspace = true }
 mojito_storage = { workspace = true }
 ordered-float = { workspace = true }
 paste = { workspace = true }
+pretty-xmlish = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

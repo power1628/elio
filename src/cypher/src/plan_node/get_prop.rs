@@ -3,6 +3,7 @@ use std::sync::Arc;
 use mojito_common::schema::Schema;
 use mojito_common::variable::VariableName;
 
+use super::*;
 use crate::plan_node::plan_base::PlanBase;
 use crate::plan_node::{InnerNode, PlanExpr};
 
@@ -12,6 +13,20 @@ use crate::plan_node::{InnerNode, PlanExpr};
 pub struct GetProperty {
     pub base: PlanBase,
     pub(crate) inner: GetPropertyInner,
+}
+
+impl PlanNode for GetProperty {
+    type Inner = GetPropertyInner;
+
+    fn inner(&self) -> &Self::Inner {
+        &self.inner
+    }
+
+    fn pretty(&self) -> XmlNode<'_> {
+        let fields = vec![("entities", Pretty::from(self.inner.entities.join(", ")))];
+        let children = vec![Pretty::Record(self.inner.input.pretty())];
+        XmlNode::simple_record("GetProperty", fields, children)
+    }
 }
 
 #[derive(Clone, Debug)]

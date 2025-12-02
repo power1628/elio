@@ -40,7 +40,7 @@ pub fn parse_statement(stmt: &str) -> Result<ast::Statement, PlanError> {
     cypher_parser::statement(stmt).map_err(PlanError::parse_error)
 }
 
-pub fn handle_query(ctx: Arc<dyn PlannerSession>, query: &ast::RegularQuery) -> Result<RootPlan, PlanError> {
+pub fn plan_query(ctx: Arc<dyn PlannerSession>, query: &ast::RegularQuery) -> Result<RootPlan, PlanError> {
     // bind
     let ir = bind_root_query(ctx.clone(), query)?;
     // plan

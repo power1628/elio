@@ -3,9 +3,10 @@ use std::sync::Arc;
 use mojito_common::IrToken;
 use mojito_common::schema::{Schema, Variable};
 
+use super::*;
 use crate::expr::BoxedExpr;
 use crate::plan_node::plan_base::PlanBase;
-use crate::plan_node::{InnerNode, PlanExpr};
+use crate::plan_node::{InnerNode, PlanExpr, PlanNode};
 
 #[derive(Clone, Debug)]
 pub struct CreateNode {
@@ -21,6 +22,32 @@ impl CreateNode {
             inner,
             _priv: (),
         }
+    }
+}
+
+impl PlanNode for CreateNode {
+    type Inner = CreateNodeInner;
+
+    fn inner(&self) -> &Self::Inner {
+        &self.inner
+    }
+
+    fn pretty(&self) -> XmlNode<'_> {
+        let fields = vec![
+            (
+                "labels",
+                Pretty::Array(
+                    self.inner
+                        .labels
+                        .iter()
+                        .map(|x| Pretty::from(x.to_string()))
+                        .collect_vec(),
+                ),
+            ),
+            ("properties", Pretty::from(self.inner.properties.pretty())),
+        ];
+        let children = vec![Pretty::Record(self.inner.input.pretty())];
+        XmlNode::simple_record("CreateNode", fields, children)
     }
 }
 

@@ -98,6 +98,23 @@ impl<'a> ScalarRefImpl<'a> {
             Self::PropertyMap(m) => ScalarImpl::PropertyMap(m.to_owned_scalar()),
         }
     }
+
+    pub fn pretty(&self) -> String {
+        match self {
+            ScalarRefImpl::Bool(b) => b.to_string(),
+            ScalarRefImpl::Integer(i) => i.to_string(),
+            ScalarRefImpl::Float(ordered_float) => ordered_float.to_string(),
+            ScalarRefImpl::String(s) => s.to_string(),
+            ScalarRefImpl::U16(u) => u.to_string(),
+            ScalarRefImpl::NodeId(node_id) => node_id.to_string(),
+            ScalarRefImpl::RelId(relationship_id) => relationship_id.to_string(),
+            ScalarRefImpl::Node(node_value_ref) => node_value_ref.pretty(),
+            ScalarRefImpl::Rel(rel_value_ref) => rel_value_ref.pretty(),
+            ScalarRefImpl::List(list_value_ref) => list_value_ref.pretty(),
+            ScalarRefImpl::Property(property_value) => property_value.pretty(),
+            ScalarRefImpl::PropertyMap(property_map_value_ref) => property_map_value_ref.pretty(),
+        }
+    }
 }
 
 pub type Datum = Option<ScalarImpl>;

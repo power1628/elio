@@ -4,23 +4,22 @@ use std::collections::VecDeque;
 
 use indexmap::IndexSet;
 use itertools::Itertools;
+use mojito_common::schema::{self, Schema};
 use mojito_common::variable::VariableName;
 
-use crate::{
-    ir::{node_connection::RelPattern, query_graph::QueryGraph},
-    plan_node::{
-        AllNodeScan, AllNodeScanInner, Argument, ArgumentInner, Expand, ExpandInner, ExpandKind, Filter, FilterInner,
-    },
-};
-
 use super::*;
+use crate::ir::node_connection::RelPattern;
+use crate::ir::query_graph::QueryGraph;
+use crate::plan_node::{
+    AllNodeScan, AllNodeScanInner, Argument, ArgumentInner, Expand, ExpandInner, ExpandKind, Filter, FilterInner,
+};
 
 // This is an simple implementation of planning an query graph.
 // we do not handle optionl match and update pattern in qg here.
 // So, if qg's node and imported is both empty, then qg is empty.
 pub(crate) fn plan_qg_simple(ctx: &mut PlannerContext, qg: &QueryGraph) -> Result<Box<PlanExpr>, PlanError> {
     if qg.nodes.is_empty() && qg.imported().is_empty() {
-        return Ok(PlanExpr::empty(ctx.ctx.clone()).boxed());
+        return Ok(PlanExpr::empty(Schema::empty(), ctx.ctx.clone()).boxed());
     }
 
     let mut solver = TraversalSolver::new(ctx, qg);
@@ -44,9 +43,7 @@ pub(crate) fn plan_qg_simple(ctx: &mut PlannerContext, qg: &QueryGraph) -> Resul
 ///   - NodeScan
 /// 2. select node connection by the given node
 ///   - Expand
-/// 3. if the node have multiple node connections, we have two strategy
-///    3.1 DFS: this is what we currently doing
-///    3.2 BFS
+/// 3. if the node have multiple node connections, we have two strategy 3.1 DFS: this is what we currently doing 3.2 BFS
 ///
 /// This only solves graph traversal, filter and get properties not solved by this class.
 ///
@@ -156,7 +153,7 @@ impl<'a> TraversalSolver<'a> {
             }
         };
 
-        let empty = PlanExpr::empty(self.root.ctx()).boxed();
+        let empty = PlanExpr::empty(Schema::empty(), self.root.ctx()).boxed();
         let inner = ExpandInner {
             input: std::mem::replace(&mut self.root, empty),
             from: from.clone(),

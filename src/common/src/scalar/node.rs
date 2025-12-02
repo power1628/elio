@@ -34,6 +34,15 @@ impl<'a> NodeValueRef<'a> {
     pub fn new(id: NodeId, labels: ListValueRef<'a>, properties: PropertyMapValueRef<'a>) -> Self {
         Self { id, labels, properties }
     }
+
+    pub fn pretty(&self) -> String {
+        format!(
+            "{{id: {}, labels: {}, properties: {}}}",
+            self.id,
+            self.labels.pretty(),
+            self.properties.pretty(),
+        )
+    }
 }
 
 impl<'a> ScalarRef<'a> for NodeValueRef<'a> {

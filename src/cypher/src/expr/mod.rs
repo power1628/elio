@@ -113,3 +113,36 @@ impl Expr {
         Expr::PropertyAccess(PropertyAccess::new_unchecked(self.boxed(), prop, typ))
     }
 }
+
+impl Expr {
+    pub fn pretty(&self) -> String {
+        match self {
+            Expr::VariableRef(variable_ref) => variable_ref.name.to_string(),
+            Expr::PropertyAccess(property_access) => {
+                format!("{}.{}", property_access.expr.pretty(), property_access.property)
+            }
+            Expr::Constant(constant) => constant.pretty(),
+            Expr::FuncCall(func_call) => {
+                format!(
+                    "{}({})",
+                    func_call.func,
+                    func_call.args.iter().map(|a| a.pretty()).collect::<Vec<_>>().join(", ")
+                )
+            }
+            Expr::AggCall(agg_call) => todo!(),
+            Expr::Subquery(subquery) => todo!(),
+            Expr::Label(label_expr) => todo!(),
+            Expr::CreateMap(create_map) => {
+                format!(
+                    "create_map{{{}}}",
+                    create_map
+                        .properties
+                        .iter()
+                        .map(|(k, v)| format!("{}: {}", k, v.pretty()))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )
+            }
+        }
+    }
+}

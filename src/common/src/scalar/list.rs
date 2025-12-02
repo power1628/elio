@@ -19,6 +19,22 @@ impl Scalar for ListValue {
     }
 }
 
+impl ListValue {
+    pub fn iter(&self) -> impl Iterator<Item = Option<ScalarRefImpl<'_>>> {
+        self.0.iter()
+    }
+
+    pub fn pretty(&self) -> String {
+        format!(
+            "[{}]",
+            self.iter()
+                .map(|x| x.map(|x| x.pretty()).unwrap_or_else(|| "NULL".to_string()))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct ListValueRef<'a> {
     data: &'a ArrayImpl,
@@ -71,6 +87,16 @@ impl<'a> ListValueRef<'a> {
         } else {
             None
         }
+    }
+
+    pub fn pretty(&self) -> String {
+        format!(
+            "[{}]",
+            self.iter()
+                .map(|x| x.map(|x| x.pretty()).unwrap_or_else(|| "NULL".to_string()))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
     }
 }
 

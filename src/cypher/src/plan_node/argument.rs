@@ -1,4 +1,5 @@
 use educe::Educe;
+use itertools::Itertools;
 
 use super::*;
 
@@ -14,6 +15,28 @@ impl Argument {
             base: inner.build_base(),
             inner,
         }
+    }
+}
+
+impl PlanNode for Argument {
+    type Inner = ArgumentInner;
+
+    fn inner(&self) -> &Self::Inner {
+        &self.inner
+    }
+
+    fn pretty(&self) -> XmlNode<'_> {
+        let fields = vec![(
+            "variables",
+            Pretty::Array(
+                self.inner
+                    .variables
+                    .iter()
+                    .map(|x| Pretty::from(x.name.as_ref()))
+                    .collect_vec(),
+            ),
+        )];
+        XmlNode::simple_record("Argument", fields, Default::default())
     }
 }
 

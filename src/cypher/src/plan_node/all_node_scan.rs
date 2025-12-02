@@ -1,4 +1,5 @@
 use educe::{self, Educe};
+use itertools::Itertools;
 
 use super::*;
 // TODO(pgao): associate the catalog object here?
@@ -16,6 +17,31 @@ impl AllNodeScan {
             base: inner.build_base(),
             inner,
         }
+    }
+}
+
+impl PlanNode for AllNodeScan {
+    type Inner = AllNodeScanInner;
+
+    fn inner(&self) -> &Self::Inner {
+        &self.inner
+    }
+
+    fn pretty(&self) -> XmlNode<'_> {
+        let mut fields = vec![("variable", Pretty::from(self.inner.variable.as_ref()))];
+        if !self.inner.arguments.is_empty() {
+            fields.push((
+                "arguments",
+                Pretty::Array(
+                    self.inner
+                        .arguments
+                        .iter()
+                        .map(|x| Pretty::from(x.name.as_ref()))
+                        .collect_vec(),
+                ),
+            ));
+        }
+        XmlNode::simple_record("AllNodeScan", fields, Default::default())
     }
 }
 

@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use indexmap::IndexMap;
+use itertools::Itertools;
 use mojito_common::variable::VariableName;
+use pretty_xmlish::{Pretty, PrettyConfig};
 
 use crate::error::PlanError;
 use crate::ir::query::{IrQuery, IrQueryRoot, IrSingleQueryPart};
@@ -30,7 +32,28 @@ pub struct PlannerConfig {
 
 pub struct RootPlan {
     pub plan: Box<PlanExpr>,
-    pub names: IndexMap<VariableName, String>,
+    // TODO: convert to name to variable mapping
+    pub names: IndexMap<String, VariableName>,
+}
+
+impl RootPlan {
+    pub fn explain(&self) -> String {
+        let fields = vec![(
+            "names",
+            Pretty::Array(self.names.iter().map(|(k, _)| Pretty::display(k)).collect_vec()),
+        )];
+        let children = vec![Pretty::Record(self.plan.pretty())];
+        let tree = Pretty::simple_record("RootPlan", fields, children);
+        let mut config = PrettyConfig {
+            indent: 3,
+            width: 2048,
+            need_boundaries: false,
+            reduced_spaces: true,
+        };
+        let mut output = String::with_capacity(2048);
+        config.unicode(&mut output, &tree);
+        output
+    }
 }
 
 pub fn plan_root(

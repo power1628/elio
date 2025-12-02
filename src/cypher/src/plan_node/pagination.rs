@@ -15,6 +15,23 @@ impl Pagination {
     }
 }
 
+impl PlanNode for Pagination {
+    type Inner = PaginationInner;
+
+    fn inner(&self) -> &Self::Inner {
+        &self.inner
+    }
+
+    fn pretty(&self) -> XmlNode<'_> {
+        let fields = vec![
+            ("offset", Pretty::from(self.inner.offset.to_string())),
+            ("limit", Pretty::from(self.inner.limit.to_string())),
+        ];
+        let children = vec![Pretty::Record(self.inner.input.pretty())];
+        XmlNode::simple_record("Pagination", fields, children)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct PaginationInner {
     pub input: Box<PlanExpr>,

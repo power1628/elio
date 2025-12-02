@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use educe::Educe;
 use futures::StreamExt;
+use itertools::Itertools;
 use mojito_catalog::Catalog;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::schema::Schema;
@@ -123,11 +124,7 @@ pub async fn create_task(ectx: &Arc<ExecContext>, query_id: Arc<str>, plan: Root
 
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
 
-    let columns = root_executor
-        .schema()
-        .iter()
-        .map(|x| plan.names.get(&x.name).unwrap().clone())
-        .collect();
+    let columns = plan.names.keys().cloned().collect_vec();
 
     let handle = TaskHandle {
         query_id,

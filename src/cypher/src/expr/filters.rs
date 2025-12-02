@@ -48,6 +48,10 @@ impl FilterExprs {
     pub fn iter(&self) -> std::slice::Iter<'_, Expr> {
         self.exprs.iter()
     }
+
+    pub fn pretty(&self) -> String {
+        self.exprs.iter().map(|e| e.pretty()).collect::<Vec<_>>().join(" AND ")
+    }
 }
 
 impl From<FilterExprs> for Expr {
@@ -73,9 +77,8 @@ impl FromIterator<Expr> for FilterExprs {
 }
 
 impl IntoIterator for FilterExprs {
-    type Item = Expr;
-
     type IntoIter = std::vec::IntoIter<Self::Item>;
+    type Item = Expr;
 
     fn into_iter(self) -> Self::IntoIter {
         self.exprs.into_iter()

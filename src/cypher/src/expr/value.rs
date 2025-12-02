@@ -41,6 +41,12 @@ impl Constant {
     pub fn null(typ: DataType) -> Self {
         Self { data: None, typ }
     }
+
+    pub fn pretty(&self) -> String {
+        self.data
+            .as_ref()
+            .map_or("null".to_string(), |d| d.as_scalar_ref().pretty())
+    }
 }
 
 impl ExprNode for Constant {

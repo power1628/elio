@@ -3,10 +3,13 @@ use mojito_parser::ast::SemanticDirection;
 
 use super::*;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash, derive_more::Display)]
 pub enum ExpandKind {
+    #[default]
+    #[display("All")]
     // input (a), output (a)-[r]-(b)
     All,
+    #[display("Into")]
     // input (a), (b), output (a)-[r]-(b)
     Into,
 }
@@ -23,6 +26,36 @@ impl Expand {
             base: inner.build_base(),
             inner,
         }
+    }
+}
+
+impl PlanNode for Expand {
+    type Inner = ExpandInner;
+
+    fn inner(&self) -> &Self::Inner {
+        &self.inner
+    }
+
+    fn pretty(&self) -> XmlNode<'_> {
+        let fields = vec![
+            ("from", Pretty::from(self.inner.from.as_ref())),
+            ("to", Pretty::from(self.inner.to.as_ref())),
+            ("rel", Pretty::from(self.inner.rel.as_ref())),
+            ("direction", Pretty::from(self.inner.direction.to_string())),
+            (
+                "types",
+                Pretty::Array(
+                    self.inner
+                        .types
+                        .iter()
+                        .map(|x| Pretty::from(x.to_string()))
+                        .collect_vec(),
+                ),
+            ),
+            ("kind", Pretty::from(self.inner.kind.to_string())),
+        ];
+        let children = vec![Pretty::Record(self.inner.input.pretty())];
+        XmlNode::simple_record("Expand", fields, children)
     }
 }
 

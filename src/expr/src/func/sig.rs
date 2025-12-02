@@ -3,7 +3,7 @@ use mojito_common::data_type::DataType;
 use crate::impl_::func_call::FunctionImpl;
 
 /// Function definition
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct FuncDef {
     pub name: String, // function name
     pub impls: Vec<FuncImpl>,
@@ -12,7 +12,7 @@ pub struct FuncDef {
 }
 
 /// Function implementation
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct FuncImpl {
     pub args: Vec<FuncImplArg>,
     pub ret: FuncImplReturn,
@@ -43,7 +43,7 @@ impl FuncImpl {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum FuncImplArg {
     /// Exact argument type, e.g. `Int` in `map(Int, [1, 2, 3])`
     Exact(DataType),
@@ -51,7 +51,7 @@ pub enum FuncImplArg {
     Templated(String),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum FuncImplReturn {
     /// Exact return type, e.g. `add(Int, Int) -> Int`
     Exact(DataType),

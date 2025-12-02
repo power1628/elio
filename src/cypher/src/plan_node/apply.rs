@@ -1,3 +1,7 @@
+use std::vec;
+
+use itertools::Itertools;
+
 use super::*;
 
 #[derive(Debug, Clone)]
@@ -12,6 +16,24 @@ impl Apply {
             base: inner.build_base(),
             inner,
         }
+    }
+}
+
+impl PlanNode for Apply {
+    type Inner = ApplyInner;
+
+    fn inner(&self) -> &Self::Inner {
+        &self.inner
+    }
+
+    fn pretty(&self) -> XmlNode<'_> {
+        let children = self
+            .inputs()
+            .iter()
+            .map(|x| x.pretty())
+            .map(|x| Pretty::Record(x))
+            .collect_vec();
+        XmlNode::simple_record("Apply", vec![], children)
     }
 }
 

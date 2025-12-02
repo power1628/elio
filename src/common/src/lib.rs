@@ -19,7 +19,7 @@ pub type LabelId = TokenId;
 pub type RelationshipTypeId = TokenId;
 pub type PropertyKeyId = TokenId;
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, EnumAsInner)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, EnumAsInner, derive_more::Display)]
 pub enum IrToken {
     Resolved(TokenId),
     Unresolved(String),
@@ -34,7 +34,7 @@ impl From<Option<TokenId>> for IrToken {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Debug, Clone, Hash, PartialEq, Eq)]
 pub enum TokenKind {
     Label,
     RelationshipType,

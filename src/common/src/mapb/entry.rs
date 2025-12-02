@@ -66,6 +66,46 @@ pub enum EntryValueRef<'a> {
     ListString(ListStringRef<'a>),
 }
 
+impl<'a> EntryValueRef<'a> {
+    pub fn pretty(&self) -> String {
+        match self {
+            EntryValueRef::Null => "NULL".to_string(),
+            EntryValueRef::Bool(b) => b.to_string(),
+            EntryValueRef::Integer(i) => i.to_string(),
+            EntryValueRef::Float(f) => f.to_string(),
+            EntryValueRef::String(s) => s.to_string(),
+            EntryValueRef::ListBool(items) => format!(
+                "[{}]",
+                items.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", ")
+            ),
+            EntryValueRef::ListInteger(primitive_list_ref) => format!(
+                "[{}]",
+                primitive_list_ref
+                    .iter()
+                    .map(|x| x.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
+            EntryValueRef::ListFloat(primitive_list_ref) => format!(
+                "[{}]",
+                primitive_list_ref
+                    .iter()
+                    .map(|x| x.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
+            EntryValueRef::ListString(list_string_ref) => format!(
+                "[{}]",
+                list_string_ref
+                    .iter()
+                    .map(|x| x.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
+        }
+    }
+}
+
 pub struct ListStringRef<'a> {
     // # layout
     // | len (u32) | str_len(u32) | str_bytes    | ...

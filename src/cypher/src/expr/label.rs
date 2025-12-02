@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 
 use educe::Educe;
-use mojito_common::data_type::DataType;
 use mojito_common::IrToken;
+use mojito_common::data_type::DataType;
 
 use crate::expr::{Expr, ExprNode};
 

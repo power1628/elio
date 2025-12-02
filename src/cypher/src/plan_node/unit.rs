@@ -3,9 +3,10 @@ use std::sync::Arc;
 use educe::Educe;
 use mojito_common::schema::Schema;
 
+use super::*;
 use crate::plan_context::PlanContext;
 use crate::plan_node::plan_base::PlanBase;
-use crate::plan_node::{InnerNode, PlanExpr};
+use crate::plan_node::{InnerNode, PlanExpr, PlanNode};
 
 /// Generate one empty row
 /// used to drive the create node/rel
@@ -23,6 +24,18 @@ impl Unit {
             base: inner.build_base(),
             inner,
         }
+    }
+}
+
+impl PlanNode for Unit {
+    type Inner = UnitInner;
+
+    fn inner(&self) -> &Self::Inner {
+        &self.inner
+    }
+
+    fn pretty(&self) -> XmlNode<'_> {
+        XmlNode::simple_record("Unit", vec![], vec![])
     }
 }
 

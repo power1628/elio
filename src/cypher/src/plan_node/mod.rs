@@ -1,8 +1,10 @@
 use std::sync::Arc;
 
+use itertools::Itertools;
 use mojito_common::data_type::DataType;
 use mojito_common::schema::{Schema, Variable};
 use mojito_common::variable::VariableName;
+use pretty_xmlish::{Pretty, XmlNode};
 
 use crate::expr::{Expr, ExprNode};
 use crate::plan_context::PlanContext;
@@ -57,8 +59,8 @@ pub enum PlanExpr {
 }
 
 impl PlanExpr {
-    pub fn empty(ctx: Arc<PlanContext>) -> Self {
-        Self::Empty(Empty::new(ctx))
+    pub fn empty(schema: Schema, ctx: Arc<PlanContext>) -> Self {
+        Self::Empty(Empty::new(schema, ctx))
     }
 
     pub fn boxed(self) -> Box<Self> {
@@ -78,6 +80,8 @@ pub trait PlanNode {
     fn inputs(&self) -> Vec<&PlanExpr> {
         self.inner().inputs()
     }
+
+    fn pretty(&self) -> XmlNode<'_>;
 }
 
 pub trait InnerNode {
@@ -87,14 +91,6 @@ pub trait InnerNode {
 
 macro_rules! impl_plan_node_common {
     ($plan_node:ident, $inner:ident) => {
-        impl PlanNode for $plan_node {
-            type Inner = $inner;
-
-            fn inner(&self) -> &Self::Inner {
-                &self.inner
-            }
-        }
-
         impl $plan_node {
             pub fn id(&self) -> PlanNodeId {
                 self.base.id()
@@ -162,6 +158,12 @@ macro_rules! impl_plan_expr_dispatch {
             pub fn inputs(&self) -> Vec<&PlanExpr> {
                 match self {
                     $(PlanExpr::$plan_node(p) => p.inputs(),)*
+                }
+            }
+
+            pub fn pretty(&self) -> XmlNode<'_>{
+                match self {
+                    $(PlanExpr::$plan_node(p) => p.pretty(),)*
                 }
             }
         }

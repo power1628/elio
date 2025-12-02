@@ -2,20 +2,17 @@ use std::collections::HashSet;
 
 use itertools::Itertools;
 use mojito_common::order::ColumnOrder;
+use mojito_common::schema::Schema;
 
-use crate::{
-    error::PlanError,
-    expr::FilterExprs,
-    ir::{
-        horizon::{
-            AggregateProjection, DistinctProjection, Pagination, QueryHorizon, QueryProjection, RegularProjection,
-            UnwindProjection,
-        },
-        order::SortItem,
-    },
-    plan_node::{Filter, FilterInner, PaginationInner, PlanExpr, Project, ProjectInner, Sort, SortInner},
-    planner::PlannerContext,
+use crate::error::PlanError;
+use crate::expr::FilterExprs;
+use crate::ir::horizon::{
+    AggregateProjection, DistinctProjection, Pagination, QueryHorizon, QueryProjection, RegularProjection,
+    UnwindProjection,
 };
+use crate::ir::order::SortItem;
+use crate::plan_node::{Filter, FilterInner, PaginationInner, PlanExpr, Project, ProjectInner, Sort, SortInner};
+use crate::planner::PlannerContext;
 
 pub fn plan_horizon(
     ctx: &mut PlannerContext,
@@ -128,7 +125,7 @@ fn plan_sort(
     // extra project
     if !extra_projections.is_empty() {
         // add extra project
-        let empty = PlanExpr::empty(root.ctx());
+        let empty = PlanExpr::empty(Schema::empty(), root.ctx());
         let mut inner = ProjectInner::new_from_input(std::mem::replace(&mut root, Box::new(empty)));
         extra_projections
             .iter()
@@ -148,7 +145,7 @@ fn plan_sort(
     // remove extra project
     // TODO(pgao): maybe we can use the opt rule to remove unnecessary project
     if !extra_projections.is_empty() {
-        let empty = PlanExpr::empty(root.ctx());
+        let empty = PlanExpr::empty(Schema::empty(), root.ctx());
         let mut inner = ProjectInner::new_from_input(std::mem::replace(&mut root, Box::new(empty)));
         let extra_names: HashSet<_> = extra_projections.iter().map(|(n, _)| n).collect();
         inner.retain(|(name, _expr)| !extra_names.contains(name));

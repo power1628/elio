@@ -50,3 +50,16 @@ impl<'a> ScalarRef<'a> for PropertyMapValueRef<'a> {
         Self::ScalarType::from(self.0.to_owned())
     }
 }
+
+impl<'a> PropertyMapValueRef<'a> {
+    pub fn pretty(&self) -> String {
+        format!(
+            "{}",
+            self.0
+                .iter()
+                .map(|kv| format!("{}: {}", kv.key(), kv.value().pretty()))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    }
+}

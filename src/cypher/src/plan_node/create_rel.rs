@@ -3,6 +3,7 @@ use std::sync::Arc;
 use mojito_common::IrToken;
 use mojito_common::schema::{Schema, Variable};
 
+use super::*;
 use crate::expr::BoxedExpr;
 use crate::plan_node::plan_base::PlanBase;
 use crate::plan_node::{InnerNode, PlanExpr, PlanNode};
@@ -19,6 +20,26 @@ impl CreateRel {
             base: inner.build_base(),
             inner,
         }
+    }
+}
+
+impl PlanNode for CreateRel {
+    type Inner = CreateRelInner;
+
+    fn inner(&self) -> &Self::Inner {
+        &self.inner
+    }
+
+    fn pretty(&self) -> XmlNode<'_> {
+        let fields = vec![
+            ("variable", Pretty::from(self.inner.variable.name.as_ref())),
+            ("reltype", Pretty::from(self.inner.reltype.to_string())),
+            ("start_node", Pretty::from(self.inner.start_node.pretty())),
+            ("end_node", Pretty::from(self.inner.end_node.pretty())),
+            ("properties", Pretty::from(self.inner.properties.pretty())),
+        ];
+        let children = vec![Pretty::Record(self.inner.input.pretty())];
+        XmlNode::simple_record("CreateRel", fields, children)
     }
 }
 

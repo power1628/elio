@@ -19,6 +19,22 @@ pub enum PropertyValue {
     ListString(Vec<String>),
 }
 
+impl PropertyValue {
+    pub fn pretty(&self) -> String {
+        match self {
+            PropertyValue::Null => "null".to_string(),
+            PropertyValue::Boolean(b) => b.to_string(),
+            PropertyValue::Integer(i) => i.to_string(),
+            PropertyValue::Float(f) => f.to_string(),
+            PropertyValue::String(s) => format!("\"{}\"", s),
+            PropertyValue::ListBool(b) => format!("[{}]", b.iter().map(|b| b.to_string()).join(", ")),
+            PropertyValue::ListInteger(i) => format!("[{}]", i.iter().map(|i| i.to_string()).join(", ")),
+            PropertyValue::ListFloat(f) => format!("[{}]", f.iter().map(|f| f.to_string()).join(", ")),
+            PropertyValue::ListString(s) => format!("[{}]", s.iter().map(|s| format!("\"{}\"", s)).join(", ")),
+        }
+    }
+}
+
 pub enum StoreDataType {
     Null,
     Boolean,

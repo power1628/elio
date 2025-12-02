@@ -49,3 +49,16 @@ impl<'a> ScalarRef<'a> for RelValueRef<'a> {
         }
     }
 }
+
+impl<'a> RelValueRef<'a> {
+    pub fn pretty(&self) -> String {
+        format!(
+            "{{id: {}, reltype: {}, start: {}, end: {}, properties: {}}}",
+            self.id,
+            self.reltype,
+            self.start,
+            self.end,
+            self.properties.pretty()
+        )
+    }
+}

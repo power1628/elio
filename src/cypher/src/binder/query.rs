@@ -28,10 +28,10 @@ pub fn bind_root_query(sctx: Arc<dyn PlannerSession>, query: &ast::RegularQuery)
 
     let (ir, scope) = bind_query(&bctx, query)?;
 
-    let names: IndexMap<VariableName, String> = scope
+    let names: IndexMap<String, VariableName> = scope
         .items
         .iter()
-        .map(|x| (x.variable.clone(), x.symbol.clone().unwrap()))
+        .map(|x| (x.symbol.clone().unwrap().to_string(), x.variable.clone()))
         .collect();
 
     let root = IrQueryRoot { inner: ir, names };

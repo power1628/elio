@@ -1,13 +1,14 @@
 use indexmap::IndexMap;
 use mojito_common::variable::VariableName;
 
-use crate::ir::{horizon::QueryHorizon, query_graph::QueryGraph};
+use crate::ir::horizon::QueryHorizon;
+use crate::ir::query_graph::QueryGraph;
 
 pub struct IrQueryRoot {
     pub inner: IrQuery,
     // mapping from variable name to output names
     // TODO(pgao): should we record the datatype here?
-    pub names: IndexMap<VariableName, String>,
+    pub names: IndexMap<String, VariableName>,
 }
 
 pub struct IrQuery {

@@ -9,6 +9,7 @@ async-stream = { workspace = true }
 educe = { workspace = true }
 futures = { workspace = true }
 indexmap = { workspace = true }
+itertools = { workspace = true }
 mojito_catalog = { workspace = true }
 mojito_common = { workspace = true }
 mojito_cypher = { workspace = true }

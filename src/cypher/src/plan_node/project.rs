@@ -1,5 +1,3 @@
-use itertools::Itertools;
-
 use super::*;
 
 #[derive(Debug, Clone)]
@@ -14,6 +12,30 @@ impl Project {
             base: inner.build_base(),
             inner,
         }
+    }
+}
+
+impl PlanNode for Project {
+    type Inner = ProjectInner;
+
+    fn inner(&self) -> &Self::Inner {
+        &self.inner
+    }
+
+    fn pretty(&self) -> XmlNode<'_> {
+        let fields = vec![(
+            "exprs",
+            Pretty::Array(
+                self.inner
+                    .projections
+                    .iter()
+                    .map(|(var, expr)| format!("{} AS {}", var, expr.pretty()))
+                    .map(|x| Pretty::from(x))
+                    .collect_vec(),
+            ),
+        )];
+        let children = vec![Pretty::Record(self.inner.input.pretty())];
+        XmlNode::simple_record("Project", fields, children)
     }
 }
 
