@@ -30,7 +30,7 @@ impl PlanNode for Project {
                     .projections
                     .iter()
                     .map(|(var, expr)| format!("{} AS {}", var, expr.pretty()))
-                    .map(|x| Pretty::from(x))
+                    .map(Pretty::from)
                     .collect_vec(),
             ),
         )];

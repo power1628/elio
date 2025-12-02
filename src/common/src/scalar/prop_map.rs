@@ -53,13 +53,10 @@ impl<'a> ScalarRef<'a> for PropertyMapValueRef<'a> {
 
 impl<'a> PropertyMapValueRef<'a> {
     pub fn pretty(&self) -> String {
-        format!(
-            "{}",
-            self.0
+        self.0
                 .iter()
                 .map(|kv| format!("{}: {}", kv.key(), kv.value().pretty()))
                 .collect::<Vec<_>>()
-                .join(", ")
-        )
+                .join(", ").to_string()
     }
 }

@@ -129,9 +129,9 @@ impl Expr {
                     func_call.args.iter().map(|a| a.pretty()).collect::<Vec<_>>().join(", ")
                 )
             }
-            Expr::AggCall(agg_call) => todo!(),
-            Expr::Subquery(subquery) => todo!(),
-            Expr::Label(label_expr) => todo!(),
+            Expr::AggCall(_agg_call) => todo!(),
+            Expr::Subquery(_subquery) => todo!(),
+            Expr::Label(_label_expr) => todo!(),
             Expr::CreateMap(create_map) => {
                 format!(
                     "create_map{{{}}}",

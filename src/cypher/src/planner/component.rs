@@ -4,7 +4,7 @@ use std::collections::VecDeque;
 
 use indexmap::IndexSet;
 use itertools::Itertools;
-use mojito_common::schema::{self, Schema};
+use mojito_common::schema::Schema;
 use mojito_common::variable::VariableName;
 
 use super::*;

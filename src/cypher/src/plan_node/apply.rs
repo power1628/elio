@@ -31,7 +31,7 @@ impl PlanNode for Apply {
             .inputs()
             .iter()
             .map(|x| x.pretty())
-            .map(|x| Pretty::Record(x))
+            .map(Pretty::Record)
             .collect_vec();
         XmlNode::simple_record("Apply", vec![], children)
     }

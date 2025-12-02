@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use anyhow::Error;
 use async_trait::async_trait;
+use itertools::Itertools;
 use mojito_catalog::FunctionCatalog;
 use mojito_catalog::error::CatalogError;
 use mojito_common::{TokenId, TokenKind};
@@ -59,6 +61,10 @@ impl MockPlannerSession {
         let plan = mojito_cypher::session::plan_query(self.clone(), ast)?;
         Ok(plan.explain())
     }
+
+    pub fn execute_ddl(self: &Arc<Self>, _ast: &ast::RegularQuery) -> anyhow::Result<()> {
+        todo!()
+    }
 }
 
 impl PlannerSession for MockPlannerSession {
@@ -107,7 +113,21 @@ impl TestEnv {
     }
 
     // generate plan
-    pub fn task_plan(&self, result: &mut String, cypher: &str, task: &str, opts: &TaskOption) -> anyhow::Result<()> {}
+    pub fn task_plan(&self, result: &mut String, cypher: &str, task: &str, _opts: &TaskOption) -> anyhow::Result<()> {
+        let session = Arc::new(self.new_session());
+        let stmts = cypher.trim().split(';').collect_vec();
+        for stmt in stmts {
+            let ast = session.parse(stmt)?;
+            match ast {
+                ast::Statement::Query(regular_query) => {
+                    let plan = session.plan_query(&regular_query)?;
+                    result.push_str(&plan);
+                }
+                _ => return Err(Error::msg(format!("invalid cypher{} and task{}", stmt, task))),
+            }
+        }
+        Ok(())
+    }
 }
 
 // TODO(pgao): task options
@@ -120,5 +140,13 @@ pub struct TaskOption {
 #[async_trait]
 impl sqlplannertest::PlannerTestRunner for TestEnv {
     /// Run a test case and return the result
-    async fn run(&mut self, test_case: &ParsedTestCase) -> anyhow::Result<String> {}
+    async fn run(&mut self, test_case: &ParsedTestCase) -> anyhow::Result<String> {
+        let mut result = String::new();
+        for task in test_case.tasks.iter() {
+            if task == "plan" {
+                self.task_plan(&mut result, &test_case.sql, task, &TaskOption::default())?;
+            }
+        }
+        Ok(result)
+    }
 }

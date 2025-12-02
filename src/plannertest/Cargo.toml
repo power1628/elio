@@ -6,9 +6,16 @@ edition.workspace = true
 [dependencies]
 anyhow = { workspace = true }
 async-trait = { workspace = true }
+clap = { workspace = true, features = ["derive", "cargo"] }
+itertools = { workspace = true }
 mojito_catalog = { workspace = true }
 mojito_common = { workspace = true }
 mojito_cypher = { workspace = true }
 mojito_expr = { workspace = true }
 mojito_parser = { workspace = true }
 sqlplannertest = { workspace = true }
+tokio = { workspace = true }
+
+[[test]]
+name = "planner_test"
+harness = false

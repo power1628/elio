@@ -24,9 +24,11 @@ build-release:
 	cargo build --release --workspace --bins
 
 planner-test:
-	cargo test --package flavius-core --test drive
-	#cargo test --package flavius-core --test drive -- --show-output
+	cargo test -p mojito_plannertest --test planner_test
 
+rewrite-planner-test:
+	cargo run -p mojito_plannertest --bin planner_test_apply
+	
 doc-test:
 	cargo test --no-fail-fast --doc --all-features --workspace
 

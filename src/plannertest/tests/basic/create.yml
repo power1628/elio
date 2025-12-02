@@ -1,0 +1,4 @@
+- sql: |
+    CREATE (n:Person {name: 'Alice', age: 30})
+  tasks:
+    - plan
