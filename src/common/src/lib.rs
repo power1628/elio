@@ -25,12 +25,9 @@ pub enum IrToken {
     Unresolved(String),
 }
 
-impl From<Option<TokenId>> for IrToken {
-    fn from(token: Option<TokenId>) -> Self {
-        match token {
-            Some(token) => Self::Resolved(token),
-            None => Self::Unresolved("".to_string()),
-        }
+impl From<TokenId> for IrToken {
+    fn from(token: TokenId) -> Self {
+        Self::Resolved(token)
     }
 }
 

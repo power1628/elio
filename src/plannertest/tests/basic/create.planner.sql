@@ -4,7 +4,7 @@ CREATE (n:Person {name: 'Alice', age: 30})
 /*
 RootPlan { names: [n] }
 └─Project { exprs: [] }
-  └─CreateNode { labels: [], properties: create_map{: Alice, : 30} }
+  └─CreateNode { labels: [Person], properties: create_map{name: Alice, age: 30} }
     └─Unit
 */
 

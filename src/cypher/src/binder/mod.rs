@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use mojito_common::{IrToken, TokenKind};
 use mojito_expr::func::sig::FuncDef;
 
 use crate::binder::expr::ExprContext;
@@ -52,5 +53,12 @@ impl BindContext {
 
     pub fn resolve_function(&self, name: &str) -> Option<&FuncDef> {
         self.session().get_function_by_name(name).map(|x| &x.func)
+    }
+
+    pub fn resolve_token(&self, token: &str, token_kind: TokenKind) -> IrToken {
+        match self.session().get_token_id(token, token_kind) {
+            Some(token_id) => IrToken::Resolved(token_id),
+            None => IrToken::Unresolved(token.to_owned()),
+        }
     }
 }

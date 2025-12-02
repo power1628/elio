@@ -69,7 +69,7 @@ pub fn bind_expr(ectx: &ExprContext, outer_scope: &[Scope], expr: &ast::Expr) ->
         ast::Expr::PropertyAccess { map, key } => {
             let expr = bind_expr(ectx, outer_scope, map)?;
             // resolve property keys
-            let token: IrToken = ectx.bctx.session().get_token_id(key, TokenKind::PropertyKey).into();
+            let token: IrToken = ectx.bctx.resolve_token(key, TokenKind::PropertyKey);
             // TODO(pgao): maybe we can resolve the property types here
             let pa = PropertyAccess::new_unchecked(expr.boxed(), &token, &DataType::Property);
             Ok(pa.into())
@@ -239,7 +239,7 @@ pub fn bind_map_expr_to_property_map(
 
     let tokens: Vec<IrToken> = keys
         .iter()
-        .map(|x| ectx.bctx.session().get_token_id(x, TokenKind::PropertyKey).into())
+        .map(|x| ectx.bctx.resolve_token(x, TokenKind::PropertyKey))
         .collect_vec();
 
     let exprs = values
