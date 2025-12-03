@@ -135,11 +135,14 @@ impl TokenStore {
     fn db_get_all_token(&self, token_kind: TokenKind) -> Result<Vec<(String, u16)>, GraphStoreError> {
         let cf = self.db.cf_handle(cf_meta::CF_NAME).unwrap();
         let prefix = TokenCodec::data_key_prefix(&token_kind);
-        let iter = self.db.prefix_iterator_cf(&cf, prefix);
+        let iter = self.db.prefix_iterator_cf(&cf, &prefix);
 
         let mut tokens = Vec::new();
         for res in iter {
             let (key, value) = res?;
+            if !key.starts_with(&prefix) {
+                break;
+            }
             let (_, token) = TokenCodec::decode_data_key(&key);
             let token_id = TokenCodec::decode_data_value(&value);
             tokens.push((token, token_id));
