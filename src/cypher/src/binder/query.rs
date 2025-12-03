@@ -15,7 +15,7 @@ use crate::error::{PlanError, SemanticError};
 use crate::ir::query::{IrQuery, IrQueryRoot, IrSingleQuery};
 use crate::session::PlannerSession;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, derive_more::Display)]
 pub enum ClauseKind {
     Create,
     Match,
@@ -85,6 +85,10 @@ fn bind_single_query(bctx: &BindContext, query: &ast::SingleQuery) -> Result<(Ir
             ast::Clause::Return(return_clause) => bind_return(bctx, &mut builder, in_scope, return_clause)?,
             ast::Clause::Unwind(_unwind_clause) => todo!(),
         };
+    }
+    // fix: if clause does not ends with return, then return an empty in scope
+    if !matches!(clauses.last().unwrap(), ast::Clause::Return(_)) {
+        in_scope = Scope::empty();
     }
     Ok((builder.build(), in_scope))
 }

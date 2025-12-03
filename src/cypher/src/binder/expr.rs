@@ -108,6 +108,8 @@ fn bind_variable(ectx: &ExprContext, name: &str, outer_scope: &[Scope]) -> Resul
     let item = ectx.scope.resolve_symbol(name);
     if ectx.sema_flags.reject_outer_reference() && item.is_none() {
         return Err(SemanticError::variable_not_defined(name, ectx.name).into());
+    } else if let Some(item) = item {
+        return Ok(VariableRef::from_variable(&item.as_variable()));
     }
     // bind variable in outer scope
     for scope in outer_scope.iter() {

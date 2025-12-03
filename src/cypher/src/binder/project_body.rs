@@ -70,7 +70,11 @@ pub fn bind_return_items(
                 continue;
             } else {
                 // add symbol to existing
-                existing.push((in_item.variable.clone(), in_item.as_expr()));
+                existing.push((
+                    in_item.variable.clone(),
+                    in_item.symbol.clone().unwrap(),
+                    in_item.as_expr(),
+                ));
             }
         }
     }
@@ -81,7 +85,8 @@ pub fn bind_return_items(
         // for the case WITH * [WHERE]
         let mut out_scope = Scope::empty();
         let mut projections = IndexMap::new();
-        let ectx = bctx.derive_expr_context(&scope, "WITH Clause");
+        let clause = format!("{} Clause", for_clause);
+        let ectx = bctx.derive_expr_context(&scope, &clause);
         for ReturnItem { expr, alias } in group_by {
             let bound_expr = bind_expr(&ectx, &bctx.outer_scopes, expr)?;
             let symbol = alias.clone().unwrap_or(expr.to_string());
@@ -96,8 +101,18 @@ pub fn bind_return_items(
             projections.insert(var_name, bound_expr);
         }
 
-        // add existing
-        projections.extend(existing);
+        // add existing to out scope
+        for (var, symbol, expr) in existing.iter() {
+            let item = ScopeItem {
+                symbol: Some(symbol.to_string()),
+                variable: var.clone(),
+                expr: Default::default(),
+                typ: expr.typ(),
+            };
+            out_scope.add_item(item);
+        }
+        projections.extend(existing.iter().map(|(var, _symbol, expr)| (var.clone(), expr.clone())));
+
         (out_scope, projections)
     };
 

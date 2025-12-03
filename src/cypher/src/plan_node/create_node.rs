@@ -34,6 +34,7 @@ impl PlanNode for CreateNode {
 
     fn pretty(&self) -> XmlNode<'_> {
         let fields = vec![
+            ("variable", Pretty::display(&self.inner.variable.name)),
             (
                 "labels",
                 Pretty::Array(
