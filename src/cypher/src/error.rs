@@ -1,3 +1,5 @@
+use std::backtrace::Backtrace;
+
 use mojito_common::data_type::DataType;
 use mojito_storage::error::GraphStoreError;
 use thiserror::Error;

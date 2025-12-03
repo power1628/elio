@@ -39,7 +39,7 @@ fn build_variable(ctx: &BuildExprContext<'_>, variable_ref: &VariableRef) -> Res
     let col = ctx
         .name2col
         .get(&variable_ref.name)
-        .ok_or_else(|| BuildError::VariableNotFound(variable_ref.name.clone()))?;
+        .ok_or_else(|| BuildError::variable_not_found(variable_ref.name.clone()))?;
     let typ = ctx.schema.column(*col).typ.clone();
     Ok(VariableRefExpr::new(*col, typ).boxed())
 }
@@ -52,7 +52,7 @@ fn build_property_access(
     let token = match property {
         IrToken::Resolved(id) => id,
         IrToken::Unresolved(key) => {
-            return Err(BuildError::UnresolvedToken(key.clone()));
+            return Err(BuildError::unresolved_token(key.clone()));
         }
     };
     let expr = PropertyAccessExpr::new(input, *token);

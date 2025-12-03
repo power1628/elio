@@ -22,10 +22,11 @@ async fn main() {
 
     let sess = db.new_session();
 
-    let query = "CREATE (n:Person {name: 'Alice', age: 30})";
+    let query = "CREATE (n:Person {name: 'Alice', age: 30}) RETURN *";
 
     let mut stream = sess.execute(query.to_string(), HashMap::new()).await.unwrap();
     while let Some(row) = stream.next().await {
+        print!("hh");
         println!("{:?}", row);
     }
 }

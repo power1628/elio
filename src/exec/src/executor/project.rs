@@ -8,7 +8,7 @@ use super::*;
 pub struct ProjectExecutor {
     pub(crate) input: BoxedExecutor,
     pub(crate) exprs: Vec<BoxedExpression>,
-    pub(crate) schema: Schema,
+    pub(crate) schema: Arc<Schema>,
 }
 
 impl Executor for ProjectExecutor {
