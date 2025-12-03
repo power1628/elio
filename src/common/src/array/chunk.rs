@@ -14,6 +14,10 @@ impl DataChunk {
         Self::new(vec![], 1)
     }
 
+    pub fn empty() -> Self {
+        Self::new(vec![], 0)
+    }
+
     pub fn new(columns: Vec<ArrayImpl>, cardinality: usize) -> Self {
         Self { columns, cardinality }
     }

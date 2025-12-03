@@ -1,11 +1,12 @@
 use std::sync::Arc;
 
 use mojito_common::variable::VariableName;
-use mojito_cypher::plan_node::{CreateNode, PlanExpr};
+use mojito_cypher::plan_node::{CreateNode, PlanExpr, PlanNode, Project};
 use mojito_cypher::planner::RootPlan;
 
 use crate::builder::expression::{BuildExprContext, build_expression};
 use crate::executor::create_node::CreateNodeExectuor;
+use crate::executor::project::ProjectExecutor;
 use crate::executor::unit::UnitExecutor;
 use crate::executor::{BoxedExecutor, Executor};
 use crate::task::TaskExecContext;
@@ -53,7 +54,7 @@ fn build_node(ctx: &mut ExecutorBuildContext, node: &PlanExpr) -> Result<BoxedEx
         PlanExpr::Unit(_unit) => Ok(UnitExecutor::default().boxed()),
         PlanExpr::CreateNode(create_node) => build_create_node(ctx, create_node, inputs),
         PlanExpr::CreateRel(_create_rel) => todo!(),
-        PlanExpr::Project(_project) => todo!(),
+        PlanExpr::Project(project) => build_project(ctx, project, inputs),
         PlanExpr::Sort(_sort) => todo!(),
         PlanExpr::Filter(_filter) => todo!(),
         PlanExpr::Pagination(_pagination) => todo!(),
@@ -79,6 +80,44 @@ fn build_create_node(
         labels: node.inner.labels.clone(),
         properties,
         schema: schema.clone(),
+    }
+    .boxed())
+}
+
+fn build_project(
+    ctx: &mut ExecutorBuildContext,
+    node: &Project,
+    inputs: Vec<BoxedExecutor>,
+) -> Result<BoxedExecutor, BuildError> {
+    assert_eq!(inputs.len(), 1);
+    let [input]: [BoxedExecutor; 1] = inputs.try_into().unwrap();
+
+    let schema = input.schema().clone();
+    let out_name_to_col = node.schema().name_to_col_map();
+    let ectx = BuildExprContext::new(&schema, ctx);
+
+    // findout project item order
+    let project_items = &node.inner().projections;
+    let mut out_idx_to_idx = vec![0; project_items.len()];
+    let mut exprs = vec![];
+    for (i, (var, expr)) in project_items.iter().enumerate() {
+        let out_idx = out_name_to_col[var];
+        out_idx_to_idx[out_idx] = i;
+        let expr = build_expression(&ectx, expr)?;
+        exprs.push(Some(expr));
+    }
+
+    // build exprs
+    let mut project_exprs = vec![];
+    for in_idx in out_idx_to_idx {
+        project_exprs.push(exprs[in_idx].take().unwrap());
+    }
+
+    Ok(ProjectExecutor {
+        input,
+        exprs: project_exprs,
+        // we assume the schema is with the same order of projections
+        schema,
     }
     .boxed())
 }

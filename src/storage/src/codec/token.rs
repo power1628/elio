@@ -44,7 +44,7 @@ impl TokenCodec {
             LABEL_KEY_PREFIX => TokenKind::Label,
             RELTYPE_KEY_PREFIX => TokenKind::RelationshipType,
             PROPERTY_KEY_PREFIX => TokenKind::PropertyKey,
-            _ => panic!("invalid token kind"),
+            kind => panic!("invalid token kind {}", kind),
         };
         let token = String::from_utf8_lossy(&key[1..]).to_string();
         (kind, token)

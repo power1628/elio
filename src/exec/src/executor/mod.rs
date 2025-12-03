@@ -10,6 +10,7 @@ use crate::task::TaskExecContext;
 
 pub mod create_node;
 pub mod filter;
+pub mod project;
 pub mod relscan;
 pub mod unit;
 

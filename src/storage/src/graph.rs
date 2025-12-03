@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use rocksdb::{self};
+use rocksdb;
+use rocksdb::{ColumnFamilyDescriptor, Options};
 
 use crate::dict::IdStore;
 use crate::error::GraphStoreError;
@@ -27,16 +28,35 @@ pub enum TransactionMode {
 
 impl GraphStore {
     pub fn open(path: &str) -> Result<Self, GraphStoreError> {
-        let db: rocksdb::TransactionDB<rocksdb::MultiThreaded> = rocksdb::TransactionDB::open_default(path).unwrap();
-        // create column families
-        let mut opts = rocksdb::Options::default();
+        let mut opts = Options::default();
         opts.create_if_missing(true);
         opts.create_missing_column_families(true);
-        db.create_cf(CF_META, &opts)?;
-        db.create_cf(CF_TOPOLOGY, &opts)?;
-        db.create_cf(CF_PROPERTY, &opts)?;
-        let db = Arc::new(db);
 
+        let cf_descriptors = vec![
+            ColumnFamilyDescriptor::new(CF_META, Options::default()),
+            ColumnFamilyDescriptor::new(CF_TOPOLOGY, Options::default()),
+            ColumnFamilyDescriptor::new(CF_PROPERTY, Options::default()),
+        ];
+        let tx_db_opts = rocksdb::TransactionDBOptions::default();
+
+        // create db and create cf if not exist
+        let db = match rocksdb::TransactionDB::open_cf_descriptors(&opts, &tx_db_opts, path, cf_descriptors) {
+            Ok(db) => db,
+            Err(_) => {
+                // if db not exists, create one
+                let db = rocksdb::TransactionDB::open_default(path)?;
+
+                // create cf
+                let cf_opts = Options::default();
+                db.create_cf(CF_META, &cf_opts)?;
+                db.create_cf(CF_TOPOLOGY, &cf_opts)?;
+                db.create_cf(CF_PROPERTY, &cf_opts)?;
+
+                db
+            }
+        };
+
+        let db = Arc::new(db);
         let dict = Arc::new(IdStore::new(db.clone())?);
         let token = Arc::new(TokenStore::new(db.clone())?);
 
