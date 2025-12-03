@@ -105,10 +105,13 @@ fn bind_constant(_ectx: &ExprContext, lit: &ast::Literal) -> Result<Constant, Pl
 }
 
 fn bind_variable(ectx: &ExprContext, name: &str, outer_scope: &[Scope]) -> Result<VariableRef, PlanError> {
-    let item = ectx.scope.resolve_symbol(name);
-    if ectx.sema_flags.reject_outer_reference() && item.is_none() {
+    if let Some(item) = ectx.scope.resolve_symbol(name) {
+        return Ok(VariableRef::from_variable(&item.as_variable()));
+    }
+    if ectx.sema_flags.reject_outer_reference() {
         return Err(SemanticError::variable_not_defined(name, ectx.name).into());
     }
+
     // bind variable in outer scope
     for scope in outer_scope.iter() {
         let item = scope.resolve_symbol(name);
