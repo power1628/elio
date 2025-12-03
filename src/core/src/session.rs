@@ -1,9 +1,10 @@
 use std::collections::HashMap;
+use std::pin::Pin;
 use std::sync::Arc;
 
 use async_stream::stream;
-use futures::Stream;
 use futures::stream::BoxStream;
+use futures::{Stream, StreamExt};
 use mojito_catalog::Catalog;
 use mojito_catalog::error::CatalogError;
 use mojito_common::array::chunk::DataChunk;
@@ -59,20 +60,20 @@ impl Session {
         self: &Arc<Self>,
         query: String,
         _params: HashMap<String, Datum>,
-    ) -> Result<Box<dyn ResultHandle>, Error> {
+    ) -> Result<Pin<Box<dyn ResultHandle>>, Error> {
         let ast = parse_statement(&query)?;
         match ast {
             ast::Statement::Query(regular_query) => self.handle_query(&regular_query).await,
         }
     }
 
-    async fn handle_query(self: &Arc<Self>, query: &ast::RegularQuery) -> Result<Box<dyn ResultHandle>, Error> {
+    async fn handle_query(self: &Arc<Self>, query: &ast::RegularQuery) -> Result<Pin<Box<dyn ResultHandle>>, Error> {
         let plan = plan_query(self.clone(), query)?;
         // execute query
         let query_id = uuid::Uuid::new_v4().to_string().into();
         let handle = create_task(&self.exec_ctx, query_id, plan).await?;
         let bridge = TaskHandleBridge::new(handle.columns.clone(), handle.recv);
-        Ok(Box::new(bridge))
+        Ok(Box::pin(bridge))
     }
 }
 

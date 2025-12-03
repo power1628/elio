@@ -9,5 +9,6 @@ path = "bin/mojito.rs"
 
 [dependencies]
 clap = { workspace = true, features = ["derive", "cargo"] }
+futures = { workspace = true }
 mojito_core = { workspace = true }
 tokio = { workspace = true }
