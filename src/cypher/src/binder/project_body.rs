@@ -101,7 +101,7 @@ pub fn bind_return_items(
             projections.insert(var_name, bound_expr);
         }
 
-        // add existing to out scope
+        // add existing to out scope and projections
         for (var, symbol, expr) in existing.iter() {
             let item = ScopeItem {
                 symbol: Some(symbol.to_string()),
@@ -110,8 +110,8 @@ pub fn bind_return_items(
                 typ: expr.typ(),
             };
             out_scope.add_item(item);
+            projections.insert(var.clone(), expr.clone());
         }
-        projections.extend(existing.iter().map(|(var, _symbol, expr)| (var.clone(), expr.clone())));
 
         (out_scope, projections)
     };
