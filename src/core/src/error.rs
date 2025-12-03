@@ -1,3 +1,5 @@
+use std::backtrace::Backtrace;
+
 use mojito_cypher::error::PlanError;
 use mojito_exec::error::ExecError;
 use thiserror::Error;
@@ -11,7 +13,7 @@ pub enum Error {
     },
 
     #[error("{0}")]
-    PlanError(#[from] PlanError),
+    PlanError(#[from] PlanError, #[backtrace] Backtrace),
     #[error("{0}")]
-    ExecError(#[from] ExecError),
+    ExecError(#[from] ExecError, #[backtrace] Backtrace),
 }

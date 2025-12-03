@@ -1,3 +1,4 @@
+use std::backtrace::Backtrace;
 use std::sync::Arc;
 
 use mojito_common::variable::VariableName;
@@ -16,9 +17,19 @@ pub mod expression;
 #[derive(thiserror::Error, Debug)]
 pub enum BuildError {
     #[error("variable {0} not found in schema")]
-    VariableNotFound(VariableName),
+    VariableNotFound(VariableName, #[backtrace] Backtrace),
     #[error("token {0} not resolved")]
-    UnresolvedToken(String),
+    UnresolvedToken(String, #[backtrace] Backtrace),
+}
+
+impl BuildError {
+    pub fn variable_not_found(var_name: VariableName) -> Self {
+        Self::VariableNotFound(var_name, Backtrace::capture())
+    }
+
+    pub fn unresolved_token(token: String) -> Self {
+        Self::UnresolvedToken(token, Backtrace::capture())
+    }
 }
 
 pub struct ExecutorBuildContext {
@@ -79,7 +90,7 @@ fn build_create_node(
         input,
         labels: node.inner.labels.clone(),
         properties,
-        schema: schema.clone(),
+        schema: node.schema().clone(),
     }
     .boxed())
 }
@@ -93,8 +104,9 @@ fn build_project(
     let [input]: [BoxedExecutor; 1] = inputs.try_into().unwrap();
 
     let schema = input.schema().clone();
-    let out_name_to_col = node.schema().name_to_col_map();
     let ectx = BuildExprContext::new(&schema, ctx);
+
+    let out_name_to_col = node.schema().name_to_col_map();
 
     // findout project item order
     let project_items = &node.inner().projections;
@@ -117,7 +129,7 @@ fn build_project(
         input,
         exprs: project_exprs,
         // we assume the schema is with the same order of projections
-        schema,
+        schema: node.schema().clone(),
     }
     .boxed())
 }

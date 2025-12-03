@@ -1,5 +1,5 @@
 [toolchain]
 #channel = "stable"
-# futures_async_stream requires rust nightly
+# thiserror backtrace feature is nightly only
 channel = "nightly-2025-11-01"
-components = ["rustfmt", "clippy"]
+components = ["rustfmt", "clippy", "rust-analyzer"]

@@ -11,7 +11,7 @@ pub struct CreateNodeExectuor {
     pub input: BoxedExecutor,
     pub labels: Vec<IrToken>,
     pub properties: BoxedExpression,
-    pub schema: Schema,
+    pub schema: Arc<Schema>,
 }
 
 impl Executor for CreateNodeExectuor {
