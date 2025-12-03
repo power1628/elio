@@ -7,23 +7,23 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum PlanError {
     #[error("parse error")]
-    ParserError(String),
+    ParserError(String, #[backtrace] Backtrace),
     #[error("meta access error")]
-    MetaError(#[from] GraphStoreError),
+    MetaError(#[from] GraphStoreError, #[backtrace] Backtrace),
     #[error("{}", _0.message)]
-    SemanticError(#[from] SemanticError),
+    SemanticError(#[from] SemanticError, #[backtrace] Backtrace),
     #[error("{}", _0)]
     NotSupported(String),
 }
 
 impl PlanError {
     pub fn parse_error<T: ToString>(msg: T) -> Self {
-        Self::ParserError(msg.to_string())
+        Self::ParserError(msg.to_string(), Backtrace::capture())
     }
 
     #[deprecated]
     pub fn semantic_err<T: ToString>(msg: T) -> Self {
-        Self::SemanticError(SemanticError::new(msg.to_string()))
+        Self::SemanticError(SemanticError::new(msg.to_string()), Backtrace::capture())
     }
 
     pub fn not_supported<T: ToString>(msg: T) -> Self {

@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::pin::pin;
-use std::time::Duration;
 
 use clap::Parser;
 use futures::stream::StreamExt;
@@ -26,7 +24,6 @@ async fn main() {
 
     let mut stream = sess.execute(query.to_string(), HashMap::new()).await.unwrap();
     while let Some(row) = stream.next().await {
-        print!("hh");
         println!("{:?}", row);
     }
 }
