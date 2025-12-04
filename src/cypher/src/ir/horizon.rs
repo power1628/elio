@@ -157,15 +157,7 @@ impl RegularProjection {
     pub fn xmlnode(&self) -> XmlNode<'_> {
         let mut fields = vec![];
         fields.push(("items", pretty_project_items(self.items.iter())));
-        if !self.order_by.is_empty() {
-            fields.push(("order_by", pretty_order_items(&self.order_by)));
-        };
-        if !self.pagination.is_empty() {
-            fields.push(("pagination", Pretty::display(&self.pagination)));
-        }
-        if !self.filter.is_true() {
-            fields.push(("filter", Pretty::display(&self.filter.pretty())));
-        }
+        add_common_projection_fields(&mut fields, &self.order_by, &self.pagination, &self.filter);
 
         XmlNode::simple_record("Project", fields, vec![])
     }
@@ -190,15 +182,7 @@ impl AggregateProjection {
         if !self.aggregate.is_empty() {
             fields.push(("aggregate", pretty_project_items(self.aggregate.iter())));
         };
-        if !self.order_by.is_empty() {
-            fields.push(("order_by", pretty_order_items(&self.order_by)));
-        };
-        if !self.pagination.is_empty() {
-            fields.push(("pagination", Pretty::display(&self.pagination)));
-        }
-        if !self.filter.is_true() {
-            fields.push(("filter", Pretty::display(&self.filter.pretty())));
-        }
+        add_common_projection_fields(&mut fields, &self.order_by, &self.pagination, &self.filter);
 
         XmlNode::simple_record("Aggregate", fields, vec![])
     }
@@ -218,16 +202,25 @@ impl DistinctProjection {
         if !self.group_by.is_empty() {
             fields.push(("group_by", pretty_project_items(self.group_by.iter())));
         };
-        if !self.order_by.is_empty() {
-            fields.push(("order_by", pretty_order_items(&self.order_by)));
-        };
-        if !self.pagination.is_empty() {
-            fields.push(("pagination", Pretty::display(&self.pagination)));
-        }
-        if !self.filter.is_true() {
-            fields.push(("filter", Pretty::display(&self.filter.pretty())));
-        }
+        add_common_projection_fields(&mut fields, &self.order_by, &self.pagination, &self.filter);
 
         XmlNode::simple_record("Distinct", fields, vec![])
+    }
+}
+
+fn add_common_projection_fields<'a>(
+    fields: &mut Vec<(&'a str, Pretty<'a>)>,
+    order_by: &'a [SortItem],
+    pagination: &'a Pagination,
+    filter: &'a FilterExprs,
+) {
+    if !order_by.is_empty() {
+        fields.push(("order_by", pretty_order_items(order_by)));
+    }
+    if !pagination.is_empty() {
+        fields.push(("pagination", Pretty::display(pagination)));
+    }
+    if !filter.is_true() {
+        fields.push(("filter", Pretty::display(&filter.pretty())));
     }
 }

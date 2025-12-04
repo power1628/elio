@@ -74,6 +74,7 @@ impl IrSingleQuery {
     }
 
     pub fn xmlnode(&self) -> XmlNode<'_> {
+        assert!(!self.parts.is_empty());
         let mut iter = self.parts.iter();
         let mut root = iter.next().unwrap().xmlnode();
 

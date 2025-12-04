@@ -87,9 +87,9 @@ fn bind_single_query(bctx: &BindContext, query: &ast::SingleQuery) -> Result<(Ir
         };
     }
     // fix: if clause does not ends with return, then return an empty in scope
-    if !matches!(clauses.last().unwrap(), ast::Clause::Return(_)) {
-        in_scope = Scope::empty();
-    }
+    // if !matches!(clauses.last().unwrap(), ast::Clause::Return(_)) {
+    // in_scope = Scope::empty();
+    // }
     Ok((builder.build(), in_scope))
 }
 

@@ -2,12 +2,12 @@
 CREATE (n:Person {name: 'Alice', age: 30})
 
 /*
-RootIR { names: [] }
+RootIR { names: [n] }
 └─IrSingleQueryPart
   └─QueryGraph
     └─mutating_pattern
       └─CreatePattern { nodes: [(n@0):Person create_map{name: Alice, age: 30}], rels: [] }
-RootPlan { names: [] }
+RootPlan { names: [n] }
 └─CreateNode { variable: n@0, labels: [Person], properties: create_map{name: Alice, age: 30} }
   └─Unit
 */
@@ -48,13 +48,13 @@ RootPlan { names: [n] }
 CREATE (n:Person {name: 'Alice', age: 30}) CREATE (m:Person {name: 'Bob', age: 31})
 
 /*
-RootIR { names: [] }
+RootIR { names: [n, m] }
 └─IrSingleQueryPart
   └─QueryGraph
     └─mutating_pattern
       ├─CreatePattern { nodes: [(n@0):Person create_map{name: Alice, age: 30}], rels: [] }
       └─CreatePattern { nodes: [(m@1):Person create_map{name: Bob, age: 31}], rels: [] }
-RootPlan { names: [] }
+RootPlan { names: [n, m] }
 └─CreateNode { variable: m@1, labels: [Person], properties: create_map{name: Bob, age: 31} }
   └─CreateNode { variable: n@0, labels: [Person], properties: create_map{name: Alice, age: 30} }
     └─Unit
