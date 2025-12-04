@@ -22,9 +22,9 @@ impl PlanNode for GetProperty {
         &self.inner
     }
 
-    fn pretty(&self) -> XmlNode<'_> {
+    fn xmlnode(&self) -> XmlNode<'_> {
         let fields = vec![("entities", Pretty::from(self.inner.entities.join(", ")))];
-        let children = vec![Pretty::Record(self.inner.input.pretty())];
+        let children = vec![Pretty::Record(self.inner.input.xmlnode())];
         XmlNode::simple_record("GetProperty", fields, children)
     }
 }

@@ -42,6 +42,26 @@ impl RelPattern {
     }
 }
 
+impl std::fmt::Display for RelPattern {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let (ldir, rdir) = if self.dir == SemanticDirection::Outgoing {
+            ("-", "->")
+        } else if self.dir == SemanticDirection::Incoming {
+            ("<-", "-")
+        } else {
+            ("<-", "->")
+        };
+        let var = &self.variable;
+        write!(
+            f,
+            "({lnode}){ldir}[{var}{length}]{rdir}({rnode})",
+            lnode = self.left(),
+            rnode = self.right(),
+            length = self.length
+        )
+    }
+}
+
 // For Quantified path pattern
 // (x) ( (a)--(b)--(c) ){1,3} (y)
 // left node biding is inner(a) --> outer(x)
@@ -117,9 +137,11 @@ pub enum Selector {
     ShortestKGroup(i64),
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, derive_more::Display)]
 pub enum PatternLength {
+    #[display("")]
     Simple,
+    #[display("{}..{}", min, max.unwrap_or(i64::MAX))]
     Var { min: i64, max: Option<i64> },
 }
 

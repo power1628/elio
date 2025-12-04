@@ -9,6 +9,7 @@ use mojito_parser::parser::cypher_parser;
 
 use crate::binder::query::bind_root_query;
 use crate::error::PlanError;
+use crate::ir::query::IrQueryRoot;
 use crate::plan_context::PlanContext;
 use crate::planner::{RootPlan, plan_root};
 
@@ -46,4 +47,8 @@ pub fn plan_query(ctx: Arc<dyn PlannerSession>, query: &ast::RegularQuery) -> Re
     // plan
     let plan = plan_root(ctx, &ir)?;
     Ok(plan)
+}
+
+pub fn bind_query(ctx: Arc<dyn PlannerSession>, query: &ast::RegularQuery) -> Result<IrQueryRoot, PlanError> {
+    bind_root_query(ctx, query)
 }

@@ -81,7 +81,7 @@ pub trait PlanNode {
         self.inner().inputs()
     }
 
-    fn pretty(&self) -> XmlNode<'_>;
+    fn xmlnode(&self) -> XmlNode<'_>;
 }
 
 pub trait InnerNode {
@@ -161,9 +161,9 @@ macro_rules! impl_plan_expr_dispatch {
                 }
             }
 
-            pub fn pretty(&self) -> XmlNode<'_>{
+            pub fn xmlnode(&self) -> XmlNode<'_>{
                 match self {
-                    $(PlanExpr::$plan_node(p) => p.pretty(),)*
+                    $(PlanExpr::$plan_node(p) => p.xmlnode(),)*
                 }
             }
         }

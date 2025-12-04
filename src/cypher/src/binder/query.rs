@@ -128,7 +128,7 @@ fn bind_with(
     // bind where_
     if let Some(where_) = where_ {
         let filter = bind_where(bctx, &scope, where_)?;
-        builder.tail_mut().unwrap().horizon.set_filter(filter);
+        builder.tail_mut().unwrap().update_projection(|p| p.set_filter(filter));
     }
     Ok(scope)
 }

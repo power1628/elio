@@ -26,11 +26,11 @@ impl PlanNode for Apply {
         &self.inner
     }
 
-    fn pretty(&self) -> XmlNode<'_> {
+    fn xmlnode(&self) -> XmlNode<'_> {
         let children = self
             .inputs()
             .iter()
-            .map(|x| x.pretty())
+            .map(|x| x.xmlnode())
             .map(Pretty::Record)
             .collect_vec();
         XmlNode::simple_record("Apply", vec![], children)

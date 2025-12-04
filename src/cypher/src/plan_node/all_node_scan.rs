@@ -27,7 +27,7 @@ impl PlanNode for AllNodeScan {
         &self.inner
     }
 
-    fn pretty(&self) -> XmlNode<'_> {
+    fn xmlnode(&self) -> XmlNode<'_> {
         let mut fields = vec![("variable", Pretty::from(self.inner.variable.as_ref()))];
         if !self.inner.arguments.is_empty() {
             fields.push((

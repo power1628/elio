@@ -36,7 +36,7 @@ impl PlanNode for Expand {
         &self.inner
     }
 
-    fn pretty(&self) -> XmlNode<'_> {
+    fn xmlnode(&self) -> XmlNode<'_> {
         let fields = vec![
             ("from", Pretty::from(self.inner.from.as_ref())),
             ("to", Pretty::from(self.inner.to.as_ref())),
@@ -54,7 +54,7 @@ impl PlanNode for Expand {
             ),
             ("kind", Pretty::from(self.inner.kind.to_string())),
         ];
-        let children = vec![Pretty::Record(self.inner.input.pretty())];
+        let children = vec![Pretty::Record(self.inner.input.xmlnode())];
         XmlNode::simple_record("Expand", fields, children)
     }
 }

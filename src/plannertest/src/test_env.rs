@@ -7,6 +7,7 @@ use itertools::Itertools;
 use mojito_catalog::FunctionCatalog;
 use mojito_catalog::error::CatalogError;
 use mojito_common::{TokenId, TokenKind};
+use mojito_cypher::ir::query::IrQueryRoot;
 use mojito_cypher::plan_context::PlanContext;
 use mojito_cypher::session::PlannerSession;
 use mojito_expr::func::FUNCTION_REGISTRY;
@@ -55,6 +56,11 @@ impl MockPlannerSession {
     pub fn parse(self: &Arc<Self>, cypher: &str) -> anyhow::Result<ast::Statement> {
         let ast = mojito_cypher::session::parse_statement(cypher)?;
         Ok(ast)
+    }
+
+    pub fn bind_query(self: &Arc<Self>, ast: &ast::RegularQuery) -> anyhow::Result<String> {
+        let ir = mojito_cypher::session::bind_query(self.clone(), ast)?;
+        Ok(ir.explain())
     }
 
     pub fn plan_query(self: &Arc<Self>, ast: &ast::RegularQuery) -> anyhow::Result<String> {
@@ -122,6 +128,24 @@ impl TestEnv {
                 ast::Statement::Query(regular_query) => {
                     let plan = session.plan_query(&regular_query)?;
                     result.push_str(&plan);
+                    result.push('\n');
+                }
+                _ => return Err(Error::msg(format!("invalid cypher{} and task{}", stmt, task))),
+            }
+        }
+        Ok(())
+    }
+
+    pub fn task_bind(&self, result: &mut String, cypher: &str, task: &str, _opts: &TaskOption) -> anyhow::Result<()> {
+        let session = Arc::new(self.new_session());
+        let stmts = cypher.trim().split(';').collect_vec();
+        for stmt in stmts {
+            let ast = session.parse(stmt)?;
+            match ast {
+                ast::Statement::Query(regular_query) => {
+                    let ir = session.bind_query(&regular_query)?;
+                    result.push_str(&ir);
+                    result.push('\n');
                 }
                 _ => return Err(Error::msg(format!("invalid cypher{} and task{}", stmt, task))),
             }
@@ -145,6 +169,9 @@ impl sqlplannertest::PlannerTestRunner for TestEnv {
         for task in test_case.tasks.iter() {
             if task == "plan" {
                 self.task_plan(&mut result, &test_case.sql, task, &TaskOption::default())?;
+            }
+            if task == "bind" {
+                self.task_bind(&mut result, &test_case.sql, task, &TaskOption::default())?;
             }
         }
         Ok(result)

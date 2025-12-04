@@ -30,7 +30,7 @@ pub(crate) fn build_expression(ctx: &BuildExprContext<'_>, expr: &Expr) -> Resul
         Expr::FuncCall(_func_call) => todo!(),
         Expr::AggCall(_agg_call) => todo!(),
         Expr::Subquery(_subquery) => todo!(),
-        Expr::Label(_label_expr) => todo!(),
+        Expr::LabelExpr(_label_expr) => todo!(),
         Expr::CreateMap(create_map) => build_create_map(ctx, create_map),
     }
 }

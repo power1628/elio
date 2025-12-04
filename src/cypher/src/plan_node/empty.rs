@@ -31,7 +31,7 @@ impl PlanNode for Empty {
         &self.inner
     }
 
-    fn pretty(&self) -> XmlNode<'_> {
+    fn xmlnode(&self) -> XmlNode<'_> {
         XmlNode::simple_record("Empty", vec![], vec![])
     }
 }

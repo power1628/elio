@@ -25,7 +25,7 @@ impl PlanNode for Argument {
         &self.inner
     }
 
-    fn pretty(&self) -> XmlNode<'_> {
+    fn xmlnode(&self) -> XmlNode<'_> {
         let fields = vec![(
             "variables",
             Pretty::Array(

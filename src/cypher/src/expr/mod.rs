@@ -32,7 +32,7 @@ pub enum Expr {
     FuncCall(FuncCall),
     AggCall(AggCall),
     Subquery(Subquery),
-    Label(LabelExpr),
+    LabelExpr(LabelExpr),
     CreateMap(CreateMap),
 }
 
@@ -53,6 +53,15 @@ macro_rules! impl_expr_node_for_enum {
                 }
             }
         }
+
+        /// convert from variant to BoxedExpr
+        $(
+            impl From<$variant> for BoxedExpr {
+                fn from(expr: $variant) -> Self {
+                    Box::new(Expr::$variant(expr))
+                }
+            }
+        )+
     };
 }
 
@@ -64,7 +73,7 @@ impl_expr_node_for_enum!(
     FuncCall,
     AggCall,
     Subquery,
-    Label,
+    LabelExpr,
     CreateMap
 );
 
@@ -131,7 +140,9 @@ impl Expr {
             }
             Expr::AggCall(_agg_call) => todo!(),
             Expr::Subquery(_subquery) => todo!(),
-            Expr::Label(_label_expr) => todo!(),
+            Expr::LabelExpr(label_expr) => {
+                format!("{} {}", label_expr.entity.pretty(), label_expr.op)
+            }
             Expr::CreateMap(create_map) => {
                 format!(
                     "create_map{{{}}}",

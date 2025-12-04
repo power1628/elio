@@ -39,7 +39,9 @@ fn plan_head(
         root = plan_mutating_pattern(ctx, root, mutating_pattern)?;
     }
     // plan horizon
-    root = plan_horizon(ctx, root, horizon)?;
+    if let Some(proj) = horizon {
+        root = plan_horizon(ctx, root, proj)?;
+    }
     Ok(root)
 }
 

@@ -1,15 +1,18 @@
 use std::collections::VecDeque;
 
 use indexmap::IndexSet;
+use itertools::Itertools;
 use mojito_common::data_type::DataType;
 use mojito_common::schema::Variable;
 use mojito_common::variable::VariableName;
+use pretty_xmlish::{Pretty, XmlNode};
 
 use crate::binder::pattern::PathPatternWithExtra;
 use crate::expr::FilterExprs;
 use crate::ir::mutating_pattern::{CreatePattern, MutatingPattern};
 use crate::ir::node_connection::{ExhaustiveNodeConnection, QuantifiedPathPattern, RelPattern};
 use crate::ir::path_pattern::{PathPattern, SelectivePathPattern, SingleNode};
+use crate::pretty_utils::pretty_display_iter;
 
 #[derive(Default)]
 pub struct QueryGraph {
@@ -292,5 +295,45 @@ impl QueryGraph {
         self.rels
             .iter()
             .filter(move |rel| rel.endpoints.0 == *node || rel.endpoints.1 == *node)
+    }
+}
+
+impl QueryGraph {
+    pub fn xmlnode(&self) -> XmlNode<'_> {
+        let mut fields = vec![];
+        if !self.imported.is_empty() {
+            fields.push((
+                "imported",
+                pretty_display_iter(self.imported.iter().map(|x| x.name.clone())),
+            ));
+        };
+        if !self.nodes.is_empty() {
+            fields.push(("nodes", pretty_display_iter(self.nodes.iter().map(|x| x))));
+        };
+        if !self.rels.is_empty() {
+            fields.push(("rels", pretty_display_iter(self.rels.iter().map(|x| x))));
+        };
+        if !self.filter.is_true() {
+            fields.push(("filter", Pretty::display(&self.filter.pretty())));
+        };
+        let mut children = vec![];
+        if !self.optional_matches.is_empty() {
+            let optional_matches = self
+                .optional_matches
+                .iter()
+                .map(|x| Pretty::Record(x.xmlnode()))
+                .collect_vec();
+            children.push(Pretty::simple_record("optional_matches", vec![], optional_matches));
+        };
+        if !self.mutating_patterns.is_empty() {
+            let mutating_patterns = self
+                .mutating_patterns
+                .iter()
+                .map(|x| Pretty::Record(x.xmlnode()))
+                .collect_vec();
+            children.push(Pretty::simple_record("mutating_pattern", vec![], mutating_patterns));
+        };
+
+        XmlNode::simple_record("QueryGraph", fields, children)
     }
 }

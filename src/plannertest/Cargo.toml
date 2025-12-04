@@ -1,5 +1,5 @@
 [package]
-name = "mojito_plannertest"
+name = "plannertest"
 version.workspace = true
 edition.workspace = true
 

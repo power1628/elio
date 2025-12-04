@@ -34,7 +34,7 @@ impl PlanNode for Unit {
         &self.inner
     }
 
-    fn pretty(&self) -> XmlNode<'_> {
+    fn xmlnode(&self) -> XmlNode<'_> {
         XmlNode::simple_record("Unit", vec![], vec![])
     }
 }

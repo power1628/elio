@@ -2,6 +2,8 @@ use mojito_common::order::SortDirection;
 
 use crate::expr::Expr;
 
+#[derive(derive_more::Display)]
+#[display("{} {}", expr.pretty(), direction)]
 pub struct SortItem {
     pub expr: Box<Expr>,
     pub direction: SortDirection,
