@@ -35,11 +35,35 @@ impl ListValue {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ListValueRef<'a> {
     data: &'a ArrayImpl,
     start: u32,
     end: u32,
+}
+
+impl<'a> std::fmt::Debug for ListValueRef<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.data.data_type() {
+            crate::data_type::DataType::Bool => f.debug_list().entries(self.data.as_bool().iter()).finish(),
+            crate::data_type::DataType::Integer => f.debug_list().entries(self.data.as_integer().iter()).finish(),
+            crate::data_type::DataType::Float => f.debug_list().entries(self.data.as_float().iter()).finish(),
+            crate::data_type::DataType::String => f.debug_list().entries(self.data.as_string().iter()).finish(),
+            crate::data_type::DataType::U16 => f.debug_list().entries(self.data.as_u16().iter()).finish(),
+            crate::data_type::DataType::NodeId => f.debug_list().entries(self.data.as_node_id().iter()).finish(),
+            crate::data_type::DataType::RelId => f.debug_list().entries(self.data.as_rel_id().iter()).finish(),
+            crate::data_type::DataType::List(data_type) => {
+                todo!()
+            }
+            crate::data_type::DataType::Node => f.debug_list().entries(self.data.as_node().iter()).finish(),
+            crate::data_type::DataType::Rel => f.debug_list().entries(self.data.as_rel().iter()).finish(),
+            crate::data_type::DataType::Path => todo!(),
+            crate::data_type::DataType::Property => f.debug_list().entries(self.data.as_property().iter()).finish(),
+            crate::data_type::DataType::PropertyMap => {
+                f.debug_list().entries(self.data.as_property_map().iter()).finish()
+            }
+        }
+    }
 }
 
 impl<'a> ListValueRef<'a> {

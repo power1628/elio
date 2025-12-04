@@ -4,7 +4,7 @@ use crate::array::{Array, ArrayBuilder, ArrayIterator};
 use crate::data_type::DataType;
 use crate::store_types::PropertyValue;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct PropertyArray {
     data: Arc<[PropertyValue]>,
 }
@@ -54,8 +54,7 @@ impl ArrayBuilder for PropertyArrayBuilder {
 
     fn append_n(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>, repeat: usize) {
         assert!(value.is_some());
-        self.buffer
-            .extend(std::iter::repeat_n(value.unwrap().clone(), repeat));
+        self.buffer.extend(std::iter::repeat_n(value.unwrap().clone(), repeat));
     }
 
     fn finish(self) -> Self::Array {

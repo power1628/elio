@@ -205,3 +205,24 @@ macro_rules! impl_array_builder_dispatch {
 }
 
 for_all_variants! { impl_array_builder_dispatch }
+
+fn debug_array<A: Array>(f: &mut std::fmt::Formatter<'_>, array: &A) -> std::fmt::Result {
+    f.debug_list().entries(array.iter()).finish()
+}
+
+/// Implements Debug for [`Array`]
+macro_rules! impl_array_debug {
+    (
+        [], $({ $Abc:ident, $abc:ident, $AbcArray:ty, $AbcArrayBuilder:ty, $Owned:ty, $Ref:ty }),*
+    ) => {
+        $(
+            impl std::fmt::Debug for $AbcArray {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    debug_array(f, self)
+                }
+            }
+        )*
+    };
+}
+
+for_all_variants! { impl_array_debug }

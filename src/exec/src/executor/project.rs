@@ -19,11 +19,13 @@ impl Executor for ProjectExecutor {
             let mut input_stream = self.input.build_stream(ctx.clone())?;
             while let Some(chunk) = input_stream.next().await {
                 let chunk = chunk?;
-                let mut output = DataChunk::empty();
+                let mut cols = vec![];
                 for expr in self.exprs.iter() {
                     let column = expr.eval_batch(&chunk, &eval_ctx)?;
-                    output.add_column(column);
+                    cols.push(column);
                 }
+                let cardinality = cols[0].len();
+                let output = DataChunk::new(cols, cardinality);
                 yield output;
            }
         }

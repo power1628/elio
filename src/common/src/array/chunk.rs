@@ -1,7 +1,7 @@
 use crate::array::ArrayImpl;
 use crate::scalar::Row;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct DataChunk {
     columns: Vec<ArrayImpl>,
     // TODO(pgao): selection vector
