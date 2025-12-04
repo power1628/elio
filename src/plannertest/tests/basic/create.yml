@@ -2,19 +2,23 @@
     CREATE (n:Person {name: 'Alice', age: 30})
   desc: Create a node with properties, without return clause
   tasks:
+    - bind
     - plan
 - sql: |
     CREATE (n:Person {name: 'Alice', age: 30}) RETURN *
   desc: Create a node with properties, with return clause
   tasks:
+    - bind
     - plan
 - sql: |
     CREATE (n:Person {name: 'Alice', age: 30}) RETURN n
   desc: Create a node with properties, with return clause, only return node
   tasks:
+    - bind
     - plan
 - sql: |
     CREATE (n:Person {name: 'Alice', age: 30}) CREATE (m:Person {name: 'Bob', age: 31})
   desc: create multiple nodes
   tasks:
+    - bind
     - plan

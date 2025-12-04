@@ -30,7 +30,7 @@ impl PlanNode for CreateRel {
         &self.inner
     }
 
-    fn pretty(&self) -> XmlNode<'_> {
+    fn xmlnode(&self) -> XmlNode<'_> {
         let fields = vec![
             ("variable", Pretty::from(self.inner.variable.name.as_ref())),
             ("reltype", Pretty::from(self.inner.reltype.to_string())),
@@ -38,7 +38,7 @@ impl PlanNode for CreateRel {
             ("end_node", Pretty::from(self.inner.end_node.pretty())),
             ("properties", Pretty::from(self.inner.properties.pretty())),
         ];
-        let children = vec![Pretty::Record(self.inner.input.pretty())];
+        let children = vec![Pretty::Record(self.inner.input.xmlnode())];
         XmlNode::simple_record("CreateRel", fields, children)
     }
 }

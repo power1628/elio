@@ -142,7 +142,7 @@ pub fn bind_return_items(
                 QueryHorizon::Project(proj)
             }
         };
-        builder.tail_mut().unwrap().horizon = horizon;
+        builder.tail_mut().unwrap().with_projection(horizon);
         return Ok(agg_in_scope);
     }
 
@@ -212,7 +212,10 @@ pub fn bind_return_items(
             pagination: Default::default(),
             filter: Default::default(),
         };
-        builder.tail_mut().unwrap().horizon = QueryHorizon::Project(QueryProjection::Aggregate(agg_proj));
+        builder
+            .tail_mut()
+            .unwrap()
+            .with_projection(QueryHorizon::Project(QueryProjection::Aggregate(agg_proj)));
     }
 
     // post projection
@@ -236,12 +239,15 @@ pub fn bind_return_items(
         }
         // add new part
         builder.new_part();
-        builder.tail_mut().unwrap().horizon = QueryHorizon::Project(QueryProjection::Regular(RegularProjection {
-            items: projs,
-            order_by: Default::default(),
-            pagination: Default::default(),
-            filter: FilterExprs::empty(),
-        }));
+        builder
+            .tail_mut()
+            .unwrap()
+            .with_projection(QueryHorizon::Project(QueryProjection::Regular(RegularProjection {
+                items: projs,
+                order_by: Default::default(),
+                pagination: Default::default(),
+                filter: FilterExprs::empty(),
+            })));
     }
 
     Ok(out_scope)
@@ -303,7 +309,10 @@ pub fn bind_order_by(
         });
     }
 
-    builder.tail_mut().unwrap().horizon.set_order_by(bound_items);
+    builder
+        .tail_mut()
+        .unwrap()
+        .update_projection(|p| p.set_order_by(bound_items));
     Ok(())
 }
 
@@ -348,6 +357,9 @@ pub fn bind_pagination(
         }
     }
 
-    builder.tail_mut().unwrap().horizon.set_pagination(pagination);
+    builder
+        .tail_mut()
+        .unwrap()
+        .update_projection(|p| p.set_pagination(pagination));
     Ok(())
 }

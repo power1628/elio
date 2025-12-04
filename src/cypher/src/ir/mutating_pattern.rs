@@ -3,11 +3,21 @@ use std::collections::HashSet;
 use mojito_common::IrToken;
 use mojito_common::variable::VariableName;
 use mojito_parser::ast::SemanticDirection;
+use pretty_xmlish::XmlNode;
 
-use crate::expr::CreateMap;
+use crate::expr::{BoxedExpr, CreateMap};
+use crate::pretty_utils::pretty_display_iter;
 
 pub enum MutatingPattern {
     Create(CreatePattern),
+}
+
+impl MutatingPattern {
+    pub fn xmlnode(&self) -> XmlNode<'_> {
+        match self {
+            MutatingPattern::Create(create_pattern) => create_pattern.xmlnode(),
+        }
+    }
 }
 
 /// semantic:
@@ -16,6 +26,16 @@ pub enum MutatingPattern {
 pub struct CreatePattern {
     pub nodes: Vec<CreateNode>,
     pub rels: Vec<CreateRel>,
+}
+
+impl CreatePattern {
+    pub fn xmlnode(&self) -> XmlNode<'_> {
+        let fields = vec![
+            ("nodes", pretty_display_iter(self.nodes.iter())),
+            ("rels", pretty_display_iter(self.rels.iter())),
+        ];
+        XmlNode::simple_record("CreatePattern", fields, vec![])
+    }
 }
 
 pub struct CreateNode {
@@ -27,6 +47,26 @@ pub struct CreateNode {
     pub properties: CreateMap,
 }
 
+impl std::fmt::Display for CreateNode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "({var}){labels} {properties}",
+            var = self.variable,
+            labels = if self.labels.is_empty() {
+                "".to_string()
+            } else {
+                format!(
+                    ":{}",
+                    self.labels.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(":")
+                )
+            },
+            // TODO(pgao): avoid the clone here
+            properties = BoxedExpr::from(self.properties.clone()).pretty(),
+        )
+    }
+}
+
 /// Relationship vairables MUST NOT reference previous pattern.
 /// Relationship variables must be defined in CreatePattern scope.
 pub struct CreateRel {
@@ -36,6 +76,26 @@ pub struct CreateRel {
     pub reltype: IrToken,
     pub direction: SemanticDirection,
     pub properties: CreateMap,
+}
+
+impl std::fmt::Display for CreateRel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let (ldir, rdir) = match self.direction {
+            SemanticDirection::Outgoing => ("-", "->"),
+            SemanticDirection::Both => ("<-", "->"),
+            SemanticDirection::Incoming => ("<-", "-"),
+        };
+        write!(
+            f,
+            "({left}){ldir}[{var}:{reltype}]{rdir}({right}) {properties}",
+            left = self.left,
+            var = self.variable,
+            reltype = self.reltype,
+            right = self.right,
+            // TODO(pgao): avoid the clone here
+            properties = BoxedExpr::from(self.properties.clone()).pretty(),
+        )
+    }
 }
 
 impl CreateRel {

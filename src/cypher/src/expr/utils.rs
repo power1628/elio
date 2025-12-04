@@ -19,7 +19,7 @@ impl Expr {
                 vars.extend(agg_call.args.iter().flat_map(|arg| arg.collect_variables()));
             }
             Expr::Subquery(_) => todo!("subquery not supported"),
-            Expr::Label(label_expr) => {
+            Expr::LabelExpr(label_expr) => {
                 vars.extend(label_expr.entity.collect_variables());
             }
             Expr::CreateMap(CreateMap { properties }) => {

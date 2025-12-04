@@ -17,7 +17,7 @@ pub(crate) fn bind_label_expr(
         ast::LabelExpr::Label(label) => {
             // resolve label
             let label = pctx.bctx.resolve_token(label, TokenKind::Label);
-            Ok(Expr::Label(LabelExpr {
+            Ok(Expr::LabelExpr(LabelExpr {
                 entity: expr.clone(),
                 op: LabelOp::HasAll(HashSet::from_iter(vec![label])),
             })

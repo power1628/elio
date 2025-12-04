@@ -23,9 +23,9 @@ impl PlanNode for Filter {
         &self.inner
     }
 
-    fn pretty(&self) -> XmlNode<'_> {
+    fn xmlnode(&self) -> XmlNode<'_> {
         let fields = vec![("condition", Pretty::from(self.inner.condition.pretty()))];
-        let children = vec![Pretty::Record(self.inner.input.pretty())];
+        let children = vec![Pretty::Record(self.inner.input.xmlnode())];
         XmlNode::simple_record("Filter", fields, children)
     }
 }

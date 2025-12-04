@@ -24,10 +24,10 @@ build-release:
 	cargo build --release --workspace --bins
 
 planner-test:
-	cargo test -p mojito_plannertest --test planner_test
+	cargo nextest -p plannertest
 
 rewrite-planner-test:
-	cargo run -p mojito_plannertest --bin planner_test_apply
+	cargo run -p plannertest --bin apply
 	
 doc-test:
 	cargo test --no-fail-fast --doc --all-features --workspace

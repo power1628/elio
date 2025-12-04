@@ -29,7 +29,7 @@ impl PlanNode for Sort {
         &self.inner
     }
 
-    fn pretty(&self) -> XmlNode<'_> {
+    fn xmlnode(&self) -> XmlNode<'_> {
         let fields = vec![(
             "items",
             Pretty::Array(
@@ -40,7 +40,7 @@ impl PlanNode for Sort {
                     .collect_vec(),
             ),
         )];
-        let children = vec![Pretty::Record(self.inner.input.pretty())];
+        let children = vec![Pretty::Record(self.inner.input.xmlnode())];
         XmlNode::simple_record("Sort", fields, children)
     }
 }

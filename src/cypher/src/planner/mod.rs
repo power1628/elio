@@ -42,7 +42,7 @@ impl RootPlan {
             "names",
             Pretty::Array(self.names.iter().map(|(k, _)| Pretty::display(k)).collect_vec()),
         )];
-        let children = vec![Pretty::Record(self.plan.pretty())];
+        let children = vec![Pretty::Record(self.plan.xmlnode())];
         let tree = Pretty::simple_record("RootPlan", fields, children);
         let mut config = PrettyConfig {
             indent: 3,

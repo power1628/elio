@@ -1,0 +1,18 @@
+- sql: |
+    MATCH (n:Person) RETURN n
+  desc: match with label
+  tasks:
+    - bind
+    - plan
+- sql: |
+    MATCH (n:Person) RETURN *
+  desc: match and return wild card
+  tasks:
+    - bind
+    - plan
+- sql: |
+    MATCH (n:Person) RETURN n.name
+  desc: match with projection
+  tasks:
+    - bind
+    - plan

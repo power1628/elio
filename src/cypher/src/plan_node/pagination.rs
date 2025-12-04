@@ -22,12 +22,12 @@ impl PlanNode for Pagination {
         &self.inner
     }
 
-    fn pretty(&self) -> XmlNode<'_> {
+    fn xmlnode(&self) -> XmlNode<'_> {
         let fields = vec![
             ("offset", Pretty::from(self.inner.offset.to_string())),
             ("limit", Pretty::from(self.inner.limit.to_string())),
         ];
-        let children = vec![Pretty::Record(self.inner.input.pretty())];
+        let children = vec![Pretty::Record(self.inner.input.xmlnode())];
         XmlNode::simple_record("Pagination", fields, children)
     }
 }

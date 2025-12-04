@@ -12,16 +12,19 @@ pub struct LabelExpr {
     pub op: LabelOp,
 }
 
-#[derive(Educe)]
+#[derive(Educe, derive_more::Display)]
 #[educe(Debug, Hash, Clone, Eq, PartialEq)]
 pub enum LabelOp {
     // at least one label
     // unreachable
+    #[display("HasOne")]
     HasA,
     // has any label contained
     // unreachable
+    #[display("HasAny[{}]", _0.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "))]
     HasAny(#[educe(Hash(ignore))] HashSet<IrToken>),
     // has exact given labels
+    #[display("HasAll[{}]", _0.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", "))]
     HasAll(#[educe(Hash(ignore))] HashSet<IrToken>),
 }
 
@@ -33,6 +36,6 @@ impl ExprNode for LabelExpr {
 
 impl From<LabelExpr> for Expr {
     fn from(val: LabelExpr) -> Self {
-        Expr::Label(val)
+        Expr::LabelExpr(val)
     }
 }

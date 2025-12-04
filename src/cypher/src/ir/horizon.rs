@@ -1,13 +1,25 @@
 use indexmap::IndexMap;
 use mojito_common::schema::Variable;
 use mojito_common::variable::VariableName;
+use pretty_xmlish::{Pretty, XmlNode};
 
 use crate::expr::{Expr, FilterExprs};
 use crate::ir::order::SortItem;
+use crate::pretty_utils::{pretty_order_items, pretty_project_items};
 
+// Rename to QueryProjection
 pub enum QueryHorizon {
     Unwind(UnwindProjection),
     Project(QueryProjection),
+}
+
+impl QueryHorizon {
+    pub fn xmlnode(&self) -> XmlNode<'_> {
+        match self {
+            QueryHorizon::Unwind(u) => u.xmlnode(),
+            QueryHorizon::Project(p) => p.xmlnode(),
+        }
+    }
 }
 
 impl QueryHorizon {
@@ -50,6 +62,15 @@ pub enum QueryProjection {
     Aggregate(AggregateProjection),
     Distinct(DistinctProjection),
 }
+impl QueryProjection {
+    pub fn xmlnode(&self) -> XmlNode<'_> {
+        match self {
+            QueryProjection::Regular(r) => r.xmlnode(),
+            QueryProjection::Aggregate(a) => a.xmlnode(),
+            QueryProjection::Distinct(d) => d.xmlnode(),
+        }
+    }
+}
 
 impl QueryProjection {
     pub fn empty() -> Self {
@@ -87,6 +108,18 @@ pub struct Pagination {
     pub limit: Option<i64>,
 }
 
+impl std::fmt::Display for Pagination {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(off) = self.offset {
+            write!(f, "offset: {}", off)?;
+        }
+        if let Some(lim) = self.limit {
+            write!(f, " limit: {}", lim)?;
+        }
+        Ok(())
+    }
+}
+
 impl Pagination {
     pub fn is_empty(&self) -> bool {
         self.offset.is_none() && self.limit.is_none()
@@ -98,6 +131,19 @@ pub struct UnwindProjection {
     pub expr: Expr,
 }
 
+impl UnwindProjection {
+    pub fn xmlnode(&self) -> XmlNode<'_> {
+        XmlNode::simple_record(
+            "UnwindProjection",
+            vec![
+                ("variable", Pretty::display(&self.variable.name)),
+                ("expr", self.expr.pretty().into()),
+            ],
+            vec![],
+        )
+    }
+}
+
 #[derive(Default)]
 pub struct RegularProjection {
     pub items: IndexMap<VariableName, Expr>,
@@ -105,6 +151,16 @@ pub struct RegularProjection {
     pub pagination: Pagination,
     pub filter: FilterExprs,
     // pub imported_variable: HashSet<Variable>,
+}
+
+impl RegularProjection {
+    pub fn xmlnode(&self) -> XmlNode<'_> {
+        let mut fields = vec![];
+        fields.push(("items", pretty_project_items(self.items.iter())));
+        add_common_projection_fields(&mut fields, &self.order_by, &self.pagination, &self.filter);
+
+        XmlNode::simple_record("Project", fields, vec![])
+    }
 }
 
 pub struct AggregateProjection {
@@ -117,10 +173,54 @@ pub struct AggregateProjection {
     // pub imported_variables: HashSet<Variable>,
 }
 
+impl AggregateProjection {
+    pub fn xmlnode(&self) -> XmlNode<'_> {
+        let mut fields = vec![];
+        if !self.group_by.is_empty() {
+            fields.push(("group_by", pretty_project_items(self.group_by.iter())));
+        };
+        if !self.aggregate.is_empty() {
+            fields.push(("aggregate", pretty_project_items(self.aggregate.iter())));
+        };
+        add_common_projection_fields(&mut fields, &self.order_by, &self.pagination, &self.filter);
+
+        XmlNode::simple_record("Aggregate", fields, vec![])
+    }
+}
+
 pub struct DistinctProjection {
     pub group_by: IndexMap<VariableName, Expr>,
     pub order_by: Vec<SortItem>,
     pub pagination: Pagination,
     pub filter: FilterExprs,
     // pub imported_variables: HashSet<Variable>,
+}
+
+impl DistinctProjection {
+    pub fn xmlnode(&self) -> XmlNode<'_> {
+        let mut fields = vec![];
+        if !self.group_by.is_empty() {
+            fields.push(("group_by", pretty_project_items(self.group_by.iter())));
+        };
+        add_common_projection_fields(&mut fields, &self.order_by, &self.pagination, &self.filter);
+
+        XmlNode::simple_record("Distinct", fields, vec![])
+    }
+}
+
+fn add_common_projection_fields<'a>(
+    fields: &mut Vec<(&'a str, Pretty<'a>)>,
+    order_by: &'a [SortItem],
+    pagination: &'a Pagination,
+    filter: &'a FilterExprs,
+) {
+    if !order_by.is_empty() {
+        fields.push(("order_by", pretty_order_items(order_by)));
+    }
+    if !pagination.is_empty() {
+        fields.push(("pagination", Pretty::display(pagination)));
+    }
+    if !filter.is_true() {
+        fields.push(("filter", Pretty::display(&filter.pretty())));
+    }
 }

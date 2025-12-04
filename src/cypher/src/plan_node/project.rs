@@ -1,4 +1,5 @@
 use super::*;
+use crate::pretty_utils::pretty_project_items;
 
 #[derive(Debug, Clone)]
 pub struct Project {
@@ -22,19 +23,12 @@ impl PlanNode for Project {
         &self.inner
     }
 
-    fn pretty(&self) -> XmlNode<'_> {
+    fn xmlnode(&self) -> XmlNode<'_> {
         let fields = vec![(
             "exprs",
-            Pretty::Array(
-                self.inner
-                    .projections
-                    .iter()
-                    .map(|(var, expr)| format!("{} AS {}", var, expr.pretty()))
-                    .map(Pretty::from)
-                    .collect_vec(),
-            ),
+            pretty_project_items(self.inner.projections.iter().map(|(k, v)| (k, v))),
         )];
-        let children = vec![Pretty::Record(self.inner.input.pretty())];
+        let children = vec![Pretty::Record(self.inner.input.xmlnode())];
         XmlNode::simple_record("Project", fields, children)
     }
 }
