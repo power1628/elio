@@ -49,7 +49,6 @@ impl CreateNodeExectuor {
                 let ids = ctx.tx().node_create(&labels, prop.as_property_map().unwrap())?;
                 // TODO add node column
                 chunk.add_column(ids.into());
-                println!("create node {:?}", chunk.len());
                 yield chunk;
             }
         }

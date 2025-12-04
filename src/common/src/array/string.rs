@@ -3,7 +3,7 @@ use crate::array::mask::{Mask, MaskMut};
 use crate::array::{Array, ArrayBuilder, ArrayIterator};
 use crate::data_type::DataType;
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct StringArray {
     // string content
     data: Buffer<u8>,

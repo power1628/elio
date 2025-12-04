@@ -5,7 +5,7 @@ use crate::data_type::{DataType, F64};
 use crate::scalar::{Scalar, ScalarRef};
 use crate::{NodeId, RelationshipId};
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct PrimitiveArray<T: PrimitiveArrayElementType> {
     data: Buffer<T>,
     valid: Mask,
@@ -19,6 +19,7 @@ where
     for<'a> T: Scalar<RefType<'a> = T>,
     Self: Into<ArrayImpl>,
     Self: From<ArrayImpl>,
+    Self: std::fmt::Debug,
 {
     type Builder = PrimitiveArrayBuilder<T>;
     type OwnedItem = T;

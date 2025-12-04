@@ -11,7 +11,7 @@ use crate::data_type::DataType;
 use crate::scalar::prop_map::PropertyMapValue;
 use crate::scalar::{PropertyMapValueRef, Scalar, ScalarRef};
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct PropertyMapArray {
     data: Arc<[PropertyMapValue]>,
     valid: Mask,

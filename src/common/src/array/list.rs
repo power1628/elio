@@ -6,7 +6,7 @@ use crate::array::{Array, ArrayBuilder, ArrayBuilderImpl, ArrayImpl};
 use crate::data_type::DataType;
 use crate::scalar::list::{ListValue, ListValueRef};
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct ListArray {
     data: Arc<ArrayImpl>,
     offsets: Buffer<u32>,
