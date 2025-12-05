@@ -76,7 +76,7 @@ impl<'a, D: rocksdb::DBAccess> DataChunkIterator for NodeIterator<'a, D> {
         for _ in 0..self.opts.batch_size {
             if let Some(item) = self.iter.next() {
                 let (key, _val) = item.map_err(GraphStoreError::Rocksdb)?;
-                if key.first() != Some(&cf_property::NODE_KEY_PREFIX[0]) {
+                if !key.starts_with(cf_property::NODE_KEY_PREFIX) {
                     break;
                 }
                 let node_id = NodeFormat::decode_node_key(&key);

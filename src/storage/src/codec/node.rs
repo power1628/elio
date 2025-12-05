@@ -1,5 +1,10 @@
 //！NodeKey ::= <node_id>
-//! NodeValue ::= <PropertyBlock>
+//! NodeValue ::= <NodeHeader> <LabelBlocks> <<PropertyBlock>
+//! Nodeheader ::= <NumLabels> <PropertySize>
+//!
+//! NumLabels ::= u16
+//!
+//! LabelBlock ::= <LabelId>{NumLabels}
 
 use bytes::{BufMut, Bytes, BytesMut};
 use mojito_common::scalar::PropertyMapValueRef;
