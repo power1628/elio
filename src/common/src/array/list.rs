@@ -67,6 +67,8 @@ impl ListArrayBuilder {
 impl ArrayBuilder for ListArrayBuilder {
     type Array = ListArray;
 
+    /// Use `with_capacity_and_type` for `ListArrayBuilder`. This method defaults to List<Integer> and may be removed
+    /// in the future."
     fn with_capacity(capacity: usize) -> Self {
         let inner_type = {
             DataType::Integer

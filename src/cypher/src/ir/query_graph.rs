@@ -246,6 +246,7 @@ impl QueryGraph {
             }
             visited.insert(node.clone());
             let (ncs, nbrs) = self.connected_entities(&node);
+            qg.add_node(&node);
             for nc in ncs {
                 qg.add_node_connection(&nc);
             }
