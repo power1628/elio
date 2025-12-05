@@ -17,5 +17,6 @@ mojito_expr = { workspace = true }
 mojito_storage = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+tracing = { workspace = true }
 
 # extra

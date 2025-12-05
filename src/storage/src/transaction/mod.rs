@@ -90,8 +90,7 @@ impl Transaction for TransactionImpl {
     }
 
     fn commit(self) -> Result<(), GraphStoreError> {
-        let write_state = self.write_state.lock().unwrap();
-        self.inner.commit(write_state.batch.deref().clone())
+        todo!()
     }
 
     fn abort(self) -> Result<(), GraphStoreError> {

@@ -32,21 +32,21 @@ impl Executor for AllNodeScanExectuor {
             let mut iter = match txn.node_scan(opts) {
                 Ok(iter) => iter,
                 Err(e) => {
-                    println!("node scan error: {:?}", e);
-                    let _ = tx.blocking_send(Err(e.into()));
+                    tracing::error!("node scan error: {:?}", e);
+                    if (tx.blocking_send(Err(e.into()).is_err())) {
+                        tracing::warn!("recv dropped, could not send scan error {:?}", e);
+                    }
                     return;
                 }
             };
             loop {
                 match iter.next_batch() {
                     Ok(Some(chunk)) => {
-                        println!("scan chunk: {:?}", chunk);
                         if tx.blocking_send(Ok(chunk)).is_err() {
                             break;
                         }
                     }
                     Ok(None) => {
-                        println!("none");
                         break;
                     }
                     Err(e) => {
