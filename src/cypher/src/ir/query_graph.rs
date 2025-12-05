@@ -308,10 +308,10 @@ impl QueryGraph {
             ));
         };
         if !self.nodes.is_empty() {
-            fields.push(("nodes", pretty_display_iter(self.nodes.iter().map(|x| x))));
+            fields.push(("nodes", pretty_display_iter(self.nodes.iter())));
         };
         if !self.rels.is_empty() {
-            fields.push(("rels", pretty_display_iter(self.rels.iter().map(|x| x))));
+            fields.push(("rels", pretty_display_iter(self.rels.iter())));
         };
         if !self.filter.is_true() {
             fields.push(("filter", Pretty::display(&self.filter.pretty())));

@@ -7,7 +7,6 @@ use itertools::Itertools;
 use mojito_catalog::FunctionCatalog;
 use mojito_catalog::error::CatalogError;
 use mojito_common::{TokenId, TokenKind};
-use mojito_cypher::ir::query::IrQueryRoot;
 use mojito_cypher::plan_context::PlanContext;
 use mojito_cypher::session::PlannerSession;
 use mojito_expr::func::FUNCTION_REGISTRY;

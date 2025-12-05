@@ -52,7 +52,7 @@ impl<'a> std::fmt::Debug for ListValueRef<'a> {
             crate::data_type::DataType::U16 => f.debug_list().entries(self.data.as_u16().iter()).finish(),
             crate::data_type::DataType::NodeId => f.debug_list().entries(self.data.as_node_id().iter()).finish(),
             crate::data_type::DataType::RelId => f.debug_list().entries(self.data.as_rel_id().iter()).finish(),
-            crate::data_type::DataType::List(data_type) => {
+            crate::data_type::DataType::List(_data_type) => {
                 todo!()
             }
             crate::data_type::DataType::Node => f.debug_list().entries(self.data.as_node().iter()).finish(),
