@@ -1,3 +1,16 @@
+-- match without label
+MATCH (n) RETURN n
+
+/*
+RootIR { names: [n] }
+└─IrSingleQueryPart
+  ├─QueryGraph { nodes: [n@0] }
+  └─Project { items: [n@1 AS n@0] }
+RootPlan { names: [n] }
+└─Project { exprs: [n@1 AS n@0] }
+  └─AllNodeScan { variable: n@0 }
+*/
+
 -- match with label
 MATCH (n:Person) RETURN n
 

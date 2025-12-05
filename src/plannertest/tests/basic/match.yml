@@ -1,4 +1,10 @@
 - sql: |
+    MATCH (n) RETURN n
+  desc: match without label
+  tasks: 
+    - bind
+    - plan
+- sql: |
     MATCH (n:Person) RETURN n
   desc: match with label
   tasks:

@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
@@ -7,16 +7,17 @@ use mojito_common::array::NodeIdArray;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::array::prop_map::PropertyMapArray;
 
-use crate::cf_property;
 use crate::dict::IdStore;
 use crate::error::GraphStoreError;
-use crate::transaction::node::batch_node_create;
+use crate::transaction::node::{batch_node_create, batch_node_scan};
 
 mod node;
 // mod relationship;
 
 pub struct RelScanOptions {}
-pub struct NodeScanOptions {}
+pub struct NodeScanOptions {
+    pub batch_size: usize,
+}
 
 #[async_trait]
 pub trait DataChunkIterator: Send {
@@ -27,7 +28,7 @@ pub trait DataChunkIterator: Send {
 pub trait Transaction: Send + Sync {
     // readonly
     fn rel_scan(&self, opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError>;
-    fn node_scan(&self, opts: &NodeScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError>;
+    fn node_scan(&self, opts: NodeScanOptions) -> Result<Box<dyn DataChunkIterator + '_>, GraphStoreError>;
     // read-write
     fn node_create(&self, label: &[LabelId], prop: &PropertyMapArray) -> Result<NodeIdArray, GraphStoreError>;
     fn relationship_create(&self, rel: &DataChunk) -> Result<DataChunk, GraphStoreError>;
@@ -40,7 +41,7 @@ pub trait Transaction: Send + Sync {
 
 // Simple transaction implementation with snapshot and write batch buffer
 pub struct TransactionImpl {
-    inner: OwnedSnapshot,
+    pub(crate) inner: OwnedSnapshot,
     dict: Arc<IdStore>,
     // write buffer
     write_state: Mutex<WriteState>,
@@ -68,8 +69,8 @@ impl Transaction for TransactionImpl {
         todo!()
     }
 
-    fn node_scan(&self, _opts: &NodeScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
-        todo!()
+    fn node_scan(&self, opts: NodeScanOptions) -> Result<Box<dyn DataChunkIterator + '_>, GraphStoreError> {
+        batch_node_scan(self, opts)
     }
 
     fn node_create(&self, label: &[LabelId], prop: &PropertyMapArray) -> Result<NodeIdArray, GraphStoreError> {
@@ -89,7 +90,8 @@ impl Transaction for TransactionImpl {
     }
 
     fn commit(self) -> Result<(), GraphStoreError> {
-        todo!()
+        let write_state = self.write_state.lock().unwrap();
+        self.inner.commit(write_state.batch.deref().clone())
     }
 
     fn abort(self) -> Result<(), GraphStoreError> {
@@ -208,40 +210,40 @@ impl Transaction for TransactionImpl {
 //     }
 // }
 
-pub(crate) struct OwnedTransaction {
-    pub(crate) _db: Arc<rocksdb::TransactionDB>,
-    pub(crate) tx: rocksdb::Transaction<'static, rocksdb::TransactionDB>,
-}
+// pub(crate) struct OwnedTransaction {
+//     pub(crate) _db: Arc<rocksdb::TransactionDB>,
+//     pub(crate) tx: rocksdb::Transaction<'static, rocksdb::TransactionDB>,
+// }
 
-impl OwnedTransaction {
-    pub fn new(db: Arc<rocksdb::TransactionDB>) -> Self {
-        unsafe {
-            let tx = db.transaction();
-            let static_tx: rocksdb::Transaction<'static, rocksdb::TransactionDB> = std::mem::transmute(tx);
-            Self { _db: db, tx: static_tx }
-        }
-    }
-}
+// impl OwnedTransaction {
+//     pub fn new(db: Arc<rocksdb::TransactionDB>) -> Self {
+//         unsafe {
+//             let tx = db.transaction();
+//             let static_tx: rocksdb::Transaction<'static, rocksdb::TransactionDB> = std::mem::transmute(tx);
+//             Self { _db: db, tx: static_tx }
+//         }
+//     }
+// }
 
-impl Deref for OwnedTransaction {
-    type Target = rocksdb::Transaction<'static, rocksdb::TransactionDB>;
+// impl Deref for OwnedTransaction {
+//     type Target = rocksdb::Transaction<'static, rocksdb::TransactionDB>;
 
-    fn deref(&self) -> &Self::Target {
-        &self.tx
-    }
-}
+//     fn deref(&self) -> &Self::Target {
+//         &self.tx
+//     }
+// }
 
-impl DerefMut for OwnedTransaction {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.tx
-    }
-}
+// impl DerefMut for OwnedTransaction {
+//     fn deref_mut(&mut self) -> &mut Self::Target {
+//         &mut self.tx
+//     }
+// }
 
-unsafe impl Send for OwnedTransaction {}
+// unsafe impl Send for OwnedTransaction {}
 
 struct OwnedSnapshot {
-    _db: Arc<rocksdb::TransactionDB>,
-    snapshot: rocksdb::Snapshot<'static>,
+    pub(crate) _db: Arc<rocksdb::TransactionDB>,
+    pub(crate) snapshot: rocksdb::Snapshot<'static>,
 }
 
 impl OwnedSnapshot {
@@ -265,41 +267,24 @@ impl Deref for OwnedSnapshot {
     }
 }
 
-pub trait TxRead {
-    type DBAccess: rocksdb::DBAccess;
-    /// full data scan, without seek
-    fn full_iter(&self) -> rocksdb::DBIteratorWithThreadMode<'_, Self::DBAccess>;
-}
+// pub trait TxRead {
+//     type DBAccess: rocksdb::DBAccess;
+//     /// full data scan, without seek
+//     fn full_iter(&self) -> rocksdb::DBIteratorWithThreadMode<'_, Self::DBAccess>;
+// }
 
-impl TxRead for OwnedSnapshot {
-    type DBAccess = rocksdb::DBWithThreadMode<rocksdb::MultiThreaded>;
+// impl TxRead for OwnedSnapshot {
+//     type DBAccess = rocksdb::DBWithThreadMode<rocksdb::MultiThreaded>;
 
-    fn full_iter(&self) -> rocksdb::DBIteratorWithThreadMode<'_, Self::DBAccess> {
-        self.iter()
-    }
-}
+//     fn full_iter(&self) -> rocksdb::DBIteratorWithThreadMode<'_, Self::DBAccess> {
+//         self.iter()
+//     }
+// }
 
-impl TxRead for OwnedTransaction {
-    type DBAccess = rocksdb::Transaction<'static, rocksdb::TransactionDB>;
+// impl TxRead for OwnedTransaction {
+//     type DBAccess = rocksdb::Transaction<'static, rocksdb::TransactionDB>;
 
-    fn full_iter(&self) -> rocksdb::DBIteratorWithThreadMode<'_, Self::DBAccess> {
-        self.iter()
-    }
-}
-
-impl OwnedSnapshot {
-    pub fn iter(&self) -> rocksdb::DBIteratorWithThreadMode<'_, rocksdb::DB> {
-        let cf = self._db.cf_handle(cf_property::CF_NAME).unwrap();
-        let readopts = rocksdb::ReadOptions::default();
-        let mode = rocksdb::IteratorMode::Start;
-        self.snapshot.iterator_cf_opt(&cf, readopts, mode)
-    }
-}
-
-impl OwnedTransaction {
-    pub fn iter(&self) -> rocksdb::DBIteratorWithThreadMode<'_, rocksdb::Transaction<'static, rocksdb::TransactionDB>> {
-        let cf = self._db.cf_handle(cf_property::CF_NAME).unwrap();
-        let mode = rocksdb::IteratorMode::Start;
-        self.tx.iterator_cf(&cf, mode)
-    }
-}
+//     fn full_iter(&self) -> rocksdb::DBIteratorWithThreadMode<'_, Self::DBAccess> {
+//         self.iter()
+//     }
+// }

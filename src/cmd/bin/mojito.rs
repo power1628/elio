@@ -14,6 +14,7 @@ struct Args {
 }
 
 async fn execute_cypher(sess: &Arc<Session>, cypher: &str) {
+    println!("execute {}", cypher);
     let mut stream = sess.execute(cypher.to_string(), HashMap::new()).await.unwrap();
     while let Some(row) = stream.next().await {
         println!("{:?}", row);
@@ -33,5 +34,6 @@ async fn main() {
     let q2 = "MATCH (n) RETURN n";
 
     execute_cypher(&sess, q1).await;
+    println!("---");
     execute_cypher(&sess, q2).await;
 }
