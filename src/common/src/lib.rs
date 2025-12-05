@@ -69,6 +69,10 @@ impl NodeId {
     pub fn from_le_bytes(bytes: [u8; 8]) -> Self {
         Self(u64::from_le_bytes(bytes))
     }
+
+    pub fn from_be_bytes(bytes: [u8; 8]) -> Self {
+        Self(u64::from_be_bytes(bytes))
+    }
 }
 
 #[derive(

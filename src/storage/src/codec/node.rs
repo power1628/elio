@@ -16,13 +16,14 @@ impl NodeFormat {
     pub fn encode_node_key(node_id: NodeId) -> Bytes {
         let mut key = BytesMut::new();
         key.put_slice(crate::cf_property::NODE_KEY_PREFIX);
-        key.put_u64_le(*node_id);
+        // use big endian to let nodes ordered by node id
+        key.put_u64(*node_id);
         key.freeze()
     }
 
     pub fn decode_node_key(buf: &[u8]) -> NodeId {
         assert_eq!(buf.len(), 9);
-        NodeId::from_le_bytes(buf[1..9].try_into().unwrap())
+        NodeId::from_be_bytes(buf[1..9].try_into().unwrap())
     }
 
     pub fn encode_node_value(labels: &[LabelId], property_map: PropertyMapValueRef<'_>) -> Bytes {
