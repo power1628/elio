@@ -1,5 +1,6 @@
-use bytes::{Bytes, BytesMut};
+use std::ops::BitAnd;
 
+use bytes::{BufMut, Bytes, BytesMut};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Mask {
@@ -100,6 +101,42 @@ impl Mask {
 
     pub fn all_unset(&self) -> bool {
         self.all_set.map(|x| !x).unwrap_or(false)
+    }
+
+    pub fn all(&self) -> Option<bool> {
+        if self.all_set() {
+            Some(true)
+        } else if self.all_unset() {
+            Some(false)
+        } else {
+            None
+        }
+    }
+}
+
+impl BitAnd for &Mask {
+    type Output = Mask;
+
+    fn bitand(self, rhs: Self) -> Self::Output {
+        assert_eq!(self.len(), rhs.len());
+        match (self.all(), rhs.all()) {
+            (Some(true), _) => rhs.clone(),
+            (_, Some(true)) => self.clone(),
+            (Some(false), _) => Mask::full(false, self.len),
+            (_, Some(false)) => Mask::full(false, self.len),
+            _ => {
+                let byte_len = self.len.div_ceil(8);
+                let mut bits = BytesMut::with_capacity(byte_len);
+                for i in 0..byte_len {
+                    bits.put_u8(self.bits[i] & rhs.bits[i]);
+                }
+                Self::Output {
+                    bits: bits.freeze(),
+                    len: self.len,
+                    all_set: None,
+                }
+            }
+        }
     }
 }
 

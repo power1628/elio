@@ -30,7 +30,7 @@ impl Expression for CreateMapExpr {
         }
 
         // eval batch
-        let mut builder = self.typ().array_builder(chunk.len()).into_property_map().unwrap();
+        let mut builder = self.typ().array_builder(chunk.row_len()).into_property_map().unwrap();
         let children = self
             .properties
             .iter()
@@ -39,7 +39,7 @@ impl Expression for CreateMapExpr {
 
         let num_prop = children.len();
         // build array
-        for i in 0..chunk.len() {
+        for i in 0..chunk.row_len() {
             // build mapb
             let mut map_builder = PropertyMapMut::with_capacity(num_prop);
 

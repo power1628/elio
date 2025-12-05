@@ -24,8 +24,7 @@ impl Executor for ProjectExecutor {
                     let column = expr.eval_batch(&chunk, &eval_ctx)?;
                     cols.push(column);
                 }
-                let cardinality = cols[0].len();
-                let output = DataChunk::new(cols, cardinality);
+                let output = DataChunk::new(cols);
                 yield output;
            }
         }

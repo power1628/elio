@@ -26,8 +26,7 @@ impl Expression for FuncCallExpr {
             .iter()
             .map(|e| e.eval_batch(chunk, ctx))
             .collect::<Result<Vec<_>, _>>()?;
-        let len = args[0].len();
-        let chunk = DataChunk::new(args, len);
+        let chunk = DataChunk::new(args);
         (self.func)(&chunk, ctx)
     }
 }

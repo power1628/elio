@@ -64,7 +64,7 @@ pub enum ScalarImpl {
     PropertyMap(PropertyMapValue),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ScalarRefImpl<'a> {
     Bool(bool),
     Integer(i64),

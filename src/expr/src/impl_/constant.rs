@@ -18,8 +18,8 @@ impl Expression for ConstantExpr {
     }
 
     fn eval_batch(&self, chunk: &DataChunk, _ctx: &dyn EvalCtx) -> Result<ArrayImpl, EvalError> {
-        let mut builder = self.typ.array_builder(chunk.len());
-        builder.append_n(self.value.clone().as_ref().map(|x| x.as_scalar_ref()), chunk.len());
+        let mut builder = self.typ.array_builder(chunk.row_len());
+        builder.append_n(self.value.clone().as_ref().map(|x| x.as_scalar_ref()), chunk.row_len());
         Ok(builder.finish())
     }
 }

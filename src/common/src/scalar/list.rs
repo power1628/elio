@@ -35,7 +35,7 @@ impl ListValue {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy)]
 pub struct ListValueRef<'a> {
     data: &'a ArrayImpl,
     start: u32,
@@ -65,6 +65,14 @@ impl<'a> std::fmt::Debug for ListValueRef<'a> {
         }
     }
 }
+
+impl<'a> PartialEq for ListValueRef<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.iter().zip(other.iter()).all(|(x, y)| x.eq(&y))
+    }
+}
+
+impl<'a> Eq for ListValueRef<'a> {}
 
 impl<'a> ListValueRef<'a> {
     pub fn new(data: &'a ArrayImpl, start: u32, end: u32) -> Self {

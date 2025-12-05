@@ -23,7 +23,7 @@ impl Scalar for NodeValue {
     }
 }
 
-#[derive(Clone, Debug, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, Copy, PartialEq, Eq)]
 pub struct NodeValueRef<'a> {
     pub id: NodeId,
     pub labels: ListValueRef<'a>,

@@ -1,28 +1,48 @@
 use crate::array::ArrayImpl;
+use crate::array::mask::Mask;
 use crate::scalar::Row;
 
 #[derive(Clone, Debug)]
 pub struct DataChunk {
     columns: Vec<ArrayImpl>,
-    // TODO(pgao): selection vector
+    // selection vector
+    visibility: Mask,
+    // valid number of rows
     cardinality: usize,
+    capacity: usize,
 }
 
 impl DataChunk {
     // return one empty row
     pub fn unit() -> Self {
-        Self::new(vec![], 1)
+        Self {
+            columns: vec![],
+            visibility: Mask::new_set(1),
+            cardinality: 1,
+            capacity: 1,
+        }
     }
 
     pub fn empty() -> Self {
-        Self::new(vec![], 0)
+        Self::new(vec![])
     }
 
-    pub fn new(columns: Vec<ArrayImpl>, cardinality: usize) -> Self {
-        Self { columns, cardinality }
+    pub fn new(columns: Vec<ArrayImpl>) -> Self {
+        let capacity = columns.first().map(|c| c.len()).unwrap_or(0);
+        if cfg!(debug_assertions) {
+            for col in columns.iter() {
+                assert_eq!(col.len(), capacity)
+            }
+        }
+        Self {
+            columns,
+            visibility: Mask::new_set(capacity),
+            cardinality: capacity,
+            capacity,
+        }
     }
 
-    pub fn len(&self) -> usize {
+    pub fn row_len(&self) -> usize {
         self.cardinality
     }
 
@@ -34,14 +54,42 @@ impl DataChunk {
         &self.columns[idx]
     }
 
+    pub fn columns(&self) -> &[ArrayImpl] {
+        &self.columns
+    }
+
     pub fn add_column(&mut self, col: ArrayImpl) {
         self.columns.push(col);
+    }
+
+    pub fn set_visibility(&mut self, visibility: Mask) {
+        assert_eq!(self.capacity, visibility.len());
+        self.cardinality = visibility.set_count();
+
+        // if we already have visibility, we & it with the new visibility
+        self.visibility = &self.visibility & &visibility;
+    }
+
+    pub fn is_visible(&self, idx: usize) -> bool {
+        self.visibility.get(idx)
+    }
+
+    pub fn is_all_visible(&self) -> bool {
+        self.visibility.all_set()
+    }
+
+    pub fn compact(self) -> Self {
+        todo!()
     }
 }
 
 impl DataChunk {
     pub fn iter(&self) -> impl Iterator<Item = Row> + '_ {
-        (0..self.cardinality).map(|idx| self.get_row_by_idx(idx))
+        if self.is_all_visible() {
+            (0..self.cardinality).map(|idx| self.get_row_by_idx(idx))
+        } else {
+            todo!()
+        }
     }
 
     pub fn get_row_by_idx(&self, idx: usize) -> Row {
