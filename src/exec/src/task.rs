@@ -155,12 +155,36 @@ impl TaskRunner {
     pub fn start(self) {
         // spawn task and drive task to finish
         let TaskRunner { ctx, tx, root_executor } = self;
-        let stream = root_executor.build_stream(ctx).unwrap();
+        let txn = ctx.tx().clone();
+        let stream = match root_executor.build_stream(ctx) {
+            Ok(s) => s,
+            Err(e) => {
+                let _ = tx.send(Err(e));
+                return;
+            }
+        };
         let mut stream = stream.boxed();
         tokio::spawn(async move {
+            let mut success = true;
             // TODO(pgao): cancellation token
             while let Some(chunk) = stream.next().await {
-                tx.send(chunk).unwrap();
+                let is_err = chunk.is_err();
+                if tx.send(chunk).is_err() {
+                    success = false;
+                    break;
+                }
+                if is_err {
+                    success = false;
+                    break;
+                }
+            }
+
+            if success {
+                if let Err(e) = txn.commit() {
+                    let _ = tx.send(Err(e.into()));
+                }
+            } else {
+                let _ = txn.abort();
             }
         });
     }

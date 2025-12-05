@@ -2,10 +2,11 @@ use std::backtrace::Backtrace;
 use std::sync::Arc;
 
 use mojito_common::variable::VariableName;
-use mojito_cypher::plan_node::{CreateNode, PlanExpr, PlanNode, Project};
+use mojito_cypher::plan_node::{self, CreateNode, PlanExpr, PlanNode, Project};
 use mojito_cypher::planner::RootPlan;
 
 use crate::builder::expression::{BuildExprContext, build_expression};
+use crate::executor::all_node_scan::AllNodeScanExectuor;
 use crate::executor::create_node::CreateNodeExectuor;
 use crate::executor::project::ProjectExecutor;
 use crate::executor::unit::UnitExecutor;
@@ -57,7 +58,7 @@ fn build_node(ctx: &mut ExecutorBuildContext, node: &PlanExpr) -> Result<BoxedEx
         .collect::<Result<Vec<_>, _>>()?;
 
     match node {
-        PlanExpr::AllNodeScan(_all_node_scan) => todo!(),
+        PlanExpr::AllNodeScan(all_node_scan) => build_all_node_scan(ctx, all_node_scan, inputs),
         PlanExpr::GetProperty(_get_property) => todo!(),
         PlanExpr::Expand(_expand) => todo!(),
         PlanExpr::Apply(_apply) => todo!(),
@@ -71,6 +72,16 @@ fn build_node(ctx: &mut ExecutorBuildContext, node: &PlanExpr) -> Result<BoxedEx
         PlanExpr::Pagination(_pagination) => todo!(),
         PlanExpr::Empty(_empty) => todo!(),
     }
+}
+
+fn build_all_node_scan(
+    _ctx: &mut ExecutorBuildContext,
+    all_node_scan: &plan_node::AllNodeScan,
+    inputs: Vec<BoxedExecutor>,
+) -> Result<BoxedExecutor, BuildError> {
+    assert_eq!(inputs.len(), 0);
+    let schema = all_node_scan.schema();
+    Ok(AllNodeScanExectuor::new(schema).boxed())
 }
 
 fn build_create_node(

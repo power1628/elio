@@ -22,5 +22,5 @@ pub(crate) mod cf_topology {
 
 pub(crate) mod cf_property {
     pub const CF_NAME: &str = "cf_property";
-    pub const NODE_KEY_PREFIX: u8 = 0x01;
+    pub const NODE_KEY_PREFIX: &[u8; 1] = &[0x01];
 }
