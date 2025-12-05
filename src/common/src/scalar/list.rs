@@ -1,6 +1,6 @@
 use crate::array::list::ListArray;
 use crate::array::{ArrayImpl, ArrayImplRef};
-use crate::data_type::F64;
+use crate::data_type::{DataType, F64};
 use crate::scalar::{Scalar, ScalarRef, ScalarRefImpl};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -16,6 +16,10 @@ impl Scalar for ListValue {
             start: 0,
             end: self.0.len() as u32,
         }
+    }
+
+    fn data_type(&self) -> DataType {
+        DataType::List(Box::new(self.0.data_type()))
     }
 }
 
@@ -35,7 +39,7 @@ impl ListValue {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy)]
 pub struct ListValueRef<'a> {
     data: &'a ArrayImpl,
     start: u32,
@@ -52,7 +56,7 @@ impl<'a> std::fmt::Debug for ListValueRef<'a> {
             crate::data_type::DataType::U16 => f.debug_list().entries(self.data.as_u16().iter()).finish(),
             crate::data_type::DataType::NodeId => f.debug_list().entries(self.data.as_node_id().iter()).finish(),
             crate::data_type::DataType::RelId => f.debug_list().entries(self.data.as_rel_id().iter()).finish(),
-            crate::data_type::DataType::List(data_type) => {
+            crate::data_type::DataType::List(_data_type) => {
                 todo!()
             }
             crate::data_type::DataType::Node => f.debug_list().entries(self.data.as_node().iter()).finish(),
@@ -65,6 +69,14 @@ impl<'a> std::fmt::Debug for ListValueRef<'a> {
         }
     }
 }
+
+impl<'a> PartialEq for ListValueRef<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.len() == other.len() && self.iter().eq(other.iter())
+    }
+}
+
+impl<'a> Eq for ListValueRef<'a> {}
 
 impl<'a> ListValueRef<'a> {
     pub fn new(data: &'a ArrayImpl, start: u32, end: u32) -> Self {

@@ -14,15 +14,6 @@ use crate::scalar::ScalarRefImpl;
 macro_rules! impl_array_dispatch {
     ([], $( { $Abc:ident, $abc:ident, $AbcArray:ty, $AbcArrayBuilder:ty, $Owned:ty, $Ref:ty } ),*) => {
         impl ArrayImpl {
-            /// Create new [`ArrayBuilder`] from [`Array`] type.
-            pub fn new_builder(&self, capacity: usize) -> ArrayBuilderImpl {
-                let typ = self.data_type();
-                match self {
-                    $(
-                        Self::$Abc(_) => ArrayBuilderImpl::$Abc(<$AbcArrayBuilder>::with_capacity(capacity, typ))
-                    ),*
-                }
-            }
 
             /// Get the value at the given index.
             pub fn get(&self, idx: usize) -> Option<ScalarRefImpl<'_>> {
@@ -96,6 +87,18 @@ macro_rules! impl_array_conversion {
 
         )*
 
+        /// Convert [`&ArrayImpl`] to [`&AbcArray`].
+        $(
+                #[doc = concat!("Implement [`&ArrayImpl`] -> [`&", stringify!($AbcArray), "`]")]
+                impl<'a> From<&'a ArrayImpl> for &'a $AbcArray {
+                    fn from(array: &'a ArrayImpl) -> &'a $AbcArray {
+                        match array {
+                            ArrayImpl::$Abc(array) => array,
+                            _other => panic!("type mismatch, expected {}", stringify!($AbcArray)),
+                        }
+                    }
+                }
+        )*
 
         /// Convert [`ArrayImplRef<'a>`] to [`&AbcArray`].
         $(

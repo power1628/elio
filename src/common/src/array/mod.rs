@@ -43,37 +43,25 @@ pub mod mask;
 pub trait PrimitiveArrayElementType:
     BufferElementType + Clone + Copy + std::fmt::Debug + Sized + Send + Sync + Default + PartialEq + Eq + std::hash::Hash
 {
-    fn data_type() -> DataType;
+    const DATA_TYPE: DataType;
 }
 
 impl PrimitiveArrayElementType for u16 {
-    fn data_type() -> DataType {
-        DataType::U16
-    }
+    const DATA_TYPE: DataType = DataType::U16;
 }
 // impl PrimitiveType for u32 {}
 impl PrimitiveArrayElementType for i64 {
-    fn data_type() -> DataType {
-        DataType::Integer
-    }
+    const DATA_TYPE: DataType = DataType::Integer;
 }
-// impl PrimitiveType for u64 {}
-// impl PrimitiveType for f32 {}
 impl PrimitiveArrayElementType for OrderedFloat<f64> {
-    fn data_type() -> DataType {
-        DataType::Float
-    }
+    const DATA_TYPE: DataType = DataType::Float;
 }
 // impl PrimitiveType for usize {}
 impl PrimitiveArrayElementType for NodeId {
-    fn data_type() -> DataType {
-        DataType::NodeId
-    }
+    const DATA_TYPE: DataType = DataType::NodeId;
 }
 impl PrimitiveArrayElementType for RelationshipId {
-    fn data_type() -> DataType {
-        DataType::RelId
-    }
+    const DATA_TYPE: DataType = DataType::RelId;
 }
 
 /// [`Array`] is a collection of data of the same type.
@@ -81,7 +69,9 @@ pub trait Array: Send + Sync + Sized + 'static + Into<ArrayImpl> + Clone {
     /// The corresponding [`ArrayBuilder`] of this [`Array`].
     ///
     /// We constriant the associated type so that `Self::Builder::Array = Self`.
-    /// TODO(pgao): remove this builder, builder should be constructed with runtime datatype.
+    /// This is used in expression evaluation, we need to know the output scalar's array builder
+    /// This should only be used in the case of non-nested data types.
+    /// For nested data types, e.g. List, we should use data type to create an array builder.
     type Builder: ArrayBuilder<Array = Self>;
 
     /// The owned item of this array.
@@ -132,7 +122,10 @@ pub trait ArrayBuilder {
     type Array: Array<Builder = Self>;
 
     /// Create a new builder with `capacity`.
-    fn with_capacity(capacity: usize, typ: DataType) -> Self;
+    /// NOTICE: should only be called for non-nested data types.
+    /// List is nested, we do not know the inner data type at build
+    /// so List will return an List<Integer> by default
+    fn with_capacity(capacity: usize) -> Self;
 
     /// Append a value to builder.
     fn append_n(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>, repeat: usize);
@@ -169,6 +162,11 @@ pub enum ArrayImpl {
 }
 
 impl ArrayImpl {
+    pub fn new_builder(&self, capacity: usize) -> ArrayBuilderImpl {
+        let typ = self.data_type();
+        typ.array_builder(capacity)
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = DatumRef<'_>> {
         (0..self.len()).map(|i| self.get(i))
     }
@@ -206,25 +204,4 @@ pub enum ArrayBuilderImpl {
     List(ListArrayBuilder),
     Property(PropertyArrayBuilder),
     PropertyMap(PropertyMapArrayBuilder),
-}
-
-impl ArrayBuilderImpl {
-    // TODO(pgao): needs to be refactored, use macro rules
-    pub fn with_capacity(capacity: usize, typ: DataType) -> Self {
-        match typ {
-            DataType::Bool => Self::Bool(BoolArrayBuilder::with_capacity(capacity, typ)),
-            DataType::Integer => Self::Integer(IntegerArrayBuilder::with_capacity(capacity, typ)),
-            DataType::Float => Self::Float(FloatArrayBuilder::with_capacity(capacity, typ)),
-            DataType::String => Self::String(StringArrayBuilder::with_capacity(capacity, typ)),
-            DataType::U16 => Self::U16(U16ArrayBuilder::with_capacity(capacity, typ)),
-            DataType::NodeId => Self::NodeId(NodeIdArrayBuilder::with_capacity(capacity, typ)),
-            DataType::RelId => Self::RelId(RelIdArrayBuilder::with_capacity(capacity, typ)),
-            DataType::List(_) => Self::List(ListArrayBuilder::with_capacity(capacity, typ)),
-            DataType::Node => Self::Node(NodeArrayBuilder::with_capacity(capacity, typ)),
-            DataType::Rel => Self::Rel(RelArrayBuilder::with_capacity(capacity, typ)),
-            DataType::Path => todo!("support path array"),
-            DataType::Property => Self::Property(PropertyArrayBuilder::with_capacity(capacity, typ)),
-            DataType::PropertyMap => Self::PropertyMap(PropertyMapArrayBuilder::with_capacity(capacity, typ)),
-        }
-    }
 }

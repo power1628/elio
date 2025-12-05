@@ -1,5 +1,6 @@
 use crate::NodeId;
 use crate::array::node::NodeArray;
+use crate::data_type::DataType;
 use crate::scalar::list::{ListValue, ListValueRef};
 use crate::scalar::{PropertyMapValue, PropertyMapValueRef, Scalar, ScalarRef};
 
@@ -21,9 +22,13 @@ impl Scalar for NodeValue {
             properties: self.properties.as_scalar_ref(),
         }
     }
+
+    fn data_type(&self) -> DataType {
+        DataType::Node
+    }
 }
 
-#[derive(Clone, Debug, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, Copy, PartialEq, Eq)]
 pub struct NodeValueRef<'a> {
     pub id: NodeId,
     pub labels: ListValueRef<'a>,

@@ -1,4 +1,5 @@
 use crate::array::rel::RelArray;
+use crate::data_type::DataType;
 use crate::scalar::{PropertyMapValue, PropertyMapValueRef, Scalar, ScalarRef};
 use crate::{NodeId, RelationshipId, RelationshipTypeId};
 
@@ -23,6 +24,10 @@ impl Scalar for RelValue {
             end: self.end,
             properties: self.properties.as_scalar_ref(),
         }
+    }
+
+    fn data_type(&self) -> DataType {
+        DataType::Rel
     }
 }
 

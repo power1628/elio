@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use async_stream::stream;
 use futures::stream::BoxStream;
-use futures::{Stream, StreamExt};
+use futures::Stream;
 use mojito_catalog::Catalog;
 use mojito_catalog::error::CatalogError;
 use mojito_common::array::chunk::DataChunk;

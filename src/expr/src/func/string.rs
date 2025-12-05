@@ -4,9 +4,8 @@
 
 use std::collections::HashMap;
 
+use mojito_common::array::ArrayImpl;
 use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::{ArrayImpl, StringArray};
-use mojito_common::data_type::DataType;
 
 use crate::define_function;
 use crate::error::EvalError;
@@ -23,17 +22,13 @@ fn string_lower(s: &str) -> String {
 }
 
 fn upper_function(input: &DataChunk, _ctx: &dyn EvalCtx) -> Result<ArrayImpl, EvalError> {
-    let arg: &StringArray = input.column(0).as_ref().into();
-
-    let res: StringArray = UnaryExecutor::execute_simple::<String, String, _>(arg, string_upper, DataType::String)?;
-    Ok(res.into())
+    let res = UnaryExecutor::execute_simple::<String, String, _>(input.column(0), string_upper)?;
+    Ok(res)
 }
 
 fn lower_function(input: &DataChunk, _ctx: &dyn EvalCtx) -> Result<ArrayImpl, EvalError> {
-    let arg: &StringArray = input.column(0).as_ref().into();
-
-    let res: StringArray = UnaryExecutor::execute_simple::<String, String, _>(arg, string_lower, DataType::String)?;
-    Ok(res.into())
+    let res = UnaryExecutor::execute_simple::<String, String, _>(input.column(0), string_lower)?;
+    Ok(res)
 }
 
 // register function here

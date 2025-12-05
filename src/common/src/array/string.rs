@@ -56,8 +56,8 @@ pub struct StringArrayBuilder {
 impl ArrayBuilder for StringArrayBuilder {
     type Array = StringArray;
 
-    fn with_capacity(capacity: usize, typ: DataType) -> Self {
-        assert_eq!(typ, DataType::String);
+    fn with_capacity(capacity: usize) -> Self {
+        // assert_eq!(typ, DataType::String);
         let mut offsets = BufferMut::with_capacity(capacity + 1);
         offsets.push(0);
         Self {
@@ -96,11 +96,11 @@ impl ArrayBuilder for StringArrayBuilder {
 mod tests {
     use super::*;
     use crate::array::ArrayBuilder;
-    use crate::data_type::DataType;
+    
 
     #[test]
     fn test_string_array_builder() {
-        let mut builder = StringArrayBuilder::with_capacity(5, DataType::String);
+        let mut builder = StringArrayBuilder::with_capacity(5);
         builder.append(Some("hello"));
         builder.append(Some("world"));
         builder.append(None);
@@ -131,7 +131,7 @@ mod tests {
 
     #[test]
     fn test_string_array_iter() {
-        let mut builder = StringArrayBuilder::with_capacity(3, DataType::String);
+        let mut builder = StringArrayBuilder::with_capacity(3);
         builder.append(Some("first"));
         builder.append(None);
         builder.append(Some("third"));
@@ -146,7 +146,7 @@ mod tests {
 
     #[test]
     fn test_string_array_empty() {
-        let builder = StringArrayBuilder::with_capacity(0, DataType::String);
+        let builder = StringArrayBuilder::with_capacity(0);
         let arr = builder.finish();
         assert!(arr.is_empty());
         assert_eq!(arr.len(), 0);
@@ -154,7 +154,7 @@ mod tests {
 
     #[test]
     fn test_string_array_with_empty_string() {
-        let mut builder = StringArrayBuilder::with_capacity(2, DataType::String);
+        let mut builder = StringArrayBuilder::with_capacity(2);
         builder.append(Some(""));
         builder.append(Some("not empty"));
         let arr = builder.finish();
@@ -166,7 +166,7 @@ mod tests {
 
     #[test]
     fn test_all_nulls() {
-        let mut builder = StringArrayBuilder::with_capacity(3, DataType::String);
+        let mut builder = StringArrayBuilder::with_capacity(3);
         builder.append(None);
         builder.append(None);
         builder.append(None);
@@ -177,9 +177,9 @@ mod tests {
         assert_eq!(arr.get(2), None);
     }
 
-    #[test]
-    #[should_panic]
-    fn test_string_array_builder_wrong_type() {
-        let _builder = StringArrayBuilder::with_capacity(5, DataType::Bool);
-    }
+    // #[test]
+    // #[should_panic]
+    // fn test_string_array_builder_wrong_type() {
+    //     let _builder = StringArrayBuilder::with_capacity(5, DataType::Bool);
+    // }
 }
