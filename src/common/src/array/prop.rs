@@ -134,12 +134,12 @@ mod tests {
         assert_eq!(arr.len(), 0);
     }
 
-    #[test]
-    #[should_panic(expected = "assertion `left == right` failed")]
-    fn test_builder_with_wrong_type() {
-        // This should panic because we are not passing DataType::Property
-        let _builder = PropertyArrayBuilder::with_capacity(5);
-    }
+    // #[test]
+    // #[should_panic(expected = "assertion `left == right` failed")]
+    // fn test_builder_with_wrong_type() {
+    //     // This should panic because we are not passing DataType::Property
+    //     let _builder = PropertyArrayBuilder::with_capacity(5);
+    // }
 
     // #[test]
     // #[should_panic(expected = "assertion failed: value.is_some()")]

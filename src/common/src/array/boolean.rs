@@ -84,7 +84,7 @@ impl ArrayBuilder for BoolArrayBuilder {
 mod tests {
     use super::*;
     use crate::array::ArrayBuilder;
-    use crate::data_type::DataType;
+    
 
     #[test]
     fn test_bool_array_builder_push_and_finish() {

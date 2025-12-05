@@ -1,7 +1,6 @@
 use mojito_common::LabelId;
 use mojito_common::array::prop_map::PropertyMapArray;
 use mojito_common::array::{Array, ArrayBuilder, NodeIdArray, NodeIdArrayBuilder};
-use mojito_common::data_type::DataType;
 
 use crate::cf_property;
 use crate::codec::NodeFormat;
@@ -44,7 +43,7 @@ pub(crate) fn batch_node_create(
     drop(guard);
 
     // create node ids array
-    let mut ids = NodeIdArrayBuilder::with_capacity(len, DataType::NodeId);
+    let mut ids = NodeIdArrayBuilder::with_capacity(len);
     for id in node_ids.iter() {
         ids.append(Some(*id));
     }

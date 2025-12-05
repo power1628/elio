@@ -7,7 +7,6 @@ use std::sync::Arc;
 
 use crate::array::mask::{Mask, MaskMut};
 use crate::array::{Array, ArrayBuilder, ArrayIterator};
-use crate::data_type::DataType;
 use crate::scalar::prop_map::PropertyMapValue;
 use crate::scalar::{PropertyMapValueRef, Scalar, ScalarRef};
 
@@ -93,7 +92,7 @@ mod tests {
 
     use super::*;
     use crate::array::{Array, ArrayBuilder};
-    use crate::data_type::DataType;
+    
 
     // #[test]
     // fn test_prop_map_array_builder_and_get() {
@@ -174,9 +173,9 @@ mod tests {
         assert_eq!(arr.get(1), None);
     }
 
-    #[test]
-    #[should_panic(expected = "assertion `left == right` failed")]
-    fn test_builder_with_wrong_type() {
-        let _builder = PropertyMapArrayBuilder::with_capacity(5);
-    }
+    // #[test]
+    // #[should_panic(expected = "assertion `left == right` failed")]
+    // fn test_builder_with_wrong_type() {
+    //     let _builder = PropertyMapArrayBuilder::with_capacity(5);
+    // }
 }

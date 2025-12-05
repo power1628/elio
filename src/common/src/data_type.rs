@@ -73,7 +73,7 @@ impl DataType {
             DataType::U16 => U16ArrayBuilder::with_capacity(capacity).into(),
             DataType::NodeId => NodeIdArrayBuilder::with_capacity(capacity).into(),
             DataType::RelId => RelIdArrayBuilder::with_capacity(capacity).into(),
-            DataType::List(inner) => ListArrayBuilder::with_capacity_and_type(capacity, &inner).into(),
+            DataType::List(inner) => ListArrayBuilder::with_capacity_and_type(capacity, inner).into(),
             DataType::Node => NodeArrayBuilder::with_capacity(capacity).into(),
             DataType::Rel => RelArrayBuilder::with_capacity(capacity).into(),
             DataType::Path => todo!(),

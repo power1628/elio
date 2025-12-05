@@ -121,7 +121,7 @@ pub type RelIdArrayBuilder = PrimitiveArrayBuilder<RelationshipId>;
 mod tests {
     use super::*;
     use crate::array::ArrayBuilder;
-    use crate::data_type::DataType;
+    
 
     #[test]
     fn test_primitive_array_builder_push_and_finish() {

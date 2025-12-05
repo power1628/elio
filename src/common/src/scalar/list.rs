@@ -72,7 +72,7 @@ impl<'a> std::fmt::Debug for ListValueRef<'a> {
 
 impl<'a> PartialEq for ListValueRef<'a> {
     fn eq(&self, other: &Self) -> bool {
-        self.iter().zip(other.iter()).all(|(x, y)| x.eq(&y))
+        self.len() == other.len() && self.iter().eq(other.iter())
     }
 }
 

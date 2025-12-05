@@ -96,7 +96,7 @@ impl ArrayBuilder for StringArrayBuilder {
 mod tests {
     use super::*;
     use crate::array::ArrayBuilder;
-    use crate::data_type::DataType;
+    
 
     #[test]
     fn test_string_array_builder() {

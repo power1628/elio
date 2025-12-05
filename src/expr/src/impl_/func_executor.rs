@@ -1,5 +1,5 @@
 use mojito_common::array::{Array, ArrayBuilder, ArrayImpl};
-use mojito_common::scalar::{Scalar, *};
+use mojito_common::scalar::Scalar;
 
 use crate::error::EvalError;
 
