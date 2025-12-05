@@ -47,8 +47,8 @@ pub struct BoolArrayBuilder {
 impl ArrayBuilder for BoolArrayBuilder {
     type Array = BoolArray;
 
-    fn with_capacity(capacity: usize, typ: DataType) -> Self {
-        assert_eq!(typ, DataType::Bool);
+    fn with_capacity(capacity: usize) -> Self {
+        // assert_eq!(typ, DataType::Bool);
         Self {
             data: MaskMut::with_capacity(capacity),
             valid: MaskMut::with_capacity(capacity),
@@ -88,7 +88,7 @@ mod tests {
 
     #[test]
     fn test_bool_array_builder_push_and_finish() {
-        let mut builder = BoolArrayBuilder::with_capacity(5, DataType::Bool);
+        let mut builder = BoolArrayBuilder::with_capacity(5);
         builder.append(Some(true));
         builder.append(Some(false));
         builder.append(None);
@@ -118,7 +118,7 @@ mod tests {
 
     #[test]
     fn test_bool_array_all_valid() {
-        let mut builder = BoolArrayBuilder::with_capacity(3, DataType::Bool);
+        let mut builder = BoolArrayBuilder::with_capacity(3);
         builder.append(Some(true));
         builder.append(Some(false));
         builder.append(Some(true));
@@ -132,7 +132,7 @@ mod tests {
 
     #[test]
     fn test_bool_array_all_invalid() {
-        let mut builder = BoolArrayBuilder::with_capacity(3, DataType::Bool);
+        let mut builder = BoolArrayBuilder::with_capacity(3);
         builder.append(None);
         builder.append(None);
         builder.append(None);
@@ -146,7 +146,7 @@ mod tests {
 
     #[test]
     fn test_bool_array_iter() {
-        let mut builder = BoolArrayBuilder::with_capacity(5, DataType::Bool);
+        let mut builder = BoolArrayBuilder::with_capacity(5);
         builder.append(Some(true));
         builder.append(Some(false));
         builder.append(None);
@@ -165,19 +165,19 @@ mod tests {
 
     #[test]
     fn test_bool_array_is_empty() {
-        let builder = BoolArrayBuilder::with_capacity(0, DataType::Bool);
+        let builder = BoolArrayBuilder::with_capacity(0);
         let arr = builder.finish();
         assert!(arr.is_empty());
 
-        let mut builder = BoolArrayBuilder::with_capacity(1, DataType::Bool);
+        let mut builder = BoolArrayBuilder::with_capacity(1);
         builder.append(Some(true));
         let arr = builder.finish();
         assert!(!arr.is_empty());
     }
 
-    #[test]
-    #[should_panic(expected = "assertion `left == right` failed\n  left: Integer\n right: Bool")]
-    fn test_bool_array_builder_with_capacity_wrong_type() {
-        let _builder = BoolArrayBuilder::with_capacity(5, DataType::Integer);
-    }
+    // #[test]
+    // #[should_panic(expected = "assertion `left == right` failed\n  left: Integer\n right: Bool")]
+    // fn test_bool_array_builder_with_capacity_wrong_type() {
+    //     let _builder = BoolArrayBuilder::with_capacity(5, DataType::Integer);
+    // }
 }

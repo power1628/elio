@@ -52,20 +52,33 @@ pub struct ListArrayBuilder {
     valid: MaskMut,
 }
 
+impl ListArrayBuilder {
+    pub fn with_capacity_and_type(capacity: usize, inner: &DataType) -> Self {
+        let mut offsets = BufferMut::with_capacity(capacity + 1);
+        offsets.push(0);
+        Self {
+            data: Box::new(inner.array_builder(capacity)),
+            offsets,
+            valid: MaskMut::with_capacity(capacity),
+        }
+    }
+}
+
 impl ArrayBuilder for ListArrayBuilder {
     type Array = ListArray;
 
-    fn with_capacity(capacity: usize, typ: DataType) -> Self {
+    fn with_capacity(capacity: usize) -> Self {
         let inner_type = {
-            match typ {
-                DataType::List(inner_typ) => inner_typ,
-                _ => panic!("expected list type"),
-            }
+            DataType::Integer
+            // match typ {
+            //     DataType::List(inner_typ) => inner_typ,
+            //     _ => panic!("expected list type"),
+            // }
         };
         let mut offsets = BufferMut::with_capacity(capacity + 1);
         offsets.push(0);
         Self {
-            data: Box::new(ArrayBuilderImpl::with_capacity(capacity, *inner_type)),
+            data: Box::new(inner_type.array_builder(capacity)),
             offsets,
             valid: MaskMut::with_capacity(capacity),
         }

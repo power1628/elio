@@ -63,12 +63,11 @@ pub struct NodeArrayBuilder {
 impl ArrayBuilder for NodeArrayBuilder {
     type Array = NodeArray;
 
-    fn with_capacity(capacity: usize, typ: DataType) -> Self {
-        assert_eq!(typ, DataType::Node);
+    fn with_capacity(capacity: usize) -> Self {
         Self {
-            id: NodeIdArrayBuilder::with_capacity(capacity, DataType::NodeId),
-            labels: ListArrayBuilder::with_capacity(capacity, DataType::List(Box::new(DataType::U16))),
-            properties: PropertyMapArrayBuilder::with_capacity(capacity, DataType::PropertyMap),
+            id: NodeIdArrayBuilder::with_capacity(capacity),
+            labels: ListArrayBuilder::with_capacity_and_type(capacity, &DataType::U16),
+            properties: PropertyMapArrayBuilder::with_capacity(capacity),
             valid: MaskMut::with_capacity(capacity),
         }
     }

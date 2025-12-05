@@ -1,4 +1,5 @@
 use crate::array::prop_map::PropertyMapArray;
+use crate::data_type::DataType;
 use crate::mapb::{PropertyMap, PropertyMapRef};
 use crate::scalar::{Scalar, ScalarRef};
 // use crate::store_types::PropertyValue;
@@ -24,6 +25,10 @@ impl Scalar for PropertyMapValue {
 
     fn as_scalar_ref(&self) -> Self::RefType<'_> {
         PropertyMapValueRef(self.0.as_ref())
+    }
+
+    fn data_type(&self) -> DataType {
+        DataType::PropertyMap
     }
 }
 
@@ -54,9 +59,10 @@ impl<'a> ScalarRef<'a> for PropertyMapValueRef<'a> {
 impl<'a> PropertyMapValueRef<'a> {
     pub fn pretty(&self) -> String {
         self.0
-                .iter()
-                .map(|kv| format!("{}: {}", kv.key(), kv.value().pretty()))
-                .collect::<Vec<_>>()
-                .join(", ").to_string()
+            .iter()
+            .map(|kv| format!("{}: {}", kv.key(), kv.value().pretty()))
+            .collect::<Vec<_>>()
+            .join(", ")
+            .to_string()
     }
 }

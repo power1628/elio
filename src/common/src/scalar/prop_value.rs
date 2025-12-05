@@ -1,4 +1,5 @@
 use crate::array::prop::PropertyArray;
+use crate::data_type::DataType;
 use crate::scalar::{Scalar, ScalarRef};
 use crate::store_types::PropertyValue;
 
@@ -10,6 +11,10 @@ impl Scalar for PropertyValue {
 
     fn as_scalar_ref(&self) -> Self::RefType<'_> {
         self
+    }
+
+    fn data_type(&self) -> DataType {
+        DataType::Property
     }
 }
 

@@ -9,7 +9,7 @@
 //! This file is derived from https://github.com/skyzh/type-exercise-in-rust
 
 use crate::array::Array;
-use crate::data_type::F64;
+use crate::data_type::{DataType, F64};
 use crate::scalar::list::{ListValue, ListValueRef};
 use crate::store_types::PropertyValue;
 use crate::{NodeId, RelationshipId};
@@ -33,6 +33,9 @@ where
 
     /// Get a reference of the current value
     fn as_scalar_ref(&self) -> Self::RefType<'_>;
+
+    /// get the data type of this scalar
+    fn data_type(&self) -> DataType;
 }
 
 /// A borrowed value.

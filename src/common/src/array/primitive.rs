@@ -43,7 +43,7 @@ where
     }
 
     fn data_type(&self) -> DataType {
-        T::data_type()
+        T::DATA_TYPE
     }
 }
 
@@ -71,8 +71,8 @@ where
 {
     type Array = PrimitiveArray<T>;
 
-    fn with_capacity(capacity: usize, typ: DataType) -> Self {
-        assert_eq!(typ, T::data_type());
+    fn with_capacity(capacity: usize) -> Self {
+        // assert_eq!(typ, T::DATA_TYPE);
         Self {
             data: BufferMut::with_capacity(capacity),
             valid: MaskMut::with_capacity(capacity),
@@ -125,7 +125,7 @@ mod tests {
 
     #[test]
     fn test_primitive_array_builder_push_and_finish() {
-        let mut builder = PrimitiveArrayBuilder::<i64>::with_capacity(5, DataType::Integer);
+        let mut builder = PrimitiveArrayBuilder::<i64>::with_capacity(5);
         builder.append(Some(10));
         builder.append(Some(20));
         builder.append(None);
@@ -152,7 +152,7 @@ mod tests {
 
     #[test]
     fn test_primitive_array_all_valid() {
-        let mut builder = PrimitiveArrayBuilder::<F64>::with_capacity(3, DataType::Float);
+        let mut builder = PrimitiveArrayBuilder::<F64>::with_capacity(3);
         builder.append(Some(1.1.into()));
         builder.append(Some(2.2.into()));
         builder.append(Some(3.3.into()));
@@ -166,7 +166,7 @@ mod tests {
 
     #[test]
     fn test_primitive_array_all_invalid() {
-        let mut builder = PrimitiveArrayBuilder::<u16>::with_capacity(3, DataType::U16);
+        let mut builder = PrimitiveArrayBuilder::<u16>::with_capacity(3);
         builder.append(None);
         builder.append(None);
         builder.append(None);
@@ -180,7 +180,7 @@ mod tests {
 
     #[test]
     fn test_primitive_array_iter() {
-        let mut builder = PrimitiveArrayBuilder::<i64>::with_capacity(5, DataType::Integer);
+        let mut builder = PrimitiveArrayBuilder::<i64>::with_capacity(5);
         builder.append(Some(1));
         builder.append(Some(2));
         builder.append(None);
@@ -199,11 +199,11 @@ mod tests {
 
     #[test]
     fn test_primitive_array_is_empty() {
-        let builder = PrimitiveArrayBuilder::<i64>::with_capacity(0, DataType::Integer);
+        let builder = PrimitiveArrayBuilder::<i64>::with_capacity(0);
         let arr = builder.finish();
         assert!(arr.is_empty());
 
-        let mut builder = PrimitiveArrayBuilder::<i64>::with_capacity(1, DataType::Integer);
+        let mut builder = PrimitiveArrayBuilder::<i64>::with_capacity(1);
         builder.append(Some(100));
         let arr = builder.finish();
         assert!(!arr.is_empty());
@@ -211,7 +211,7 @@ mod tests {
 
     #[test]
     fn test_primitive_array_as_slice() {
-        let mut builder = PrimitiveArrayBuilder::<i64>::with_capacity(3, DataType::Integer);
+        let mut builder = PrimitiveArrayBuilder::<i64>::with_capacity(3);
         builder.append(Some(1));
         builder.append(Some(2));
         builder.append(Some(3));
@@ -220,9 +220,9 @@ mod tests {
         assert_eq!(arr.as_slice(), &[1, 2, 3]);
     }
 
-    #[test]
-    #[should_panic(expected = "assertion `left == right` failed\n  left: Float\n right: Integer")]
-    fn test_primitive_array_builder_with_capacity_wrong_type() {
-        let _builder = PrimitiveArrayBuilder::<i64>::with_capacity(5, DataType::Float);
-    }
+    // #[test]
+    // #[should_panic(expected = "assertion `left == right` failed\n  left: Float\n right: Integer")]
+    // fn test_primitive_array_builder_with_capacity_wrong_type() {
+    //     let _builder = PrimitiveArrayBuilder::<i64>::with_capacity(5, DataType::Float);
+    // }
 }

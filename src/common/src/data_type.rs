@@ -66,19 +66,19 @@ impl DataType {
 impl DataType {
     pub fn array_builder(&self, capacity: usize) -> ArrayBuilderImpl {
         match self {
-            DataType::Bool => BoolArrayBuilder::with_capacity(capacity, self.clone()).into(),
-            DataType::Integer => IntegerArrayBuilder::with_capacity(capacity, self.clone()).into(),
-            DataType::Float => FloatArrayBuilder::with_capacity(capacity, self.clone()).into(),
-            DataType::String => StringArrayBuilder::with_capacity(capacity, self.clone()).into(),
-            DataType::U16 => U16ArrayBuilder::with_capacity(capacity, self.clone()).into(),
-            DataType::NodeId => NodeIdArrayBuilder::with_capacity(capacity, self.clone()).into(),
-            DataType::RelId => RelIdArrayBuilder::with_capacity(capacity, self.clone()).into(),
-            DataType::List(_) => ListArrayBuilder::with_capacity(capacity, self.clone()).into(),
-            DataType::Node => NodeArrayBuilder::with_capacity(capacity, self.clone()).into(),
-            DataType::Rel => RelArrayBuilder::with_capacity(capacity, self.clone()).into(),
+            DataType::Bool => BoolArrayBuilder::with_capacity(capacity).into(),
+            DataType::Integer => IntegerArrayBuilder::with_capacity(capacity).into(),
+            DataType::Float => FloatArrayBuilder::with_capacity(capacity).into(),
+            DataType::String => StringArrayBuilder::with_capacity(capacity).into(),
+            DataType::U16 => U16ArrayBuilder::with_capacity(capacity).into(),
+            DataType::NodeId => NodeIdArrayBuilder::with_capacity(capacity).into(),
+            DataType::RelId => RelIdArrayBuilder::with_capacity(capacity).into(),
+            DataType::List(inner) => ListArrayBuilder::with_capacity_and_type(capacity, &inner).into(),
+            DataType::Node => NodeArrayBuilder::with_capacity(capacity).into(),
+            DataType::Rel => RelArrayBuilder::with_capacity(capacity).into(),
             DataType::Path => todo!(),
-            DataType::Property => PropertyArrayBuilder::with_capacity(capacity, self.clone()).into(),
-            DataType::PropertyMap => PropertyMapArrayBuilder::with_capacity(capacity, self.clone()).into(),
+            DataType::Property => PropertyArrayBuilder::with_capacity(capacity).into(),
+            DataType::PropertyMap => PropertyMapArrayBuilder::with_capacity(capacity).into(),
         }
     }
 }

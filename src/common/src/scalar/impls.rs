@@ -5,6 +5,7 @@
 
 //! Contains all macro-generated implementations of scalar methods
 
+use crate::data_type::DataType;
 // use crate::data_type::DataType;
 use crate::macros::{for_all_primitive_variants, for_all_variants};
 use crate::scalar::{Scalar, ScalarImpl, ScalarRef, ScalarRefImpl};
@@ -85,6 +86,10 @@ macro_rules! impl_scalar {
                 fn as_scalar_ref(&self) -> $Owned {
                     *self
                 }
+
+                fn data_type(&self) -> DataType {
+                    DataType::$Abc
+                }
             }
 
             #[doc = concat!(
@@ -111,6 +116,10 @@ impl Scalar for String {
 
     fn as_scalar_ref(&self) -> &str {
         self.as_str()
+    }
+
+    fn data_type(&self) -> DataType {
+        DataType::String
     }
 }
 

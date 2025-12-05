@@ -1,6 +1,6 @@
 use crate::array::list::ListArray;
 use crate::array::{ArrayImpl, ArrayImplRef};
-use crate::data_type::F64;
+use crate::data_type::{DataType, F64};
 use crate::scalar::{Scalar, ScalarRef, ScalarRefImpl};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -16,6 +16,10 @@ impl Scalar for ListValue {
             start: 0,
             end: self.0.len() as u32,
         }
+    }
+
+    fn data_type(&self) -> DataType {
+        DataType::List(Box::new(self.0.data_type()))
     }
 }
 

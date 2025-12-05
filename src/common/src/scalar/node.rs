@@ -1,5 +1,6 @@
 use crate::NodeId;
 use crate::array::node::NodeArray;
+use crate::data_type::DataType;
 use crate::scalar::list::{ListValue, ListValueRef};
 use crate::scalar::{PropertyMapValue, PropertyMapValueRef, Scalar, ScalarRef};
 
@@ -20,6 +21,10 @@ impl Scalar for NodeValue {
             labels: self.labels.as_scalar_ref(),
             properties: self.properties.as_scalar_ref(),
         }
+    }
+
+    fn data_type(&self) -> DataType {
+        DataType::Node
     }
 }
 

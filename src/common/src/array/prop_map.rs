@@ -52,8 +52,8 @@ pub struct PropertyMapArrayBuilder {
 impl ArrayBuilder for PropertyMapArrayBuilder {
     type Array = PropertyMapArray;
 
-    fn with_capacity(capacity: usize, typ: DataType) -> Self {
-        assert_eq!(typ, DataType::PropertyMap);
+    fn with_capacity(capacity: usize) -> Self {
+        // assert_eq!(typ, DataType::PropertyMap);
         Self {
             buffer: Vec::with_capacity(capacity),
             valid: MaskMut::with_capacity(capacity),
@@ -157,7 +157,7 @@ mod tests {
 
     #[test]
     fn test_empty_prop_map_array() {
-        let builder = PropertyMapArrayBuilder::with_capacity(0, DataType::PropertyMap);
+        let builder = PropertyMapArrayBuilder::with_capacity(0);
         let arr = builder.finish();
         assert!(arr.is_empty());
         assert_eq!(arr.len(), 0);
@@ -166,7 +166,7 @@ mod tests {
 
     #[test]
     fn test_all_nulls_prop_map_array() {
-        let mut builder = PropertyMapArrayBuilder::with_capacity(3, DataType::PropertyMap);
+        let mut builder = PropertyMapArrayBuilder::with_capacity(3);
         builder.append_n(None, 2);
         let arr = builder.finish();
         assert_eq!(arr.len(), 2);
@@ -177,6 +177,6 @@ mod tests {
     #[test]
     #[should_panic(expected = "assertion `left == right` failed")]
     fn test_builder_with_wrong_type() {
-        let _builder = PropertyMapArrayBuilder::with_capacity(5, DataType::String);
+        let _builder = PropertyMapArrayBuilder::with_capacity(5);
     }
 }
