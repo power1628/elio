@@ -33,8 +33,8 @@ impl Executor for AllNodeScanExectuor {
                 Ok(iter) => iter,
                 Err(e) => {
                     tracing::error!("node scan error: {:?}", e);
-                    if (tx.blocking_send(Err(e.into()).is_err())) {
-                        tracing::warn!("recv dropped, could not send scan error {:?}", e);
+                    if tx.blocking_send(Err(e.into())).is_err() {
+                        tracing::warn!("recv dropped, could not send scan error.");
                     }
                     return;
                 }
