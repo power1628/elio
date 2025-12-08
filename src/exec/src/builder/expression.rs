@@ -2,8 +2,8 @@ use mojito_common::IrToken;
 use mojito_common::schema::{Name2ColumnMap, Schema};
 use mojito_cypher::expr::{Constant, CreateMap, Expr, PropertyAccess, VariableRef};
 use mojito_expr::impl_::constant::ConstantExpr;
-use mojito_expr::impl_::create_map::CreateMapExpr;
-use mojito_expr::impl_::property_access::PropertyAccessExpr;
+use mojito_expr::impl_::create_map::CreateStructExpr;
+use mojito_expr::impl_::field_access::FieldAccessExpr;
 use mojito_expr::impl_::variable_ref::VariableRefExpr;
 use mojito_expr::impl_::{BoxedExpression, Expression};
 
@@ -46,7 +46,7 @@ fn build_variable(ctx: &BuildExprContext<'_>, variable_ref: &VariableRef) -> Res
 
 fn build_property_access(
     ctx: &BuildExprContext<'_>,
-    _property_access @ PropertyAccess { expr, property, .. }: &PropertyAccess,
+    property_access @ PropertyAccess { expr, property, .. }: &PropertyAccess,
 ) -> Result<BoxedExpression, BuildError> {
     let input = build_expression(ctx, expr)?;
     let token = match property {
@@ -55,7 +55,7 @@ fn build_property_access(
             return Err(BuildError::unresolved_token(key.clone()));
         }
     };
-    let expr = PropertyAccessExpr::new(input, *token);
+    let expr = FieldAccessExpr::new(input, *token, property_access.typ());
     Ok(expr.boxed())
 }
 
@@ -74,5 +74,5 @@ fn build_create_map(ctx: &BuildExprContext<'_>, create_map: &CreateMap) -> Resul
         .map(|(token, expr)| build_expression(ctx, expr).map(|expr| (token.clone(), expr)))
         .collect::<Result<Vec<_>, _>>()?;
 
-    Ok(CreateMapExpr { properties }.boxed())
+    Ok(CreateStructExpr { fields: properties }.boxed())
 }

@@ -1,4 +1,4 @@
-use mojito_common::array::ArrayImpl;
+use mojito_common::array::ArrayRef;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::data_type::DataType;
 
@@ -18,11 +18,11 @@ impl VariableRefExpr {
 }
 
 impl Expression for VariableRefExpr {
-    fn typ(&self) -> DataType {
-        self.typ.clone()
+    fn typ(&self) -> &DataType {
+        &self.typ
     }
 
-    fn eval_batch(&self, chunk: &DataChunk, _ctx: &dyn EvalCtx) -> Result<ArrayImpl, EvalError> {
-        Ok(chunk.column(self.idx).clone())
+    fn eval_batch(&self, chunk: &DataChunk, _ctx: &dyn EvalCtx) -> Result<ArrayRef, EvalError> {
+        Ok(chunk.column(self.idx))
     }
 }

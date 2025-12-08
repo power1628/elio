@@ -1,7 +1,7 @@
 use mojito_common::LabelId;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::array::prop_map::PropertyMapArray;
-use mojito_common::array::{Array, ArrayBuilder, NodeIdArray, NodeIdArrayBuilder};
+use mojito_common::array::{Array, ArrayBuilder, VirtualNodeArray, VirtualNodeArrayBuilder};
 
 use crate::cf_property;
 use crate::codec::NodeFormat;
@@ -16,7 +16,7 @@ pub(crate) fn batch_node_create(
     tx: &TransactionImpl,
     labels: &[LabelId],
     props: &PropertyMapArray,
-) -> Result<NodeIdArray, GraphStoreError> {
+) -> Result<VirtualNodeArray, GraphStoreError> {
     assert_eq!(labels.len(), props.len());
     let len = labels.len();
 
@@ -44,7 +44,7 @@ pub(crate) fn batch_node_create(
     drop(guard);
 
     // create node ids array
-    let mut ids = NodeIdArrayBuilder::with_capacity(len);
+    let mut ids = VirtualNodeArrayBuilder::with_capacity(len);
     for id in node_ids.iter() {
         ids.append(Some(*id));
     }
@@ -72,7 +72,7 @@ pub struct NodeIterator<'a, D: rocksdb::DBAccess> {
 
 impl<'a, D: rocksdb::DBAccess> DataChunkIterator for NodeIterator<'a, D> {
     fn next_batch(&mut self) -> Result<Option<DataChunk>, GraphStoreError> {
-        let mut builder = NodeIdArrayBuilder::with_capacity(self.opts.batch_size);
+        let mut builder = VirtualNodeArrayBuilder::with_capacity(self.opts.batch_size);
         for _ in 0..self.opts.batch_size {
             if let Some(item) = self.iter.next() {
                 let (key, _val) = item.map_err(GraphStoreError::Rocksdb)?;

@@ -1,17 +1,44 @@
 use std::iter;
 use std::iter::once;
+use std::sync::Arc;
 
 use bitvec::prelude::*;
 
 use crate::NodeId;
+use crate::array::PhysicalType;
 use crate::array::datum::{NodeValue, StructValue};
 
+#[derive(Clone)]
 pub struct NodeArray {
-    ids: Box<[NodeId]>,
-    label_offsets: Box<[usize]>,
-    label_values: Box<[String]>,
-    props: Box<[StructValue]>,
+    ids: Arc<[NodeId]>,
+    label_offsets: Arc<[usize]>,
+    label_values: Arc<[String]>,
+    props: Arc<[StructValue]>,
     valid: BitVec,
+}
+impl NodeArray {
+    pub fn physical_type(&self) -> PhysicalType {
+        PhysicalType::Node
+    }
+
+    pub fn valid_map(&self) -> &BitVec {
+        &self.valid
+    }
+
+    pub fn set_valid_map(&mut self, valid: BitVec) {
+        self.valid = valid;
+    }
+
+    pub fn len(&self) -> usize {
+        self.valid.len()
+    }
+
+    pub fn props_iter(&self) -> impl Iterator<Item = Option<&StructValue>> + '_ {
+        self.valid
+            .iter()
+            .enumerate()
+            .map(|(i, v)| if *v { Some(&self.props[i]) } else { None })
+    }
 }
 
 pub struct NodeArrayBuilder {
@@ -49,8 +76,12 @@ impl NodeArrayBuilder {
         self.push_n(value, 1);
     }
 
+    pub fn len(&self) -> usize {
+        self.valid.len()
+    }
+
     pub fn finish(self) -> NodeArray {
-        let ids = self.ids.into_boxed_slice();
+        let ids = self.ids.into();
         let label_offsets = once(0)
             .chain(self.labels.iter().scan(0, |acc, x| {
                 *acc += x.len();
@@ -58,9 +89,9 @@ impl NodeArrayBuilder {
                 Some(offset)
             }))
             .collect::<Vec<_>>()
-            .into_boxed_slice();
-        let label_values = self.labels.into_iter().flatten().collect::<Vec<_>>().into_boxed_slice();
-        let props = self.props.into_boxed_slice();
+            .into();
+        let label_values = self.labels.into_iter().flatten().collect::<Vec<_>>().into();
+        let props = self.props.into();
         let valid = self.valid;
         NodeArray {
             ids,
@@ -72,17 +103,36 @@ impl NodeArrayBuilder {
     }
 }
 
-pub struct NodeIdArray {
-    data: Box<[NodeId]>,
+#[derive(Clone)]
+pub struct VirtualNodeArray {
+    data: Arc<[NodeId]>,
     valid: BitVec,
 }
 
-pub struct NodeIdArrayBuilder {
+impl VirtualNodeArray {
+    pub fn physical_type(&self) -> PhysicalType {
+        PhysicalType::VirtualNode
+    }
+
+    pub fn valid_map(&self) -> &BitVec {
+        &self.valid
+    }
+
+    pub fn set_valid_map(&mut self, valid: BitVec) {
+        self.valid = valid;
+    }
+
+    pub fn len(&self) -> usize {
+        self.valid.len()
+    }
+}
+
+pub struct VirtualNodeArrayBuilder {
     data: Vec<NodeId>,
     valid: BitVec,
 }
 
-impl NodeIdArrayBuilder {
+impl VirtualNodeArrayBuilder {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             data: Vec::with_capacity(capacity),
@@ -104,9 +154,13 @@ impl NodeIdArrayBuilder {
         self.push_n(value, 1);
     }
 
-    pub fn finish(self) -> NodeIdArray {
-        let data = self.data.into_boxed_slice();
+    pub fn len(&self) -> usize {
+        self.valid.len()
+    }
+
+    pub fn finish(self) -> VirtualNodeArray {
+        let data = self.data.into();
         let valid = self.valid;
-        NodeIdArray { data, valid }
+        VirtualNodeArray { data, valid }
     }
 }
