@@ -1,121 +1,52 @@
-use std::sync::Arc;
+use bitvec::prelude::*;
 
-use crate::array::buffer::{Buffer, BufferMut};
-use crate::array::mask::{Mask, MaskMut};
-use crate::array::{Array, ArrayBuilder, ArrayBuilderImpl, ArrayImpl};
-use crate::data_type::DataType;
-use crate::scalar::list::{ListValue, ListValueRef};
+use crate::array::{ArrayBuilderImpl, ArrayImpl};
 
-#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct ListArray {
-    data: Arc<ArrayImpl>,
-    offsets: Buffer<u32>,
-    valid: Mask,
+    offsets: Box<[usize]>,
+    child: Box<ArrayImpl>,
+    valid: BitVec,
 }
 
-impl Array for ListArray {
-    type Builder = ListArrayBuilder;
-    type OwnedItem = ListValue;
-    type RefItem<'a> = ListValueRef<'a>;
-
-    fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
-        self.valid.get(idx).then(|| {
-            let start = self.offsets[idx];
-            let end = self.offsets[idx + 1];
-            ListValueRef::new(self.data.as_ref(), start, end)
-        })
-    }
-
-    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
-        let start = self.offsets[idx];
-        let end = self.offsets[idx + 1];
-        ListValueRef::new(self.data.as_ref(), start, end)
-    }
-
-    fn len(&self) -> usize {
-        self.offsets.len() - 1
-    }
-
-    fn iter(&self) -> super::ArrayIterator<'_, Self> {
-        super::ArrayIterator::new(self)
-    }
-
-    fn data_type(&self) -> DataType {
-        DataType::List(Box::new(self.data.data_type()))
-    }
-}
-
-#[derive(Debug)]
 pub struct ListArrayBuilder {
-    data: Box<ArrayBuilderImpl>,
-    offsets: BufferMut<u32>,
-    valid: MaskMut,
+    offsets: Vec<usize>,
+    child: Box<ArrayBuilderImpl>,
+    valid: BitVec,
 }
 
 impl ListArrayBuilder {
-    pub fn with_capacity_and_type(capacity: usize, inner: &DataType) -> Self {
-        let mut offsets = BufferMut::with_capacity(capacity + 1);
-        offsets.push(0);
+    pub fn new(child: Box<ArrayBuilderImpl>) -> Self {
         Self {
-            data: Box::new(inner.array_builder(capacity)),
-            offsets,
-            valid: MaskMut::with_capacity(capacity),
-        }
-    }
-}
-
-impl ArrayBuilder for ListArrayBuilder {
-    type Array = ListArray;
-
-    /// Use `with_capacity_and_type` for `ListArrayBuilder`. This method defaults to List<Integer> and may be removed
-    /// in the future."
-    fn with_capacity(capacity: usize) -> Self {
-        let inner_type = {
-            DataType::Integer
-            // match typ {
-            //     DataType::List(inner_typ) => inner_typ,
-            //     _ => panic!("expected list type"),
-            // }
-        };
-        let mut offsets = BufferMut::with_capacity(capacity + 1);
-        offsets.push(0);
-        Self {
-            data: Box::new(inner_type.array_builder(capacity)),
-            offsets,
-            valid: MaskMut::with_capacity(capacity),
+            offsets: vec![0],
+            child,
+            valid: BitVec::new(),
         }
     }
 
-    fn append_n(&mut self, value: Option<ListValueRef<'_>>, repeat: usize) {
-        match value {
-            Some(list) => {
-                for _ in 0..repeat {
-                    for item in list.iter() {
-                        self.data.append(item);
-                    }
-                    self.offsets.push(self.data.len() as u32);
-                }
-                self.valid.append_n(true, repeat);
-            }
-            None => {
-                self.offsets.push_n(self.data.len() as u32, repeat);
-                self.valid.append_n(false, repeat);
-            }
-        }
+    pub fn child(&mut self) -> &mut ArrayBuilderImpl {
+        &mut self.child
     }
 
-    fn finish(self) -> Self::Array {
-        let data = self.data.finish();
-        let offsets = self.offsets.freeze();
-        let valid = self.valid.freeze();
-        Self::Array {
-            data: Arc::new(data),
-            offsets,
-            valid,
-        }
+    // push n element sizes
+    pub fn push_n(&mut self, size: Option<usize>, repeat: usize) {
+        let size = size.unwrap_or(0);
+        // update the offset
+        let last_offset = *self.offsets.last().unwrap();
+        let to_extend = (0..repeat).into_iter().scan(last_offset, |acc, _| {
+            *acc += size;
+            Some(*acc)
+        });
+        self.offsets.extend(to_extend);
     }
 
-    fn len(&self) -> usize {
-        self.offsets.len() - 1
+    pub fn push(&mut self, size: Option<usize>) {
+        self.push_n(size, 1);
+    }
+
+    pub fn finish(self) -> ListArray {
+        let offsets = self.offsets.into_boxed_slice();
+        let child = Box::new(self.child.finish());
+        let valid = self.valid;
+        ListArray { offsets, child, valid }
     }
 }

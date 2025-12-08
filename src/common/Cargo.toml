@@ -4,7 +4,8 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-arrow = { workspace = true }
+# arrow = { workspace = true }
+bitvec = { workspace = true }
 bytes = { workspace = true }
 derive_more = { workspace = true, features = ["full"] }
 enum-as-inner = { workspace = true }

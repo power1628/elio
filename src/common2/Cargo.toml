@@ -1,0 +1,8 @@
+[package]
+name = "common2"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+arrow = { workspace = true }
+bitvec = { workspace = true }

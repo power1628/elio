@@ -1,11 +1,12 @@
 use enum_as_inner::EnumAsInner;
 
 pub mod array;
+// pub mod scalar;
+
 pub mod data_type;
 mod macros;
 pub mod mapb;
 pub mod order;
-pub mod scalar;
 pub mod schema;
 pub mod store_types;
 pub mod value;

@@ -1,104 +1,112 @@
-use crate::array::list::{ListArray, ListArrayBuilder};
-use crate::array::mask::{Mask, MaskMut};
-use crate::array::prop_map::{PropertyMapArray, PropertyMapArrayBuilder};
-use crate::array::{Array, ArrayBuilder, NodeIdArray, NodeIdArrayBuilder};
-use crate::data_type::DataType;
-use crate::scalar::node::{NodeValue, NodeValueRef};
+use std::iter;
+use std::iter::once;
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+use bitvec::prelude::*;
+
+use crate::NodeId;
+use crate::array::datum::{NodeValue, StructValue};
+
 pub struct NodeArray {
-    id: NodeIdArray,
-    labels: ListArray,
-    properties: PropertyMapArray,
-    // TODO(pgao): inline hot properties here
-    valid: Mask,
+    ids: Box<[NodeId]>,
+    label_offsets: Box<[usize]>,
+    label_values: Box<[String]>,
+    props: Box<[StructValue]>,
+    valid: BitVec,
 }
 
-impl Array for NodeArray {
-    type Builder = NodeArrayBuilder;
-    type OwnedItem = NodeValue;
-    type RefItem<'a> = NodeValueRef<'a>;
-
-    fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
-        self.valid.get(idx).then(|| {
-            let id = self.id.get(idx).unwrap();
-            // SAFETY:
-            // labels and properties never be null
-            let labels = self.labels.get(idx).unwrap();
-            let properties = self.properties.get(idx).unwrap();
-            NodeValueRef::new(id, labels, properties)
-        })
-    }
-
-    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
-        unsafe {
-            let id = self.id.get_unchecked(idx);
-            let labels = self.labels.get_unchecked(idx);
-            let properties = self.properties.get_unchecked(idx);
-            NodeValueRef::new(id, labels, properties)
-        }
-    }
-
-    fn len(&self) -> usize {
-        self.id.len()
-    }
-
-    fn iter(&self) -> super::ArrayIterator<'_, Self> {
-        super::ArrayIterator::new(self)
-    }
-
-    fn data_type(&self) -> DataType {
-        DataType::Node
-    }
-}
-
-#[derive(Debug)]
 pub struct NodeArrayBuilder {
-    id: NodeIdArrayBuilder,
-    labels: ListArrayBuilder,
-    properties: PropertyMapArrayBuilder,
-    valid: MaskMut,
+    ids: Vec<NodeId>,
+    labels: Vec<Vec<String>>,
+    props: Vec<StructValue>,
+    valid: BitVec,
 }
 
-impl ArrayBuilder for NodeArrayBuilder {
-    type Array = NodeArray;
-
-    fn with_capacity(capacity: usize) -> Self {
+impl NodeArrayBuilder {
+    pub fn with_capacity(capacity: usize) -> Self {
         Self {
-            id: NodeIdArrayBuilder::with_capacity(capacity),
-            labels: ListArrayBuilder::with_capacity_and_type(capacity, &DataType::U16),
-            properties: PropertyMapArrayBuilder::with_capacity(capacity),
-            valid: MaskMut::with_capacity(capacity),
+            ids: Vec::with_capacity(capacity),
+            labels: Vec::with_capacity(capacity),
+            props: Vec::with_capacity(capacity),
+            valid: BitVec::with_capacity(capacity),
         }
     }
 
-    fn append_n(&mut self, value: Option<NodeValueRef<'_>>, repeat: usize) {
-        match value {
-            Some(NodeValueRef { id, labels, properties }) => {
-                self.valid.append_n(true, repeat);
-                self.id.append_n(Some(id), repeat);
-                self.labels.append_n(Some(labels), repeat);
-                self.properties.append_n(Some(properties), repeat);
-            }
-            None => {
-                self.valid.append_n(false, repeat);
-                self.id.append_n(None, repeat);
-                self.labels.append_n(None, repeat);
-                self.properties.append_n(None, repeat);
-            }
+    pub fn push_n(&mut self, value: Option<&NodeValue>, repeat: usize) {
+        if let Some(value) = value {
+            self.ids.extend(iter::repeat(value.id).take(repeat));
+            self.labels.extend(iter::repeat(value.labels.clone()).take(repeat));
+            self.props.extend(iter::repeat(value.props.clone()).take(repeat));
+            self.valid.extend(iter::repeat(true).take(repeat));
+        } else {
+            self.ids.extend(iter::repeat(NodeId::default()).take(repeat));
+            self.labels.extend(iter::repeat(Vec::new()).take(repeat));
+            self.props.extend(iter::repeat(StructValue::default()).take(repeat));
+            self.valid.extend(iter::repeat(false).take(repeat));
         }
     }
 
-    fn finish(self) -> Self::Array {
-        Self::Array {
-            id: self.id.finish(),
-            labels: self.labels.finish(),
-            properties: self.properties.finish(),
-            valid: self.valid.freeze(),
+    pub fn push(&mut self, value: Option<&NodeValue>) {
+        self.push_n(value, 1);
+    }
+
+    pub fn finish(self) -> NodeArray {
+        let ids = self.ids.into_boxed_slice();
+        let label_offsets = once(0)
+            .chain(self.labels.iter().scan(0, |acc, x| {
+                *acc += x.len();
+                let offset = *acc;
+                Some(offset)
+            }))
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+        let label_values = self.labels.into_iter().flatten().collect::<Vec<_>>().into_boxed_slice();
+        let props = self.props.into_boxed_slice();
+        let valid = self.valid;
+        NodeArray {
+            ids,
+            label_offsets,
+            label_values,
+            props,
+            valid,
+        }
+    }
+}
+
+pub struct NodeIdArray {
+    data: Box<[NodeId]>,
+    valid: BitVec,
+}
+
+pub struct NodeIdArrayBuilder {
+    data: Vec<NodeId>,
+    valid: BitVec,
+}
+
+impl NodeIdArrayBuilder {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            data: Vec::with_capacity(capacity),
+            valid: BitVec::with_capacity(capacity),
         }
     }
 
-    fn len(&self) -> usize {
-        self.id.len()
+    pub fn push_n(&mut self, value: Option<&NodeId>, repeat: usize) {
+        if let Some(value) = value {
+            self.data.extend(iter::repeat(value).take(repeat));
+            self.valid.extend(iter::repeat(true).take(repeat));
+        } else {
+            self.data.extend(iter::repeat(NodeId::default()).take(repeat));
+            self.valid.extend(iter::repeat(false).take(repeat));
+        }
+    }
+
+    pub fn push(&mut self, value: Option<&NodeId>) {
+        self.push_n(value, 1);
+    }
+
+    pub fn finish(self) -> NodeIdArray {
+        let data = self.data.into_boxed_slice();
+        let valid = self.valid;
+        NodeIdArray { data, valid }
     }
 }
