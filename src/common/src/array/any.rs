@@ -2,20 +2,33 @@ use std::sync::Arc;
 
 use bitvec::prelude::*;
 
-use crate::array::PhysicalType;
-use crate::array::datum::Datum;
+use crate::array::datum::{ScalarRef, ScalarValue};
+use crate::array::{Array, ArrayBuilder, PhysicalType};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct AnyArray {
-    data: Arc<[Datum]>,
+    data: Arc<[ScalarValue]>,
     valid: BitVec,
 }
 
-impl AnyArray {
-    pub fn physical_type(&self) -> PhysicalType {
-        PhysicalType::Any
+impl Array for AnyArray {
+    type Builder = AnyArrayBuilder;
+    type RefItem<'a> = ScalarRef<'a>;
+
+    fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
+        self.valid.get(idx).map(|_| ScalarRef::from(&self.data[idx]))
     }
 
+    fn len(&self) -> usize {
+        self.valid.len()
+    }
+
+    fn physical_type(&self) -> PhysicalType {
+        PhysicalType::Any
+    }
+}
+
+impl AnyArray {
     pub fn valid_map(&self) -> &BitVec {
         &self.valid
     }
@@ -23,16 +36,30 @@ impl AnyArray {
     pub fn set_valid_map(&mut self, valid: BitVec) {
         self.valid = valid;
     }
-
-    pub fn len(&self) -> usize {
-        self.valid.len()
-    }
 }
 
 #[derive(Debug)]
 pub struct AnyArrayBuilder {
-    data: Vec<Datum>,
+    data: Vec<ScalarValue>,
     valid: BitVec,
+}
+
+impl ArrayBuilder for AnyArrayBuilder {
+    type Array = AnyArray;
+
+    fn push_n(&mut self, item: Option<ScalarRef<'_>>, repeat: usize) {
+        if let Some(item) = item {
+            self.data.extend(std::iter::repeat_n(item.to_owned(), repeat));
+            self.valid.extend(std::iter::repeat_n(true, repeat));
+        } else {
+            self.data.extend(std::iter::repeat_n(ScalarValue::default(), repeat));
+            self.valid.extend(std::iter::repeat_n(false, repeat));
+        }
+    }
+
+    fn finish(self) -> Self::Array {
+        todo!()
+    }
 }
 
 impl AnyArrayBuilder {
@@ -43,17 +70,17 @@ impl AnyArrayBuilder {
         }
     }
 
-    pub fn push_n(&mut self, item: Option<&Datum>, repeat: usize) {
+    pub fn push_n(&mut self, item: Option<&ScalarValue>, repeat: usize) {
         if let Some(item) = item {
             self.data.extend(std::iter::repeat_n(item.to_owned(), repeat));
             self.valid.extend(std::iter::repeat_n(true, repeat));
         } else {
-            self.data.extend(std::iter::repeat_n(Datum::default(), repeat));
+            self.data.extend(std::iter::repeat_n(ScalarValue::default(), repeat));
             self.valid.extend(std::iter::repeat_n(false, repeat));
         }
     }
 
-    pub fn push(&mut self, item: Option<&Datum>) {
+    pub fn push(&mut self, item: Option<&ScalarValue>) {
         self.push_n(item, 1);
     }
 

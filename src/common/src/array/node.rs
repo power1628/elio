@@ -1,14 +1,13 @@
-use std::iter;
 use std::iter::once;
 use std::sync::Arc;
 
 use bitvec::prelude::*;
 
 use crate::NodeId;
-use crate::array::PhysicalType;
-use crate::array::datum::{NodeValue, StructValue};
+use crate::array::datum::{NodeValue, NodeValueRef, StructValue};
+use crate::array::{Array, PhysicalType};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct NodeArray {
     ids: Arc<[NodeId]>,
     label_offsets: Arc<[usize]>,
@@ -16,21 +15,34 @@ pub struct NodeArray {
     props: Arc<[StructValue]>,
     valid: BitVec,
 }
-impl NodeArray {
-    pub fn physical_type(&self) -> PhysicalType {
-        PhysicalType::Node
+
+impl Array for NodeArray {
+    type RefItem<'a> = NodeValueRef<'a>;
+
+    fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
+        self.valid.get(idx).map(|_| NodeValueRef {
+            id: self.ids[idx],
+            labels: &self.label_values[self.label_offsets[idx]..self.label_offsets[idx + 1]],
+            props: &self.props[idx],
+        })
     }
 
+    fn len(&self) -> usize {
+        self.valid.len()
+    }
+
+    fn physical_type(&self) -> PhysicalType {
+        PhysicalType::Node
+    }
+}
+
+impl NodeArray {
     pub fn valid_map(&self) -> &BitVec {
         &self.valid
     }
 
     pub fn set_valid_map(&mut self, valid: BitVec) {
         self.valid = valid;
-    }
-
-    pub fn len(&self) -> usize {
-        self.valid.len()
     }
 
     pub fn props_iter(&self) -> impl Iterator<Item = Option<&StructValue>> + '_ {
@@ -61,15 +73,15 @@ impl NodeArrayBuilder {
 
     pub fn push_n(&mut self, value: Option<&NodeValue>, repeat: usize) {
         if let Some(value) = value {
-            self.ids.extend(iter::repeat(value.id).take(repeat));
-            self.labels.extend(iter::repeat(value.labels.clone()).take(repeat));
-            self.props.extend(iter::repeat(value.props.clone()).take(repeat));
-            self.valid.extend(iter::repeat(true).take(repeat));
+            self.ids.extend(std::iter::repeat_n(value.id, repeat));
+            self.labels.extend(std::iter::repeat_n(value.labels.clone(), repeat));
+            self.props.extend(std::iter::repeat_n(value.props.clone(), repeat));
+            self.valid.extend(std::iter::repeat_n(true, repeat));
         } else {
-            self.ids.extend(iter::repeat(NodeId::default()).take(repeat));
-            self.labels.extend(iter::repeat(Vec::new()).take(repeat));
-            self.props.extend(iter::repeat(StructValue::default()).take(repeat));
-            self.valid.extend(iter::repeat(false).take(repeat));
+            self.ids.extend(std::iter::repeat_n(NodeId::default(), repeat));
+            self.labels.extend(std::iter::repeat_n(Vec::new(), repeat));
+            self.props.extend(std::iter::repeat_n(StructValue::default(), repeat));
+            self.valid.extend(std::iter::repeat_n(false, repeat));
         }
     }
 
@@ -104,27 +116,35 @@ impl NodeArrayBuilder {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct VirtualNodeArray {
     data: Arc<[NodeId]>,
     valid: BitVec,
 }
 
-impl VirtualNodeArray {
-    pub fn physical_type(&self) -> PhysicalType {
-        PhysicalType::VirtualNode
+impl Array for VirtualNodeArray {
+    type RefItem<'a> = NodeId;
+
+    fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
+        self.valid.get(idx).map(|_| self.data[idx])
     }
 
+    fn len(&self) -> usize {
+        self.valid.len()
+    }
+
+    fn physical_type(&self) -> PhysicalType {
+        PhysicalType::VirtualNode
+    }
+}
+
+impl VirtualNodeArray {
     pub fn valid_map(&self) -> &BitVec {
         &self.valid
     }
 
     pub fn set_valid_map(&mut self, valid: BitVec) {
         self.valid = valid;
-    }
-
-    pub fn len(&self) -> usize {
-        self.valid.len()
     }
 }
 
@@ -144,11 +164,11 @@ impl VirtualNodeArrayBuilder {
 
     pub fn push_n(&mut self, value: Option<&NodeId>, repeat: usize) {
         if let Some(value) = value {
-            self.data.extend(iter::repeat(value).take(repeat));
-            self.valid.extend(iter::repeat(true).take(repeat));
+            self.data.extend(std::iter::repeat_n(value, repeat));
+            self.valid.extend(std::iter::repeat_n(true, repeat));
         } else {
-            self.data.extend(iter::repeat(NodeId::default()).take(repeat));
-            self.valid.extend(iter::repeat(false).take(repeat));
+            self.data.extend(std::iter::repeat_n(NodeId::default(), repeat));
+            self.valid.extend(std::iter::repeat_n(false, repeat));
         }
     }
 

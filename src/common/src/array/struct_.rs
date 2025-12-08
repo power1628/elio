@@ -1,17 +1,39 @@
 use std::collections::HashMap;
-use std::iter;
 use std::sync::Arc;
 
 use bitvec::prelude::*;
 use itertools::Itertools;
 
-use crate::array::{ArrayBuilderImpl, ArrayImpl, ArrayRef, PhysicalType};
+use crate::array::datum::StructValueRef;
+use crate::array::{Array, ArrayBuilderImpl, ArrayRef, PhysicalType};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct StructArray {
     // We should guarantee that if parnet is null, then all the subfields must be null
     fields: Box<[(Arc<str>, ArrayRef)]>,
     valid: BitVec,
+}
+
+impl Array for StructArray {
+    type RefItem<'a> = StructValueRef<'a>;
+
+    fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
+        self.valid.get(idx).map(|_| StructValueRef::Index { array: self, idx })
+    }
+
+    fn len(&self) -> usize {
+        self.valid.len()
+    }
+
+    fn physical_type(&self) -> PhysicalType {
+        PhysicalType::Struct(
+            self.fields
+                .iter()
+                .map(|(name, v)| (name.to_owned(), v.physical_type()))
+                .collect_vec()
+                .into_boxed_slice(),
+        )
+    }
 }
 
 impl StructArray {
@@ -21,8 +43,8 @@ impl StructArray {
 
     /// Return the field at given name.
     /// NOTICE: the valid map will not be joined
-    pub fn field_at(&self, name: &str) -> Option<ArrayRef> {
-        self.fields.iter().find(|(n, _)| **n == *name).map(|(_, v)| v.clone())
+    pub fn field_at(&self, name: &str) -> Option<&ArrayRef> {
+        self.fields.iter().find(|(n, _)| **n == *name).map(|(_, v)| v)
     }
 
     pub fn valid_map(&self) -> &BitVec {
@@ -31,20 +53,6 @@ impl StructArray {
 
     pub fn set_valid_map(&mut self, valid: BitVec) {
         self.valid = valid;
-    }
-
-    pub fn len(&self) -> usize {
-        self.valid.len()
-    }
-
-    pub fn physical_type(&self) -> PhysicalType {
-        PhysicalType::Struct(
-            self.fields
-                .iter()
-                .map(|(name, v)| (name.to_owned(), v.physical_type()))
-                .collect_vec()
-                .into_boxed_slice(),
-        )
     }
 }
 

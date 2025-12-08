@@ -7,7 +7,6 @@
 //! LabelBlock ::= <LabelId>{NumLabels}
 
 use bytes::{BufMut, Bytes, BytesMut};
-use mojito_common::scalar::PropertyMapValueRef;
 use mojito_common::{LabelId, NodeId};
 
 pub struct NodeFormat;

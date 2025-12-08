@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use mojito_common::IrToken;
 use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::{AnyArrayBuilder, ArrayImpl, ArrayRef, PhysicalType, StructArray};
+use mojito_common::array::{AnyArrayBuilder, Array, ArrayImpl, ArrayRef, PhysicalType, StructArray};
 use mojito_common::data_type::DataType;
 
 use crate::error::EvalError;

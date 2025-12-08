@@ -2,20 +2,36 @@ use std::sync::Arc;
 
 use bitvec::prelude::*;
 
-use crate::array::{ArrayBuilderImpl, ArrayImpl, PhysicalType};
+use crate::array::datum::ListValueRef;
+use crate::array::{Array, ArrayBuilderImpl, ArrayImpl, PhysicalType};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ListArray {
     offsets: Arc<[usize]>,
     child: Box<ArrayImpl>,
     valid: BitVec,
 }
 
-impl ListArray {
-    pub fn physical_type(&self) -> PhysicalType {
-        PhysicalType::List(Box::new(self.child.physical_type()))
+impl Array for ListArray {
+    type RefItem<'a> = ListValueRef<'a>;
+
+    fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
+        let start = self.offsets[idx];
+        let end = self.offsets[idx + 1];
+        let child = self.child.as_ref();
+        Some(ListValueRef::Index { child, start, end })
     }
 
+    fn len(&self) -> usize {
+        self.valid.len()
+    }
+
+    fn physical_type(&self) -> PhysicalType {
+        PhysicalType::List(Box::new(self.child.physical_type()))
+    }
+}
+
+impl ListArray {
     pub fn valid_map(&self) -> &BitVec {
         &self.valid
     }

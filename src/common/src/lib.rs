@@ -1,9 +1,11 @@
+#![feature(trusted_len)]
+
 use std::sync::Arc;
 
 use enum_as_inner::EnumAsInner;
 
 pub mod array;
-// pub mod scalar;
+pub mod scalar;
 
 pub mod data_type;
 mod macros;

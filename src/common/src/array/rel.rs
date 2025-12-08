@@ -3,11 +3,11 @@ use std::sync::Arc;
 
 use bitvec::prelude::*;
 
-use crate::array::PhysicalType;
-use crate::array::datum::{RelValue, StructValue, VirtualRel};
+use crate::array::datum::{RelValue, RelValueRef, StructValue, VirtualRel, VirtualRelRef};
+use crate::array::{Array, PhysicalType};
 use crate::{NodeId, RelationshipId};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct RelArray {
     ids: Arc<[RelationshipId]>,
     reltypes: Arc<[String]>,
@@ -17,21 +17,35 @@ pub struct RelArray {
     valid: BitVec,
 }
 
-impl RelArray {
-    pub fn physical_type(&self) -> PhysicalType {
-        PhysicalType::Rel
+impl Array for RelArray {
+    type RefItem<'a> = RelValueRef<'a>;
+
+    fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
+        self.valid.get(idx).map(|_| RelValueRef {
+            id: self.ids[idx],
+            reltype: &self.reltypes[idx],
+            start_id: self.start_ids[idx],
+            end_id: self.end_ids[idx],
+            props: &self.props[idx],
+        })
     }
 
+    fn len(&self) -> usize {
+        self.valid.len()
+    }
+
+    fn physical_type(&self) -> PhysicalType {
+        PhysicalType::Rel
+    }
+}
+
+impl RelArray {
     pub fn valid_map(&self) -> &BitVec {
         &self.valid
     }
 
     pub fn set_valid_map(&mut self, valid: BitVec) {
         self.valid = valid;
-    }
-
-    pub fn len(&self) -> usize {
-        self.valid.len()
     }
 
     pub fn props_iter(&self) -> impl Iterator<Item = Option<&StructValue>> + '_ {
@@ -100,13 +114,34 @@ impl RelArrayBuilder {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct VirtualRelArray {
     ids: Arc<[RelationshipId]>,
     reltypes: Arc<[String]>,
     start_ids: Arc<[NodeId]>,
     end_ids: Arc<[NodeId]>,
     valid: BitVec,
+}
+
+impl Array for VirtualRelArray {
+    type RefItem<'a> = VirtualRelRef<'a>;
+
+    fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
+        self.valid.get(idx).map(|_| VirtualRelRef {
+            id: self.ids[idx],
+            reltype: &self.reltypes[idx],
+            start_id: self.start_ids[idx],
+            end_id: self.end_ids[idx],
+        })
+    }
+
+    fn len(&self) -> usize {
+        self.valid.len()
+    }
+
+    fn physical_type(&self) -> PhysicalType {
+        PhysicalType::VirtualRel
+    }
 }
 
 impl VirtualRelArray {

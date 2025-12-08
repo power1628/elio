@@ -1,7 +1,7 @@
 use mojito_common::LabelId;
 use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::prop_map::PropertyMapArray;
-use mojito_common::array::{Array, ArrayBuilder, VirtualNodeArray, VirtualNodeArrayBuilder};
+use mojito_common::array::datum::{StructValue, StructValueRef};
+use mojito_common::array::{NodeArray, StructArray, VirtualNodeArray, VirtualNodeArrayBuilder};
 
 use crate::cf_property;
 use crate::codec::NodeFormat;
@@ -15,13 +15,15 @@ use crate::transaction::{DataChunkIterator, NodeScanOptions, TransactionImpl};
 pub(crate) fn batch_node_create(
     tx: &TransactionImpl,
     labels: &[LabelId],
-    props: &PropertyMapArray,
-) -> Result<VirtualNodeArray, GraphStoreError> {
+    props: &StructArray,
+) -> Result<NodeArray, GraphStoreError> {
     assert_eq!(labels.len(), props.len());
     let len = labels.len();
 
     // allocate node id for the batch
     let node_ids = tx.dict.batch_node_id(len)?;
+
+    // create node fields for the batch
 
     let mut keys = Vec::with_capacity(len);
     let mut values = Vec::with_capacity(len);
