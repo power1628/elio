@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+bitvec = { workspace = true }
 mojito_common = { workspace = true }
 mojito_parser = { workspace = true }
 thiserror = { workspace = true }

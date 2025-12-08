@@ -29,6 +29,7 @@ impl ListArray {
     }
 }
 
+#[derive(Debug)]
 pub struct ListArrayBuilder {
     offsets: Vec<usize>,
     child: Box<ArrayBuilderImpl>,

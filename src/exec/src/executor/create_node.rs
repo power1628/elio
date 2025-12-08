@@ -5,11 +5,13 @@ use mojito_expr::impl_::BoxedExpression;
 
 use super::*;
 
-// Input should have the schema of [List<u16>, PropertyMap]
+// input: Schema
+// output: Schema + Node
 #[derive(Debug)]
 pub struct CreateNodeExectuor {
     pub input: BoxedExecutor,
     pub labels: Vec<IrToken>,
+    // the return type should be struct
     pub properties: BoxedExpression,
     pub schema: Arc<Schema>,
 }

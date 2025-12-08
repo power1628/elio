@@ -5,19 +5,23 @@ use std::sync::Arc;
 use bitvec::prelude::*;
 use itertools::Itertools;
 
-use crate::array::{ArrayBuilderImpl, ArrayImpl, PhysicalType};
+use crate::array::{ArrayBuilderImpl, ArrayImpl, ArrayRef, PhysicalType};
 
 #[derive(Clone)]
 pub struct StructArray {
     // We should guarantee that if parnet is null, then all the subfields must be null
-    fields: Box<[(Arc<str>, ArrayImpl)]>,
+    fields: Box<[(Arc<str>, ArrayRef)]>,
     valid: BitVec,
 }
 
 impl StructArray {
+    pub fn from_parts(fields: Box<[(Arc<str>, ArrayRef)]>, valid: BitVec) -> Self {
+        Self { fields, valid }
+    }
+
     /// Return the field at given name.
     /// NOTICE: the valid map will not be joined
-    pub fn field_at(&self, name: &str) -> Option<ArrayImpl> {
+    pub fn field_at(&self, name: &str) -> Option<ArrayRef> {
         self.fields.iter().find(|(n, _)| **n == *name).map(|(_, v)| v.clone())
     }
 
@@ -44,6 +48,7 @@ impl StructArray {
     }
 }
 
+#[derive(Debug)]
 pub struct StructArrayBuilder {
     fields: HashMap<Arc<str>, ArrayBuilderImpl>,
     valid: BitVec,
@@ -57,7 +62,7 @@ impl StructArrayBuilder {
         }
     }
 
-    pub fn field_builder(&mut self, name: &str) -> &mut ArrayBuilderImpl {
+    pub fn field_at(&mut self, name: &str) -> &mut ArrayBuilderImpl {
         self.fields.get_mut(name).unwrap()
     }
 
@@ -74,7 +79,7 @@ impl StructArrayBuilder {
         let mut fields = self
             .fields
             .into_iter()
-            .map(|(k, v)| (k.clone(), v.finish()))
+            .map(|(k, v)| (k.clone(), Arc::new(v.finish())))
             .collect_vec();
         fields.sort_by_key(|(k, _)| k.clone());
 

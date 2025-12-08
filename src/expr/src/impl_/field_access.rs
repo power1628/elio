@@ -76,8 +76,5 @@ impl Expression for FieldAccessExpr {
 }
 
 fn struct_field_access(input: &StructArray, field: &str) -> Result<ArrayRef, EvalError> {
-    let subfield = input
-        .field_at(field)
-        .ok_or(EvalError::FieldNotFound(field.to_string()))?;
-    Ok(Arc::new(subfield))
+    input.field_at(field).ok_or(EvalError::FieldNotFound(field.to_string()))
 }

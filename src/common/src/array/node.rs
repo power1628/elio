@@ -41,6 +41,7 @@ impl NodeArray {
     }
 }
 
+#[derive(Debug)]
 pub struct NodeArrayBuilder {
     ids: Vec<NodeId>,
     labels: Vec<Vec<String>>,
@@ -127,6 +128,7 @@ impl VirtualNodeArray {
     }
 }
 
+#[derive(Debug)]
 pub struct VirtualNodeArrayBuilder {
     data: Vec<NodeId>,
     valid: BitVec,

@@ -29,6 +29,7 @@ impl AnyArray {
     }
 }
 
+#[derive(Debug)]
 pub struct AnyArrayBuilder {
     data: Vec<Datum>,
     valid: BitVec,

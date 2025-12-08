@@ -90,7 +90,7 @@ impl_array_convert!(
 {List, ListArray},
 {Struct, StructArray});
 
-#[derive(EnumAsInner)]
+#[derive(Debug, EnumAsInner)]
 pub enum ArrayBuilderImpl {
     Any(AnyArrayBuilder),
     // graph

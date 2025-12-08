@@ -43,6 +43,14 @@ impl DataType {
     pub fn is_entity(&self) -> bool {
         self.is_node() || self.is_rel()
     }
+
+    pub fn new_struct(fields: impl Iterator<Item = (Arc<str>, DataType)>) -> Self {
+        Self::Struct(fields.collect())
+    }
+
+    pub fn new_list(inner: DataType) -> Self {
+        Self::List(Box::new(inner))
+    }
 }
 
 impl DataType {

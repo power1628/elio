@@ -42,6 +42,7 @@ impl RelArray {
     }
 }
 
+#[derive(Debug)]
 pub struct RelArrayBuilder {
     ids: Vec<RelationshipId>,
     reltypes: Vec<String>,
@@ -126,6 +127,7 @@ impl VirtualRelArray {
     }
 }
 
+#[derive(Debug)]
 pub struct VirtualRelArrayBuilder {
     ids: Vec<RelationshipId>,
     reltypes: Vec<String>,
