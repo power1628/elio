@@ -31,7 +31,6 @@ macro_rules! for_all_variants {
     };
 }
 
-pub(crate) use for_all_variants;
 
 macro_rules! for_all_primitive_variants {
     ($macro:ident $(, $x:ident)*) => {
@@ -46,4 +45,3 @@ macro_rules! for_all_primitive_variants {
         }
     };
 }
-pub(crate) use for_all_primitive_variants;

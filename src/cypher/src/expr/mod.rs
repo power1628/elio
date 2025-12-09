@@ -33,7 +33,7 @@ pub enum Expr {
     AggCall(AggCall),
     Subquery(Subquery),
     LabelExpr(LabelExpr),
-    CreateMap(CreateMap),
+    CreateStruct(CreateStruct),
 }
 
 pub type BoxedExpr = Box<Expr>;
@@ -74,7 +74,7 @@ impl_expr_node_for_enum!(
     AggCall,
     Subquery,
     LabelExpr,
-    CreateMap
+    CreateStruct
 );
 
 impl Expr {
@@ -143,7 +143,7 @@ impl Expr {
             Expr::LabelExpr(label_expr) => {
                 format!("{} {}", label_expr.entity.pretty(), label_expr.op)
             }
-            Expr::CreateMap(create_map) => {
+            Expr::CreateStruct(create_map) => {
                 format!(
                     "create_map{{{}}}",
                     create_map

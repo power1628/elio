@@ -1,4 +1,4 @@
-use mojito_common::array::ArrayImpl;
+use mojito_common::array::ArrayRef;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::data_type::DataType;
 use mojito_common::{TokenId, TokenKind};
@@ -6,26 +6,12 @@ use mojito_common::{TokenId, TokenKind};
 use crate::error::EvalError;
 
 pub mod constant;
-pub mod create_map;
+pub mod create_struct;
 pub mod func_call;
-pub mod func_executor;
+// pub mod func_executor;
+pub mod field_access;
 pub mod label;
-pub mod property_access;
 pub mod variable_ref;
-
-// pub struct EvalCtx {}
-
-// impl Default for EvalCtx {
-//     fn default() -> Self {
-//         Self::new()
-//     }
-// }
-
-// impl EvalCtx {
-//     pub fn new() -> Self {
-//         Self {}
-//     }
-// }
 
 pub trait EvalCtx {
     fn get_or_create_token(&self, token: &str, kind: TokenKind) -> Result<TokenId, EvalError>;
@@ -33,8 +19,8 @@ pub trait EvalCtx {
 
 // an evaluatable expression
 pub trait Expression: Send + Sync + 'static + std::fmt::Debug {
-    fn typ(&self) -> DataType;
-    fn eval_batch(&self, chunk: &DataChunk, ctx: &dyn EvalCtx) -> Result<ArrayImpl, EvalError>;
+    fn typ(&self) -> &DataType;
+    fn eval_batch(&self, chunk: &DataChunk, ctx: &dyn EvalCtx) -> Result<ArrayRef, EvalError>;
     fn boxed(self) -> BoxedExpression
     where
         Self: Sized,

@@ -1,27 +1,47 @@
-use mojito_common::LabelId;
+use std::sync::Arc;
+
+use mojito_common::TokenKind;
 use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::prop_map::PropertyMapArray;
-use mojito_common::array::{Array, ArrayBuilder, NodeIdArray, NodeIdArrayBuilder};
+use mojito_common::array::datum::NodeValueRef;
+use mojito_common::array::{Array, ArrayImpl, NodeArray, NodeArrayBuilder, VirtualNodeArrayBuilder};
 
 use crate::cf_property;
 use crate::codec::NodeFormat;
 use crate::error::GraphStoreError;
 use crate::transaction::{DataChunkIterator, NodeScanOptions, TransactionImpl};
 
-// expected input columns
-// label: Vec<LabelId> | ListArray<u16>
-// properties: Vec<(PropertyKeyId, PropertyValue)> | AnyMapArray
-// node -> encoding -> rocksdb write batch
+// props only accept the fowlling array types
+// - StructArray
 pub(crate) fn batch_node_create(
     tx: &TransactionImpl,
-    labels: &[LabelId],
-    props: &PropertyMapArray,
-) -> Result<NodeIdArray, GraphStoreError> {
+    labels: &[String],
+    props: &ArrayImpl,
+) -> Result<NodeArray, GraphStoreError> {
     assert_eq!(labels.len(), props.len());
     let len = labels.len();
 
+    // props
+    let props = props
+        .as_struct()
+        .ok_or(GraphStoreError::type_mismatch("Expected struct array"))?;
+
+    // create label id s
+    let label_ids = labels
+        .iter()
+        .map(|l| tx.token.get_or_create_token(l, TokenKind::Label))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    // create property key names
+    let token_ids = props
+        .fields()
+        .iter()
+        .map(|(k, _)| tx.token.get_or_create_token(k, TokenKind::PropertyKey))
+        .collect::<Result<Vec<_>, _>>()?;
+
     // allocate node id for the batch
     let node_ids = tx.dict.batch_node_id(len)?;
+
+    // create node fields for the batch
 
     let mut keys = Vec::with_capacity(len);
     let mut values = Vec::with_capacity(len);
@@ -31,7 +51,7 @@ pub(crate) fn batch_node_create(
         keys.push(key);
         // labels and props must not be null
         let prop = prop.unwrap();
-        let value = NodeFormat::encode_node_value(labels, prop);
+        let value = NodeFormat::encode_node_value(&label_ids, &token_ids, prop).map_err(GraphStoreError::internal)?;
         values.push(value);
     }
 
@@ -43,13 +63,20 @@ pub(crate) fn batch_node_create(
     }
     drop(guard);
 
-    // create node ids array
-    let mut ids = NodeIdArrayBuilder::with_capacity(len);
-    for id in node_ids.iter() {
-        ids.append(Some(*id));
+    // create node array
+
+    let mut builder = NodeArrayBuilder::with_capacity(len);
+
+    for i in 0..len {
+        let node_ref = NodeValueRef {
+            id: node_ids[i],
+            labels,
+            props: props.get(i).unwrap(),
+        };
+        builder.push(Some(node_ref));
     }
-    let ids = ids.finish();
-    Ok(ids)
+
+    Ok(builder.finish())
 }
 
 pub(crate) fn batch_node_scan(
@@ -72,7 +99,7 @@ pub struct NodeIterator<'a, D: rocksdb::DBAccess> {
 
 impl<'a, D: rocksdb::DBAccess> DataChunkIterator for NodeIterator<'a, D> {
     fn next_batch(&mut self) -> Result<Option<DataChunk>, GraphStoreError> {
-        let mut builder = NodeIdArrayBuilder::with_capacity(self.opts.batch_size);
+        let mut builder = VirtualNodeArrayBuilder::with_capacity(self.opts.batch_size);
         for _ in 0..self.opts.batch_size {
             if let Some(item) = self.iter.next() {
                 let (key, _val) = item.map_err(GraphStoreError::Rocksdb)?;
@@ -80,7 +107,7 @@ impl<'a, D: rocksdb::DBAccess> DataChunkIterator for NodeIterator<'a, D> {
                     break;
                 }
                 let node_id = NodeFormat::decode_node_key(&key);
-                builder.append(Some(node_id));
+                builder.push(Some(node_id));
             } else {
                 break;
             }
@@ -90,7 +117,7 @@ impl<'a, D: rocksdb::DBAccess> DataChunkIterator for NodeIterator<'a, D> {
         if array.is_empty() {
             Ok(None)
         } else {
-            let chunk = DataChunk::new(vec![array.into()]);
+            let chunk = DataChunk::new(vec![Arc::new(array.into())]);
             Ok(Some(chunk))
         }
     }

@@ -2,13 +2,12 @@ use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
-use mojito_common::LabelId;
-use mojito_common::array::NodeIdArray;
 use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::prop_map::PropertyMapArray;
+use mojito_common::array::{ArrayImpl, NodeArray};
 
 use crate::dict::IdStore;
 use crate::error::GraphStoreError;
+use crate::token::TokenStore;
 use crate::transaction::node::{batch_node_create, batch_node_scan};
 
 mod node;
@@ -30,7 +29,7 @@ pub trait Transaction: Send + Sync {
     fn rel_scan(&self, opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError>;
     fn node_scan(&self, opts: NodeScanOptions) -> Result<Box<dyn DataChunkIterator + '_>, GraphStoreError>;
     // read-write
-    fn node_create(&self, label: &[LabelId], prop: &PropertyMapArray) -> Result<NodeIdArray, GraphStoreError>;
+    fn node_create(&self, label: &[String], prop: &ArrayImpl) -> Result<NodeArray, GraphStoreError>;
     fn relationship_create(&self, rel: &DataChunk) -> Result<DataChunk, GraphStoreError>;
     fn node_delete(&self, node: &DataChunk) -> Result<(), GraphStoreError>;
     fn relationship_delete(&self, rel: &DataChunk) -> Result<(), GraphStoreError>;
@@ -43,6 +42,7 @@ pub trait Transaction: Send + Sync {
 pub struct TransactionImpl {
     pub(crate) inner: OwnedSnapshot,
     dict: Arc<IdStore>,
+    token: Arc<TokenStore>,
     // write buffer
     write_state: Mutex<WriteState>,
 }
@@ -56,10 +56,11 @@ pub struct WriteState {
 }
 
 impl TransactionImpl {
-    pub fn new(db: Arc<rocksdb::TransactionDB>, dict: Arc<IdStore>) -> Self {
+    pub fn new(db: Arc<rocksdb::TransactionDB>, dict: Arc<IdStore>, token: Arc<TokenStore>) -> Self {
         Self {
             inner: OwnedSnapshot::new(db),
             dict,
+            token,
             write_state: WriteState::default().into(),
         }
     }
@@ -74,7 +75,7 @@ impl Transaction for TransactionImpl {
         batch_node_scan(self, opts)
     }
 
-    fn node_create(&self, label: &[LabelId], prop: &PropertyMapArray) -> Result<NodeIdArray, GraphStoreError> {
+    fn node_create(&self, label: &[String], prop: &ArrayImpl) -> Result<NodeArray, GraphStoreError> {
         batch_node_create(self, label, prop)
     }
 

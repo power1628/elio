@@ -1,114 +1,245 @@
-use crate::array::mask::{Mask, MaskMut};
-use crate::array::prop_map::{PropertyMapArray, PropertyMapArrayBuilder};
-use crate::array::{
-    Array, ArrayBuilder, ArrayIterator, NodeIdArray, NodeIdArrayBuilder, RelIdArray, RelIdArrayBuilder, U16Array,
-    U16ArrayBuilder,
-};
-use crate::data_type::DataType;
-use crate::scalar::rel::{RelValue, RelValueRef};
+use std::iter;
+use std::sync::Arc;
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+use bitvec::prelude::*;
+
+use crate::array::datum::{RelValue, RelValueRef, StructValue, VirtualRel, VirtualRelRef};
+use crate::array::{Array, PhysicalType};
+use crate::{NodeId, RelationshipId};
+
+#[derive(Debug, Clone)]
 pub struct RelArray {
-    id: RelIdArray,
-    reltype: U16Array,
-    start: NodeIdArray,
-    end: NodeIdArray,
-    properties: PropertyMapArray,
-    valid: Mask,
+    ids: Arc<[RelationshipId]>,
+    reltypes: Arc<[String]>,
+    start_ids: Arc<[NodeId]>,
+    end_ids: Arc<[NodeId]>,
+    props: Arc<[StructValue]>,
+    valid: BitVec,
 }
 
 impl Array for RelArray {
-    type Builder = RelArrayBuilder;
-    type OwnedItem = RelValue;
     type RefItem<'a> = RelValueRef<'a>;
 
     fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
-        self.valid.get(idx).then(|| unsafe { self.get_unchecked(idx) })
-    }
-
-    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
-        unsafe {
-            RelValueRef {
-                id: self.id.get_unchecked(idx),
-                reltype: self.reltype.get_unchecked(idx),
-                start: self.start.get_unchecked(idx),
-                end: self.end.get_unchecked(idx),
-                properties: self.properties.get_unchecked(idx),
+        self.valid.get(idx).and_then(|valid| {
+            if *valid {
+                Some(RelValueRef {
+                    id: self.ids[idx],
+                    reltype: &self.reltypes[idx],
+                    start_id: self.start_ids[idx],
+                    end_id: self.end_ids[idx],
+                    props: self.props[idx].as_scalar_ref(),
+                })
+            } else {
+                None
             }
-        }
+        })
     }
 
     fn len(&self) -> usize {
-        self.id.len()
+        self.valid.len()
     }
 
-    fn iter(&self) -> super::ArrayIterator<'_, Self> {
-        ArrayIterator::new(self)
+    fn physical_type(&self) -> PhysicalType {
+        PhysicalType::Rel
+    }
+}
+
+impl RelArray {
+    pub fn valid_map(&self) -> &BitVec {
+        &self.valid
     }
 
-    fn data_type(&self) -> DataType {
-        DataType::Rel
+    pub fn set_valid_map(&mut self, valid: BitVec) {
+        self.valid = valid;
+    }
+
+    pub fn props_iter(&self) -> impl Iterator<Item = Option<&StructValue>> + '_ {
+        self.props
+            .iter()
+            .zip(self.valid.iter())
+            .map(|(props, valid)| if *valid { Some(props) } else { None })
     }
 }
 
 #[derive(Debug)]
 pub struct RelArrayBuilder {
-    id: RelIdArrayBuilder,
-    reltype: U16ArrayBuilder,
-    start: NodeIdArrayBuilder,
-    end: NodeIdArrayBuilder,
-    properties: PropertyMapArrayBuilder,
-    valid: MaskMut,
+    ids: Vec<RelationshipId>,
+    reltypes: Vec<String>,
+    start_ids: Vec<NodeId>,
+    end_ids: Vec<NodeId>,
+    props: Vec<StructValue>,
+    valid: BitVec,
 }
 
-impl ArrayBuilder for RelArrayBuilder {
-    type Array = RelArray;
-
-    fn with_capacity(capacity: usize) -> Self {
-        // assert_eq!(typ, DataType::Rel);
+impl RelArrayBuilder {
+    pub fn with_capacity(capacity: usize) -> Self {
         Self {
-            id: RelIdArrayBuilder::with_capacity(capacity),
-            reltype: U16ArrayBuilder::with_capacity(capacity),
-            start: NodeIdArrayBuilder::with_capacity(capacity),
-            end: NodeIdArrayBuilder::with_capacity(capacity),
-            properties: PropertyMapArrayBuilder::with_capacity(capacity),
-            valid: MaskMut::with_capacity(capacity),
+            ids: Vec::with_capacity(capacity),
+            reltypes: Vec::with_capacity(capacity),
+            start_ids: Vec::with_capacity(capacity),
+            end_ids: Vec::with_capacity(capacity),
+            props: Vec::with_capacity(capacity),
+            valid: BitVec::with_capacity(capacity),
         }
     }
 
-    fn append_n(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>, repeat: usize) {
-        match value {
+    pub fn push_n(&mut self, item: Option<&RelValue>, repeat: usize) {
+        match item {
+            Some(item) => {
+                self.ids.extend(std::iter::repeat_n(item.id, repeat));
+                self.reltypes.extend(std::iter::repeat_n(item.reltype.clone(), repeat));
+                self.start_ids.extend(std::iter::repeat_n(item.start_id, repeat));
+                self.end_ids.extend(std::iter::repeat_n(item.end_id, repeat));
+                self.props.extend(iter::repeat(item.props.clone()));
+                self.valid.extend(std::iter::repeat_n(true, repeat));
+            }
             None => {
-                self.id.append_n(None, repeat);
-                self.reltype.append_n(None, repeat);
-                self.start.append_n(None, repeat);
-                self.end.append_n(None, repeat);
-                self.properties.append_n(None, repeat);
-                self.valid.append_n(false, repeat);
-            }
-            Some(value) => {
-                self.id.append_n(Some(value.id), repeat);
-                self.reltype.append_n(Some(value.reltype), repeat);
-                self.start.append_n(Some(value.start), repeat);
-                self.end.append_n(Some(value.end), repeat);
-                self.properties.append_n(Some(value.properties), repeat);
-                self.valid.append_n(true, repeat);
+                self.ids.extend(std::iter::repeat_n(RelationshipId::default(), repeat));
+                self.reltypes.extend(std::iter::repeat_n(String::default(), repeat));
+                self.start_ids.extend(std::iter::repeat_n(NodeId::default(), repeat));
+                self.end_ids.extend(std::iter::repeat_n(NodeId::default(), repeat));
+                self.props.extend(iter::repeat(StructValue::default()));
+                self.valid.extend(std::iter::repeat_n(false, repeat));
             }
         }
     }
 
-    fn finish(self) -> Self::Array {
-        Self::Array {
-            id: self.id.finish(),
-            reltype: self.reltype.finish(),
-            start: self.start.finish(),
-            end: self.end.finish(),
-            properties: self.properties.finish(),
-            valid: self.valid.freeze(),
+    pub fn len(&self) -> usize {
+        self.valid.len()
+    }
+
+    pub fn finish(self) -> RelArray {
+        let ids = self.ids.into();
+        let reltypes = self.reltypes.into();
+        let start_ids = self.start_ids.into();
+        let end_ids = self.end_ids.into();
+        let props = self.props.into();
+        let valid = self.valid;
+        RelArray {
+            ids,
+            reltypes,
+            start_ids,
+            end_ids,
+            props,
+            valid,
         }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct VirtualRelArray {
+    ids: Arc<[RelationshipId]>,
+    reltypes: Arc<[String]>,
+    start_ids: Arc<[NodeId]>,
+    end_ids: Arc<[NodeId]>,
+    valid: BitVec,
+}
+
+impl Array for VirtualRelArray {
+    type RefItem<'a> = VirtualRelRef<'a>;
+
+    fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
+        self.valid.get(idx).and_then(|valid| {
+            if *valid {
+                Some(VirtualRelRef {
+                    id: self.ids[idx],
+                    reltype: &self.reltypes[idx],
+                    start_id: self.start_ids[idx],
+                    end_id: self.end_ids[idx],
+                })
+            } else {
+                None
+            }
+        })
     }
 
     fn len(&self) -> usize {
-        self.id.len()
+        self.valid.len()
+    }
+
+    fn physical_type(&self) -> PhysicalType {
+        PhysicalType::VirtualRel
+    }
+}
+
+impl VirtualRelArray {
+    pub fn physical_type(&self) -> PhysicalType {
+        PhysicalType::VirtualRel
+    }
+
+    pub fn valid_map(&self) -> &BitVec {
+        &self.valid
+    }
+
+    pub fn set_valid_map(&mut self, valid: BitVec) {
+        self.valid = valid;
+    }
+
+    pub fn len(&self) -> usize {
+        self.valid.len()
+    }
+}
+
+#[derive(Debug)]
+pub struct VirtualRelArrayBuilder {
+    ids: Vec<RelationshipId>,
+    reltypes: Vec<String>,
+    start_ids: Vec<NodeId>,
+    end_ids: Vec<NodeId>,
+    valid: BitVec,
+}
+
+impl VirtualRelArrayBuilder {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            ids: Vec::with_capacity(capacity),
+            reltypes: Vec::with_capacity(capacity),
+            start_ids: Vec::with_capacity(capacity),
+            end_ids: Vec::with_capacity(capacity),
+            valid: BitVec::with_capacity(capacity),
+        }
+    }
+
+    pub fn push_n(&mut self, item: Option<&VirtualRel>, repeat: usize) {
+        match item {
+            Some(item) => {
+                self.ids.extend(std::iter::repeat_n(item.id, repeat));
+                self.reltypes.extend(std::iter::repeat_n(item.reltype.clone(), repeat));
+                self.start_ids.extend(std::iter::repeat_n(item.start_id, repeat));
+                self.end_ids.extend(std::iter::repeat_n(item.end_id, repeat));
+                self.valid.extend(std::iter::repeat_n(true, repeat));
+            }
+            None => {
+                self.ids.extend(std::iter::repeat_n(RelationshipId::default(), repeat));
+                self.reltypes.extend(std::iter::repeat_n(String::default(), repeat));
+                self.start_ids.extend(std::iter::repeat_n(NodeId::default(), repeat));
+                self.end_ids.extend(std::iter::repeat_n(NodeId::default(), repeat));
+                self.valid.extend(std::iter::repeat_n(false, repeat));
+            }
+        }
+    }
+
+    pub fn push(&mut self, item: Option<&VirtualRel>) {
+        self.push_n(item, 1);
+    }
+
+    pub fn len(&self) -> usize {
+        self.valid.len()
+    }
+
+    pub fn finish(self) -> VirtualRelArray {
+        let ids = self.ids.into();
+        let reltypes = self.reltypes.into();
+        let start_ids = self.start_ids.into();
+        let end_ids = self.end_ids.into();
+        let valid = self.valid;
+        VirtualRelArray {
+            ids,
+            reltypes,
+            start_ids,
+            end_ids,
+            valid,
+        }
     }
 }

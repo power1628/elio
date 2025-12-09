@@ -68,6 +68,10 @@ impl GraphStore {
     }
 
     pub fn transaction(&self) -> Arc<dyn Transaction> {
-        Arc::new(TransactionImpl::new(self.db.clone(), self.dict.clone()))
+        Arc::new(TransactionImpl::new(
+            self.db.clone(),
+            self.dict.clone(),
+            self.token.clone(),
+        ))
     }
 }

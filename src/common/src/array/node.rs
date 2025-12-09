@@ -1,104 +1,197 @@
-use crate::array::list::{ListArray, ListArrayBuilder};
-use crate::array::mask::{Mask, MaskMut};
-use crate::array::prop_map::{PropertyMapArray, PropertyMapArrayBuilder};
-use crate::array::{Array, ArrayBuilder, NodeIdArray, NodeIdArrayBuilder};
-use crate::data_type::DataType;
-use crate::scalar::node::{NodeValue, NodeValueRef};
+use std::iter::once;
+use std::sync::Arc;
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+use bitvec::prelude::*;
+
+use crate::NodeId;
+use crate::array::datum::{NodeValueRef, ScalarRefVTable, StructValue};
+use crate::array::{Array, PhysicalType};
+
+#[derive(Debug, Clone)]
 pub struct NodeArray {
-    id: NodeIdArray,
-    labels: ListArray,
-    properties: PropertyMapArray,
-    // TODO(pgao): inline hot properties here
-    valid: Mask,
+    ids: Arc<[NodeId]>,
+    label_offsets: Arc<[usize]>,
+    label_values: Arc<[String]>,
+    props: Arc<[StructValue]>,
+    valid: BitVec,
 }
 
 impl Array for NodeArray {
-    type Builder = NodeArrayBuilder;
-    type OwnedItem = NodeValue;
     type RefItem<'a> = NodeValueRef<'a>;
 
     fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
-        self.valid.get(idx).then(|| {
-            let id = self.id.get(idx).unwrap();
-            // SAFETY:
-            // labels and properties never be null
-            let labels = self.labels.get(idx).unwrap();
-            let properties = self.properties.get(idx).unwrap();
-            NodeValueRef::new(id, labels, properties)
+        self.valid.get(idx).and_then(|valid| {
+            if *valid {
+                Some(NodeValueRef {
+                    id: self.ids[idx],
+                    labels: &self.label_values[self.label_offsets[idx]..self.label_offsets[idx + 1]],
+                    props: self.props[idx].as_scalar_ref(),
+                })
+            } else {
+                None
+            }
         })
     }
 
-    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
-        unsafe {
-            let id = self.id.get_unchecked(idx);
-            let labels = self.labels.get_unchecked(idx);
-            let properties = self.properties.get_unchecked(idx);
-            NodeValueRef::new(id, labels, properties)
-        }
-    }
-
     fn len(&self) -> usize {
-        self.id.len()
+        self.valid.len()
     }
 
-    fn iter(&self) -> super::ArrayIterator<'_, Self> {
-        super::ArrayIterator::new(self)
+    fn physical_type(&self) -> PhysicalType {
+        PhysicalType::Node
+    }
+}
+
+impl NodeArray {
+    pub fn valid_map(&self) -> &BitVec {
+        &self.valid
     }
 
-    fn data_type(&self) -> DataType {
-        DataType::Node
+    pub fn set_valid_map(&mut self, valid: BitVec) {
+        self.valid = valid;
+    }
+
+    pub fn props_iter(&self) -> impl Iterator<Item = Option<&StructValue>> + '_ {
+        self.valid
+            .iter()
+            .enumerate()
+            .map(|(i, v)| if *v { Some(&self.props[i]) } else { None })
     }
 }
 
 #[derive(Debug)]
 pub struct NodeArrayBuilder {
-    id: NodeIdArrayBuilder,
-    labels: ListArrayBuilder,
-    properties: PropertyMapArrayBuilder,
-    valid: MaskMut,
+    ids: Vec<NodeId>,
+    labels: Vec<Vec<String>>,
+    props: Vec<StructValue>,
+    valid: BitVec,
 }
 
-impl ArrayBuilder for NodeArrayBuilder {
-    type Array = NodeArray;
-
-    fn with_capacity(capacity: usize) -> Self {
+impl NodeArrayBuilder {
+    pub fn with_capacity(capacity: usize) -> Self {
         Self {
-            id: NodeIdArrayBuilder::with_capacity(capacity),
-            labels: ListArrayBuilder::with_capacity_and_type(capacity, &DataType::U16),
-            properties: PropertyMapArrayBuilder::with_capacity(capacity),
-            valid: MaskMut::with_capacity(capacity),
+            ids: Vec::with_capacity(capacity),
+            labels: Vec::with_capacity(capacity),
+            props: Vec::with_capacity(capacity),
+            valid: BitVec::with_capacity(capacity),
         }
     }
 
-    fn append_n(&mut self, value: Option<NodeValueRef<'_>>, repeat: usize) {
-        match value {
-            Some(NodeValueRef { id, labels, properties }) => {
-                self.valid.append_n(true, repeat);
-                self.id.append_n(Some(id), repeat);
-                self.labels.append_n(Some(labels), repeat);
-                self.properties.append_n(Some(properties), repeat);
-            }
-            None => {
-                self.valid.append_n(false, repeat);
-                self.id.append_n(None, repeat);
-                self.labels.append_n(None, repeat);
-                self.properties.append_n(None, repeat);
-            }
+    pub fn push_n(&mut self, value: Option<NodeValueRef<'_>>, repeat: usize) {
+        if let Some(value) = value {
+            self.ids.extend(std::iter::repeat_n(value.id, repeat));
+            self.labels.extend(std::iter::repeat_n(value.labels.to_vec(), repeat));
+            self.props
+                .extend(std::iter::repeat_n(value.props.to_owned_value(), repeat));
+            self.valid.extend(std::iter::repeat_n(true, repeat));
+        } else {
+            self.ids.extend(std::iter::repeat_n(NodeId::default(), repeat));
+            self.labels.extend(std::iter::repeat_n(Vec::new(), repeat));
+            self.props.extend(std::iter::repeat_n(StructValue::default(), repeat));
+            self.valid.extend(std::iter::repeat_n(false, repeat));
         }
     }
 
-    fn finish(self) -> Self::Array {
-        Self::Array {
-            id: self.id.finish(),
-            labels: self.labels.finish(),
-            properties: self.properties.finish(),
-            valid: self.valid.freeze(),
+    pub fn push(&mut self, value: Option<NodeValueRef<'_>>) {
+        self.push_n(value, 1);
+    }
+
+    pub fn len(&self) -> usize {
+        self.valid.len()
+    }
+
+    pub fn finish(self) -> NodeArray {
+        let ids = self.ids.into();
+        let label_offsets = once(0)
+            .chain(self.labels.iter().scan(0, |acc, x| {
+                *acc += x.len();
+                let offset = *acc;
+                Some(offset)
+            }))
+            .collect::<Vec<_>>()
+            .into();
+        let label_values = self.labels.into_iter().flatten().collect::<Vec<_>>().into();
+        let props = self.props.into();
+        let valid = self.valid;
+        NodeArray {
+            ids,
+            label_offsets,
+            label_values,
+            props,
+            valid,
         }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct VirtualNodeArray {
+    data: Arc<[NodeId]>,
+    valid: BitVec,
+}
+
+impl Array for VirtualNodeArray {
+    type RefItem<'a> = NodeId;
+
+    fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
+        self.valid
+            .get(idx)
+            .and_then(|valid| if *valid { Some(self.data[idx]) } else { None })
     }
 
     fn len(&self) -> usize {
-        self.id.len()
+        self.valid.len()
+    }
+
+    fn physical_type(&self) -> PhysicalType {
+        PhysicalType::VirtualNode
+    }
+}
+
+impl VirtualNodeArray {
+    pub fn valid_map(&self) -> &BitVec {
+        &self.valid
+    }
+
+    pub fn set_valid_map(&mut self, valid: BitVec) {
+        self.valid = valid;
+    }
+}
+
+#[derive(Debug)]
+pub struct VirtualNodeArrayBuilder {
+    data: Vec<NodeId>,
+    valid: BitVec,
+}
+
+impl VirtualNodeArrayBuilder {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            data: Vec::with_capacity(capacity),
+            valid: BitVec::with_capacity(capacity),
+        }
+    }
+
+    pub fn push_n(&mut self, value: Option<NodeId>, repeat: usize) {
+        if let Some(value) = value {
+            self.data.extend(std::iter::repeat_n(value, repeat));
+            self.valid.extend(std::iter::repeat_n(true, repeat));
+        } else {
+            self.data.extend(std::iter::repeat_n(NodeId::default(), repeat));
+            self.valid.extend(std::iter::repeat_n(false, repeat));
+        }
+    }
+
+    pub fn push(&mut self, value: Option<NodeId>) {
+        self.push_n(value, 1);
+    }
+
+    pub fn len(&self) -> usize {
+        self.valid.len()
+    }
+
+    pub fn finish(self) -> VirtualNodeArray {
+        let data = self.data.into();
+        let valid = self.valid;
+        VirtualNodeArray { data, valid }
     }
 }

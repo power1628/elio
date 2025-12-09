@@ -1,10 +1,13 @@
 // Copyright 2022 Alex Chi. Licensed under Apache-2.0.
+// This file is derived from type-exercise-in-rust and motified by mojito.
 
 //! Implements `Arrayiterator`
-//! This file is derived from https://github.com/skyzh/type-exercise-in-rust
+
+use std::iter::TrustedLen;
 
 use super::Array;
 
+/// An iterator that iterators on any [`Array`] type.
 pub struct ArrayIterator<'a, A: Array> {
     array: &'a A,
     pos: usize,
@@ -29,6 +32,7 @@ impl<'a, A: Array> Iterator for ArrayIterator<'a, A> {
 }
 
 impl<'a, A: Array> ArrayIterator<'a, A> {
+    /// Create an [`ArrayIterator`] from [`Array`].
     pub fn new(array: &'a A) -> Self {
         Self { array, pos: 0 }
     }
@@ -41,4 +45,4 @@ impl<A: Array> ExactSizeIterator for ArrayIterator<'_, A> {
 }
 
 // nightly-only feature
-// unsafe impl<'a, A: Array> TrustedLen for ArrayIterator<'a, A> {}
+unsafe impl<'a, A: Array> TrustedLen for ArrayIterator<'a, A> {}

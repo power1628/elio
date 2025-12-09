@@ -57,8 +57,11 @@ impl BindContext {
 
     pub fn resolve_token(&self, token: &str, token_kind: TokenKind) -> IrToken {
         match self.session().get_token_id(token, token_kind) {
-            Some(token_id) => IrToken::Resolved(token_id),
-            None => IrToken::Unresolved(token.to_owned()),
+            Some(token_id) => IrToken::Resolved {
+                name: token.to_owned().into(),
+                token: token_id,
+            },
+            None => IrToken::Unresolved(token.to_owned().into()),
         }
     }
 }

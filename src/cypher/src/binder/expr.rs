@@ -1,4 +1,5 @@
 use core::f64;
+use std::sync::Arc;
 
 use itertools::Itertools;
 use mojito_catalog::FunctionCatalog;
@@ -71,7 +72,7 @@ pub fn bind_expr(ectx: &ExprContext, outer_scope: &[Scope], expr: &ast::Expr) ->
             // resolve property keys
             let token: IrToken = ectx.bctx.resolve_token(key, TokenKind::PropertyKey);
             // TODO(pgao): maybe we can resolve the property types here
-            let pa = PropertyAccess::new_unchecked(expr.boxed(), &token, &DataType::Property);
+            let pa = PropertyAccess::new_unchecked(expr.boxed(), &token, &DataType::Any);
             Ok(pa.into())
         }
         ast::Expr::Unary { op, oprand } => bind_unary(ectx, outer_scope, op, oprand),
@@ -99,7 +100,7 @@ fn bind_constant(_ectx: &ExprContext, lit: &ast::Literal) -> Result<Constant, Pl
         }
         ast::Literal::String(s) => Ok(Constant::string(s.clone())),
         // TODO(pgao): double check
-        ast::Literal::Null => Ok(Constant::null(DataType::Property)),
+        ast::Literal::Null => Ok(Constant::null(DataType::Any)),
         ast::Literal::Inf => Ok(Constant::float(F64::infinity())),
     }
 }
@@ -237,18 +238,18 @@ pub fn bind_map_expr_to_property_map(
     outer_scope: &[Scope],
     keys: &[String],
     values: &[ast::Expr],
-) -> Result<Vec<(IrToken, Expr)>, PlanError> {
+) -> Result<Vec<(Arc<str>, Expr)>, PlanError> {
     assert_eq!(keys.len(), values.len());
 
-    let tokens: Vec<IrToken> = keys
-        .iter()
-        .map(|x| ectx.bctx.resolve_token(x, TokenKind::PropertyKey))
-        .collect_vec();
+    // let tokens: Vec<IrToken> = keys
+    //     .iter()
+    //     .map(|x| ectx.bctx.resolve_token(x, TokenKind::PropertyKey))
+    //     .collect_vec();
 
     let exprs = values
         .iter()
         .map(|x| bind_expr(ectx, outer_scope, x))
         .collect::<Result<Vec<_>, _>>()?;
 
-    Ok(tokens.into_iter().zip(exprs).collect())
+    Ok(keys.iter().map(|x| x.as_str().into()).zip(exprs).collect())
 }

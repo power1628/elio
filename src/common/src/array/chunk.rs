@@ -1,102 +1,105 @@
-use crate::array::ArrayImpl;
-use crate::array::mask::Mask;
-use crate::scalar::Row;
+use std::sync::Arc;
 
-#[derive(Clone, Debug)]
+use bitvec::vec::BitVec;
+
+use crate::array::datum::Row;
+use crate::array::{ArrayImpl, ArrayRef};
+
 pub struct DataChunk {
-    columns: Vec<ArrayImpl>,
-    // selection vector
-    visibility: Mask,
-    // valid number of rows
-    cardinality: usize,
-    capacity: usize,
+    columns: Vec<Arc<ArrayImpl>>,
+    visibility: Arc<BitVec>,
 }
 
 impl DataChunk {
-    // return one empty row
     pub fn unit() -> Self {
         Self {
             columns: vec![],
-            visibility: Mask::new_set(1),
-            cardinality: 1,
-            capacity: 1,
+            visibility: Arc::new(BitVec::repeat(true, 1)),
         }
     }
 
-    pub fn empty() -> Self {
-        Self::new(vec![])
-    }
+    pub fn new(columns: Vec<Arc<ArrayImpl>>) -> Self {
+        if columns.is_empty() {
+            return Self {
+                columns: Vec::new(),
+                visibility: Arc::new(BitVec::new()),
+            };
+        }
 
-    pub fn new(columns: Vec<ArrayImpl>) -> Self {
-        let capacity = columns.first().map(|c| c.len()).unwrap_or(0);
+        let len = columns.first().unwrap().len();
+
         if cfg!(debug_assertions) {
-            for col in columns.iter() {
-                assert_eq!(col.len(), capacity)
-            }
+            assert!(
+                columns.iter().all(|c| c.len() == len),
+                "All columns in a DataChunk must have the same length"
+            );
         }
         Self {
             columns,
-            visibility: Mask::new_set(capacity),
-            cardinality: capacity,
-            capacity,
+            visibility: Arc::new(BitVec::repeat(true, len)),
         }
     }
 
-    pub fn row_len(&self) -> usize {
-        self.cardinality
+    pub fn add_column(&mut self, column: Arc<ArrayImpl>) {
+        assert_eq!(column.len(), self.len());
+        self.columns.push(column);
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.cardinality == 0
+    pub fn with_visibility(self, visibility: BitVec) -> Self {
+        Self {
+            visibility: Arc::new(visibility),
+            ..self
+        }
     }
 
-    pub fn column(&self, idx: usize) -> &ArrayImpl {
-        &self.columns[idx]
+    pub fn column(&self, idx: usize) -> ArrayRef {
+        self.columns[idx].clone()
     }
 
-    pub fn columns(&self) -> &[ArrayImpl] {
-        &self.columns
+    pub fn visibility(&self) -> &BitVec {
+        &self.visibility
     }
 
-    pub fn add_column(&mut self, col: ArrayImpl) {
-        self.columns.push(col);
+    pub fn len(&self) -> usize {
+        self.visibility.len()
     }
 
-    pub fn set_visibility(&mut self, visibility: Mask) {
-        assert_eq!(self.capacity, visibility.len());
-        self.cardinality = visibility.set_count();
-
-        // if we already have visibility, we & it with the new visibility
-        self.visibility = &self.visibility & &visibility;
+    // valid row len
+    pub fn visible_row_len(&self) -> usize {
+        self.visibility.count_ones()
     }
 
-    pub fn is_visible(&self, idx: usize) -> bool {
-        self.visibility.get(idx)
-    }
-
-    pub fn is_all_visible(&self) -> bool {
-        self.visibility.all_set()
-    }
-
-    pub fn compact(self) -> Self {
-        todo!()
+    pub fn iter(&self) -> ChunkIter<'_> {
+        ChunkIter {
+            chunk: self,
+            idx: 0,
+            len: self.visibility.len(),
+        }
     }
 }
 
-impl DataChunk {
-    pub fn iter(&self) -> impl Iterator<Item = Row> + '_ {
-        if self.is_all_visible() {
-            (0..self.cardinality).map(|idx| self.get_row_by_idx(idx))
-        } else {
-            todo!()
-        }
-    }
+pub struct ChunkIter<'a> {
+    chunk: &'a DataChunk,
+    idx: usize,
+    // visbility map len
+    len: usize,
+}
 
-    pub fn get_row_by_idx(&self, idx: usize) -> Row {
-        let mut row = Row::new();
-        for col in &self.columns {
-            row.push(col.get(idx).map(|x| x.to_owned_scalar()));
+impl<'a> Iterator for ChunkIter<'a> {
+    type Item = Row;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while self.idx < self.len {
+            if self.chunk.visibility[self.idx] {
+                let mut row = vec![];
+                for col in self.chunk.columns.iter() {
+                    row.push(col.get(self.idx).map(|x| x.to_owned_value()));
+                }
+                self.idx += 1;
+                return Some(row);
+            }
+            self.idx += 1;
         }
-        row
+        None
     }
 }

@@ -12,6 +12,10 @@ pub enum GraphStoreError {
     TxRollback(rocksdb::Error),
     #[error("internal error: {0}")]
     Internal(String),
+    #[error("type mismatch: {0}")]
+    TypeMismatch(String),
+    #[error("token not found: {0}")]
+    Token(String),
 }
 
 impl GraphStoreError {
@@ -21,5 +25,9 @@ impl GraphStoreError {
 
     pub fn internal<T: Display>(msg: T) -> Self {
         Self::Internal(msg.to_string())
+    }
+
+    pub fn type_mismatch<T: Display>(msg: T) -> Self {
+        Self::TypeMismatch(msg.to_string())
     }
 }

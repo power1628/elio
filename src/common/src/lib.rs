@@ -1,11 +1,16 @@
+#![feature(trusted_len)]
+
+use std::sync::Arc;
+
 use enum_as_inner::EnumAsInner;
 
 pub mod array;
+// pub mod scalar;
+
 pub mod data_type;
 mod macros;
 pub mod mapb;
 pub mod order;
-pub mod scalar;
 pub mod schema;
 pub mod store_types;
 pub mod value;
@@ -21,13 +26,29 @@ pub type PropertyKeyId = TokenId;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, EnumAsInner, derive_more::Display)]
 pub enum IrToken {
-    Resolved(TokenId),
-    Unresolved(String),
+    #[display("Resolved({name}, {token})")]
+    Resolved {
+        name: Arc<str>,
+        token: TokenId,
+    },
+    Unresolved(Arc<str>),
 }
 
-impl From<TokenId> for IrToken {
-    fn from(token: TokenId) -> Self {
-        Self::Resolved(token)
+impl IrToken {
+    pub fn name(&self) -> &Arc<str> {
+        match self {
+            Self::Resolved { name, .. } => name,
+            Self::Unresolved(name) => name,
+        }
+    }
+}
+
+impl From<(String, TokenId)> for IrToken {
+    fn from(token: (String, TokenId)) -> Self {
+        Self::Resolved {
+            name: token.0.into(),
+            token: token.1,
+        }
     }
 }
 

@@ -1,25 +1,34 @@
-use mojito_common::array::ArrayImpl;
+use std::sync::Arc;
+
+use mojito_common::array::ArrayRef;
 use mojito_common::array::chunk::DataChunk;
+use mojito_common::array::datum::ScalarValue;
 use mojito_common::data_type::DataType;
-use mojito_common::scalar::Datum;
 
 use crate::error::EvalError;
 use crate::impl_::{EvalCtx, Expression};
 
 #[derive(Debug)]
 pub struct ConstantExpr {
-    pub value: Datum,
+    pub value: Option<ScalarValue>,
     pub typ: DataType,
 }
 
 impl Expression for ConstantExpr {
-    fn typ(&self) -> DataType {
-        self.typ.clone()
+    fn typ(&self) -> &DataType {
+        &self.typ
     }
 
-    fn eval_batch(&self, chunk: &DataChunk, _ctx: &dyn EvalCtx) -> Result<ArrayImpl, EvalError> {
-        let mut builder = self.typ.array_builder(chunk.row_len());
-        builder.append_n(self.value.clone().as_ref().map(|x| x.as_scalar_ref()), chunk.row_len());
-        Ok(builder.finish())
+    fn eval_batch(&self, chunk: &DataChunk, _ctx: &dyn EvalCtx) -> Result<ArrayRef, EvalError> {
+        let mut builder = self
+            .typ
+            .physical_type()
+            .array_builder(chunk.visible_row_len())
+            .into_any()
+            .map_err(|_| EvalError::type_error(format!("consant only allow basic types, got {}", self.typ)))?;
+
+        builder.push_n(self.value.as_ref().map(|x| x.as_scalar_ref()), chunk.visible_row_len());
+
+        Ok(Arc::new(builder.finish().into()))
     }
 }

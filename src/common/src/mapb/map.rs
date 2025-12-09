@@ -1,8 +1,8 @@
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
+use crate::array::datum::ScalarRef;
 use crate::mapb::entry::{EntryMut, EntryRef, EntryValueRef};
 use crate::mapb::meta::EntryMeta;
-use crate::scalar::{DatumRef, ScalarRefImpl};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub struct PropertyMap {
@@ -109,7 +109,7 @@ impl PropertyMapMut {
     }
 
     /// Return failed when property map value does not support given data type
-    pub fn insert(&mut self, key_id: u16, datum: DatumRef<'_>) -> Result<(), String> {
+    pub fn insert(&mut self, key_id: u16, datum: Option<&ScalarRef<'_>>) -> Result<(), String> {
         if datum.is_none() {
             self.entries.push(EntryMut::null(key_id));
             return Ok(());
@@ -117,40 +117,27 @@ impl PropertyMapMut {
 
         let datum = datum.unwrap();
         let entry = match datum {
-            ScalarRefImpl::Bool(b) => EntryMut::bool(key_id, b),
-            ScalarRefImpl::Integer(i) => EntryMut::integer(key_id, i),
-            ScalarRefImpl::Float(ordered_float) => EntryMut::float(key_id, *ordered_float),
-            ScalarRefImpl::String(s) => EntryMut::string(key_id, s),
-            ScalarRefImpl::U16(_) => return Err("u16 cannot be property value".to_owned()),
-            ScalarRefImpl::NodeId(_) => return Err("node id cannot be property value".to_owned()),
-            ScalarRefImpl::RelId(_) => return Err("relationship id cannot be property value".to_owned()),
-            ScalarRefImpl::Node(_) => return Err("node cannot be property value".to_owned()),
-            ScalarRefImpl::Rel(_) => return Err("relationship cannot be property value".to_owned()),
-            ScalarRefImpl::List(list) => {
-                if let Some(slice) = list.as_integer_slice() {
-                    EntryMut::list_integer(key_id, slice)
-                } else if let Some(slice) = list.as_float_slice() {
-                    EntryMut::list_float(key_id, slice)
+            ScalarRef::Null => EntryMut::null(key_id),
+            ScalarRef::Bool(b) => EntryMut::bool(key_id, *b),
+            ScalarRef::Integer(i) => EntryMut::integer(key_id, *i),
+            ScalarRef::Float(ordered_float) => EntryMut::float(key_id, **ordered_float),
+            ScalarRef::String(s) => EntryMut::string(key_id, s),
+            ScalarRef::VirtualNode(_) | ScalarRef::VirtualRel(_) | ScalarRef::Node(_) | ScalarRef::Rel(_) => {
+                return Err("node and rel cannot be property value".to_owned());
+            }
+            ScalarRef::List(list) => {
+                // only integer, float, string list property are supported
+                if let Some(i) = list.as_integer_list() {
+                    EntryMut::list_integer(key_id, &i)
+                } else if let Some(f) = list.as_float_list() {
+                    EntryMut::list_float(key_id, &f)
+                } else if let Some(s) = list.as_string_list() {
+                    EntryMut::list_string(key_id, &s)
                 } else {
-                    return Err("list value must be integer or float".to_owned());
+                    return Err("list property must be integer, float, or string".to_owned());
                 }
             }
-            ScalarRefImpl::Property(value) => match value {
-                crate::store_types::PropertyValue::Null => EntryMut::null(key_id),
-                crate::store_types::PropertyValue::Boolean(b) => EntryMut::bool(key_id, *b),
-                crate::store_types::PropertyValue::Integer(i) => EntryMut::integer(key_id, *i),
-                crate::store_types::PropertyValue::Float(ordered_float) => EntryMut::float(key_id, **ordered_float),
-                crate::store_types::PropertyValue::String(s) => EntryMut::string(key_id, s),
-                crate::store_types::PropertyValue::ListBool(items) => EntryMut::list_bool(key_id, items),
-                crate::store_types::PropertyValue::ListInteger(items) => EntryMut::list_integer(key_id, items),
-                crate::store_types::PropertyValue::ListFloat(ordered_floats) => {
-                    EntryMut::list_float(key_id, ordered_floats)
-                }
-                crate::store_types::PropertyValue::ListString(items) => EntryMut::list_string(key_id, items),
-            },
-            ScalarRefImpl::PropertyMap(_) => {
-                return Err("property map cannot be property value".to_owned());
-            }
+            ScalarRef::Struct(_) => return Err("struct property type not supported".to_owned()),
         };
         self.entries.push(entry);
         Ok(())
