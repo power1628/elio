@@ -21,12 +21,18 @@ impl Array for RelArray {
     type RefItem<'a> = RelValueRef<'a>;
 
     fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
-        self.valid.get(idx).map(|_| RelValueRef {
-            id: self.ids[idx],
-            reltype: &self.reltypes[idx],
-            start_id: self.start_ids[idx],
-            end_id: self.end_ids[idx],
-            props: self.props[idx].as_scalar_ref(),
+        self.valid.get(idx).and_then(|valid| {
+            if *valid {
+                Some(RelValueRef {
+                    id: self.ids[idx],
+                    reltype: &self.reltypes[idx],
+                    start_id: self.start_ids[idx],
+                    end_id: self.end_ids[idx],
+                    props: self.props[idx].as_scalar_ref(),
+                })
+            } else {
+                None
+            }
         })
     }
 
@@ -127,11 +133,17 @@ impl Array for VirtualRelArray {
     type RefItem<'a> = VirtualRelRef<'a>;
 
     fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
-        self.valid.get(idx).map(|_| VirtualRelRef {
-            id: self.ids[idx],
-            reltype: &self.reltypes[idx],
-            start_id: self.start_ids[idx],
-            end_id: self.end_ids[idx],
+        self.valid.get(idx).and_then(|valid| {
+            if *valid {
+                Some(VirtualRelRef {
+                    id: self.ids[idx],
+                    reltype: &self.reltypes[idx],
+                    start_id: self.start_ids[idx],
+                    end_id: self.end_ids[idx],
+                })
+            } else {
+                None
+            }
         })
     }
 

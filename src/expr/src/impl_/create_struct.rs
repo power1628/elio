@@ -34,7 +34,7 @@ impl Expression for CreateStructExpr {
 
     fn eval_batch(&self, chunk: &DataChunk, ctx: &dyn EvalCtx) -> Result<ArrayRef, EvalError> {
         let mut sub_fields = vec![];
-        let valid = BitVec::repeat(true, chunk.row_len());
+        let valid = BitVec::repeat(true, chunk.visible_row_len());
 
         // build sub fields
         for (name, expr) in &self.fields {

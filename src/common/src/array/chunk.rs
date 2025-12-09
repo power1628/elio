@@ -34,7 +34,7 @@ impl DataChunk {
     }
 
     pub fn add_column(&mut self, column: Arc<ArrayImpl>) {
-        assert_eq!(column.len(), self.row_len());
+        assert_eq!(column.len(), self.len());
         self.columns.push(column);
     }
 
@@ -53,8 +53,12 @@ impl DataChunk {
         &self.visibility
     }
 
+    pub fn len(&self) -> usize {
+        self.visibility.len()
+    }
+
     // valid row len
-    pub fn row_len(&self) -> usize {
+    pub fn visible_row_len(&self) -> usize {
         self.visibility.count_ones()
     }
 

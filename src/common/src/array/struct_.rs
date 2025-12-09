@@ -18,7 +18,13 @@ impl Array for StructArray {
     type RefItem<'a> = StructValueRef<'a>;
 
     fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
-        self.valid.get(idx).map(|_| StructValueRef::Index { array: self, idx })
+        self.valid.get(idx).and_then(|valid| {
+            if *valid {
+                Some(StructValueRef::Index { array: self, idx })
+            } else {
+                None
+            }
+        })
     }
 
     fn len(&self) -> usize {

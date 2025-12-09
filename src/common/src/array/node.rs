@@ -20,10 +20,16 @@ impl Array for NodeArray {
     type RefItem<'a> = NodeValueRef<'a>;
 
     fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
-        self.valid.get(idx).map(|_| NodeValueRef {
-            id: self.ids[idx],
-            labels: &self.label_values[self.label_offsets[idx]..self.label_offsets[idx + 1]],
-            props: self.props[idx].as_scalar_ref(),
+        self.valid.get(idx).and_then(|valid| {
+            if *valid {
+                Some(NodeValueRef {
+                    id: self.ids[idx],
+                    labels: &self.label_values[self.label_offsets[idx]..self.label_offsets[idx + 1]],
+                    props: self.props[idx].as_scalar_ref(),
+                })
+            } else {
+                None
+            }
         })
     }
 
@@ -127,7 +133,9 @@ impl Array for VirtualNodeArray {
     type RefItem<'a> = NodeId;
 
     fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
-        self.valid.get(idx).map(|_| self.data[idx])
+        self.valid
+            .get(idx)
+            .and_then(|valid| if *valid { Some(self.data[idx]) } else { None })
     }
 
     fn len(&self) -> usize {
@@ -163,7 +171,7 @@ impl VirtualNodeArrayBuilder {
         }
     }
 
-    pub fn push_n(&mut self, value: Option<&NodeId>, repeat: usize) {
+    pub fn push_n(&mut self, value: Option<NodeId>, repeat: usize) {
         if let Some(value) = value {
             self.data.extend(std::iter::repeat_n(value, repeat));
             self.valid.extend(std::iter::repeat_n(true, repeat));
@@ -173,7 +181,7 @@ impl VirtualNodeArrayBuilder {
         }
     }
 
-    pub fn push(&mut self, value: Option<&NodeId>) {
+    pub fn push(&mut self, value: Option<NodeId>) {
         self.push_n(value, 1);
     }
 

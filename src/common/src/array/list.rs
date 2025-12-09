@@ -16,10 +16,16 @@ impl Array for ListArray {
     type RefItem<'a> = ListValueRef<'a>;
 
     fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
-        let start = self.offsets[idx];
-        let end = self.offsets[idx + 1];
-        let child = self.child.as_ref();
-        Some(ListValueRef::Index { child, start, end })
+        self.valid.get(idx).and_then(|valid| {
+            if *valid {
+                let start = self.offsets[idx];
+                let end = self.offsets[idx + 1];
+                let child = self.child.as_ref();
+                Some(ListValueRef::Index { child, start, end })
+            } else {
+                None
+            }
+        })
     }
 
     fn len(&self) -> usize {
@@ -67,14 +73,20 @@ impl ListArrayBuilder {
 
     // push n element sizes
     pub fn push_n(&mut self, size: Option<usize>, repeat: usize) {
-        let size = size.unwrap_or(0);
-        // update the offset
-        let last_offset = *self.offsets.last().unwrap();
-        let to_extend = (0..repeat).scan(last_offset, |acc, _| {
-            *acc += size;
-            Some(*acc)
-        });
-        self.offsets.extend(to_extend);
+        if let Some(size) = size {
+            // update the offset
+            let last_offset = *self.offsets.last().unwrap();
+            let to_extend = (0..repeat).scan(last_offset, |acc, _| {
+                *acc += size;
+                Some(*acc)
+            });
+            self.offsets.extend(to_extend);
+            self.valid.extend(std::iter::repeat_n(true, repeat));
+        } else {
+            let last_offset = *self.offsets.last().unwrap();
+            self.offsets.extend(std::iter::repeat_n(last_offset, repeat));
+            self.valid.extend(std::iter::repeat_n(false, repeat));
+        }
     }
 
     pub fn push(&mut self, size: Option<usize>) {

@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
+use mojito_common::TokenKind;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::array::datum::NodeValueRef;
 use mojito_common::array::{Array, ArrayImpl, NodeArray, NodeArrayBuilder, VirtualNodeArrayBuilder};
-use mojito_common::TokenKind;
 
 use crate::cf_property;
 use crate::codec::NodeFormat;
@@ -51,8 +51,7 @@ pub(crate) fn batch_node_create(
         keys.push(key);
         // labels and props must not be null
         let prop = prop.unwrap();
-        let value =
-            NodeFormat::encode_node_value(&label_ids, &token_ids, prop).map_err(GraphStoreError::internal)?;
+        let value = NodeFormat::encode_node_value(&label_ids, &token_ids, prop).map_err(GraphStoreError::internal)?;
         values.push(value);
     }
 
@@ -108,7 +107,7 @@ impl<'a, D: rocksdb::DBAccess> DataChunkIterator for NodeIterator<'a, D> {
                     break;
                 }
                 let node_id = NodeFormat::decode_node_key(&key);
-                builder.push(Some(&node_id));
+                builder.push(Some(node_id));
             } else {
                 break;
             }

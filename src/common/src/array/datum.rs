@@ -25,11 +25,7 @@ impl<'a> NodeValueRef<'a> {
         format!(
             "node{{id: {}, labels: [{}], props: {}}}",
             self.id,
-            self.labels
-                .iter()
-                .map(|l| l.to_string())
-                .collect::<Vec<_>>()
-                .join(", "),
+            self.labels.iter().map(|l| l.to_string()).collect::<Vec<_>>().join(", "),
             self.props.pretty()
         )
     }
@@ -149,6 +145,7 @@ pub struct ListValueIter<'a> {
 }
 
 impl<'a> Iterator for ListValueIter<'a> {
+    // TODO(pgao): maybe we should use option here?
     type Item = ScalarRef<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -157,7 +154,7 @@ impl<'a> Iterator for ListValueIter<'a> {
                 if self.idx >= end - start {
                     None
                 } else {
-                    let item = child.get(start + self.idx).unwrap();
+                    let item = child.get(start + self.idx).unwrap_or(ScalarRef::Null);
                     self.idx += 1;
                     Some(item)
                 }
@@ -231,7 +228,7 @@ impl<'a> StructValueRef<'a> {
 
     pub fn field_at(&self, name: &str) -> Option<ScalarRef<'_>> {
         match self {
-            StructValueRef::Index { array, idx } => array.field_at(name).unwrap().get(*idx),
+            StructValueRef::Index { array, idx } => array.field_at(name).and_then(|arr| arr.get(*idx)),
             StructValueRef::Value { value } => value.field_at(name),
         }
     }
@@ -284,7 +281,7 @@ impl<'a> Iterator for StructValueRefIter<'a> {
             let item = match self.struct_ref {
                 StructValueRef::Index { array, idx } => array
                     .field_at_pos(self.pos)
-                    .map(|(name, array)| (name, array.get(idx).unwrap())),
+                    .map(|(name, array)| (name, array.get(idx).unwrap_or(ScalarRef::Null))),
                 StructValueRef::Value { value } => value
                     .field_at_pos(self.pos)
                     .map(|(name, value)| (name, value.as_scalar_ref())),
@@ -448,6 +445,7 @@ macro_rules! impl_into_for_scalar_ref {
 }
 
 impl_into_for_scalar_ref!(
+    {bool, Bool},
     {i64, Integer},
     {F64, Float},
     {&'a str, String},

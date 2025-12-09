@@ -23,11 +23,11 @@ impl Expression for ConstantExpr {
         let mut builder = self
             .typ
             .physical_type()
-            .array_builder(chunk.row_len())
+            .array_builder(chunk.visible_row_len())
             .into_any()
             .map_err(|_| EvalError::type_error(format!("consant only allow basic types, got {}", self.typ)))?;
 
-        builder.push_n(self.value.as_ref().map(|x| x.as_scalar_ref()), chunk.row_len());
+        builder.push_n(self.value.as_ref().map(|x| x.as_scalar_ref()), chunk.visible_row_len());
 
         Ok(Arc::new(builder.finish().into()))
     }

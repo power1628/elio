@@ -15,7 +15,13 @@ impl Array for AnyArray {
     type RefItem<'a> = ScalarRef<'a>;
 
     fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
-        self.valid.get(idx).map(|_| self.data[idx].as_scalar_ref())
+        self.valid.get(idx).and_then(|valid| {
+            if *valid {
+                Some(self.data[idx].as_scalar_ref())
+            } else {
+                None
+            }
+        })
     }
 
     fn len(&self) -> usize {
