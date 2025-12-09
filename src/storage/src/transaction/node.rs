@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::datum::{NodeValue, NodeValueRef, ScalarRefVTable};
-use mojito_common::array::{Array, ArrayImpl, NodeArray, NodeArrayBuilder, VirtualNodeArrayBuilder, node};
-use mojito_common::{LabelId, TokenKind};
+use mojito_common::array::datum::NodeValueRef;
+use mojito_common::array::{Array, ArrayImpl, NodeArray, NodeArrayBuilder, VirtualNodeArrayBuilder};
+use mojito_common::TokenKind;
 
 use crate::cf_property;
 use crate::codec::NodeFormat;
@@ -35,7 +35,7 @@ pub(crate) fn batch_node_create(
     let token_ids = props
         .fields()
         .iter()
-        .map(|(k, _)| tx.token.get_or_create_token(&k, TokenKind::PropertyKey))
+        .map(|(k, _)| tx.token.get_or_create_token(k, TokenKind::PropertyKey))
         .collect::<Result<Vec<_>, _>>()?;
 
     // allocate node id for the batch
@@ -52,7 +52,7 @@ pub(crate) fn batch_node_create(
         // labels and props must not be null
         let prop = prop.unwrap();
         let value =
-            NodeFormat::encode_node_value(&label_ids, &token_ids, prop).map_err(|e| GraphStoreError::internal(e))?;
+            NodeFormat::encode_node_value(&label_ids, &token_ids, prop).map_err(GraphStoreError::internal)?;
         values.push(value);
     }
 
@@ -71,7 +71,7 @@ pub(crate) fn batch_node_create(
     for i in 0..len {
         let node_ref = NodeValueRef {
             id: node_ids[i],
-            labels: &labels,
+            labels,
             props: props.get(i).unwrap(),
         };
         builder.push(Some(node_ref));

@@ -81,12 +81,12 @@ impl RelArrayBuilder {
     pub fn push_n(&mut self, item: Option<&RelValue>, repeat: usize) {
         match item {
             Some(item) => {
-                self.ids.extend(iter::repeat(item.id).take(repeat));
-                self.reltypes.extend(iter::repeat(item.reltype.clone()).take(repeat));
-                self.start_ids.extend(iter::repeat(item.start_id).take(repeat));
-                self.end_ids.extend(iter::repeat(item.end_id).take(repeat));
+                self.ids.extend(std::iter::repeat_n(item.id, repeat));
+                self.reltypes.extend(std::iter::repeat_n(item.reltype.clone(), repeat));
+                self.start_ids.extend(std::iter::repeat_n(item.start_id, repeat));
+                self.end_ids.extend(std::iter::repeat_n(item.end_id, repeat));
                 self.props.extend(iter::repeat(item.props.clone()));
-                self.valid.extend(iter::repeat(true).take(repeat));
+                self.valid.extend(std::iter::repeat_n(true, repeat));
             }
             None => todo!(),
         }

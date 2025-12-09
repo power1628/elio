@@ -21,7 +21,7 @@ impl Expression for FuncCallExpr {
     }
 
     fn eval_batch(&self, chunk: &DataChunk, ctx: &dyn EvalCtx) -> Result<ArrayRef, EvalError> {
-        let args = self
+        let _args = self
             .inputs
             .iter()
             .map(|e| e.eval_batch(chunk, ctx))

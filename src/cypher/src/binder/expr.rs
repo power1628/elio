@@ -251,5 +251,5 @@ pub fn bind_map_expr_to_property_map(
         .map(|x| bind_expr(ectx, outer_scope, x))
         .collect::<Result<Vec<_>, _>>()?;
 
-    Ok(keys.into_iter().map(|x| x.as_str().into()).zip(exprs).collect())
+    Ok(keys.iter().map(|x| x.as_str().into()).zip(exprs).collect())
 }

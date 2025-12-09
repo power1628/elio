@@ -2,9 +2,8 @@ use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
-use mojito_common::LabelId;
 use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::{ArrayImpl, NodeArray, VirtualNodeArray};
+use mojito_common::array::{ArrayImpl, NodeArray};
 
 use crate::dict::IdStore;
 use crate::error::GraphStoreError;

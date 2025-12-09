@@ -4,7 +4,7 @@ use std::sync::Arc;
 use bitvec::prelude::*;
 
 use crate::NodeId;
-use crate::array::datum::{NodeValue, NodeValueRef, ScalarRefVTable, StructValue};
+use crate::array::datum::{NodeValueRef, ScalarRefVTable, StructValue};
 use crate::array::{Array, PhysicalType};
 
 #[derive(Debug, Clone)]

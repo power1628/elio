@@ -27,7 +27,7 @@ impl<'a> NodeValueRef<'a> {
             self.id,
             self.labels
                 .iter()
-                .map(|l| format!("{}", l))
+                .map(|l| l.to_string())
                 .collect::<Vec<_>>()
                 .join(", "),
             self.props.pretty()

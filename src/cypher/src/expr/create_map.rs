@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use mojito_common::IrToken;
 use mojito_common::data_type::DataType;
 
 use crate::expr::{Expr, ExprNode};
