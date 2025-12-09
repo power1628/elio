@@ -8,7 +8,7 @@ use crate::array::{Array, ArrayBuilderImpl, ArrayImpl, PhysicalType};
 #[derive(Debug, Clone)]
 pub struct ListArray {
     offsets: Arc<[usize]>,
-    child: Box<ArrayImpl>,
+    child: Arc<ArrayImpl>,
     valid: BitVec,
 }
 
@@ -99,7 +99,7 @@ impl ListArrayBuilder {
 
     pub fn finish(self) -> ListArray {
         let offsets = self.offsets.into();
-        let child = Box::new(self.child.finish());
+        let child = self.child.finish().into();
         let valid = self.valid;
         ListArray { offsets, child, valid }
     }

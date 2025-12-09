@@ -94,7 +94,14 @@ impl RelArrayBuilder {
                 self.props.extend(iter::repeat(item.props.clone()));
                 self.valid.extend(std::iter::repeat_n(true, repeat));
             }
-            None => todo!(),
+            None => {
+                self.ids.extend(std::iter::repeat_n(RelationshipId::default(), repeat));
+                self.reltypes.extend(std::iter::repeat_n(String::default(), repeat));
+                self.start_ids.extend(std::iter::repeat_n(NodeId::default(), repeat));
+                self.end_ids.extend(std::iter::repeat_n(NodeId::default(), repeat));
+                self.props.extend(iter::repeat(StructValue::default()));
+                self.valid.extend(std::iter::repeat_n(false, repeat));
+            }
         }
     }
 

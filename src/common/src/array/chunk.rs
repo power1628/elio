@@ -27,6 +27,13 @@ impl DataChunk {
         }
 
         let len = columns.first().unwrap().len();
+
+        if cfg!(debug_assertions) {
+            assert!(
+                columns.iter().all(|c| c.len() == len),
+                "All columns in a DataChunk must have the same length"
+            );
+        }
         Self {
             columns,
             visibility: Arc::new(BitVec::repeat(true, len)),
