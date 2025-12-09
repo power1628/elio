@@ -22,7 +22,7 @@ impl Expr {
             Expr::LabelExpr(label_expr) => {
                 vars.extend(label_expr.entity.collect_variables());
             }
-            Expr::CreateMap(CreateMap { properties }) => {
+            Expr::CreateStruct(CreateStruct { properties, .. }) => {
                 vars.extend(properties.iter().flat_map(|(_, expr)| expr.collect_variables()));
             }
         }

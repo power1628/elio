@@ -1,8 +1,8 @@
 use mojito_common::IrToken;
 use mojito_common::schema::{Name2ColumnMap, Schema};
-use mojito_cypher::expr::{Constant, CreateMap, Expr, PropertyAccess, VariableRef};
+use mojito_cypher::expr::{Constant, CreateStruct, Expr, ExprNode, PropertyAccess, VariableRef};
 use mojito_expr::impl_::constant::ConstantExpr;
-use mojito_expr::impl_::create_map::CreateStructExpr;
+use mojito_expr::impl_::create_struct::CreateStructExpr;
 use mojito_expr::impl_::field_access::FieldAccessExpr;
 use mojito_expr::impl_::variable_ref::VariableRefExpr;
 use mojito_expr::impl_::{BoxedExpression, Expression};
@@ -31,7 +31,7 @@ pub(crate) fn build_expression(ctx: &BuildExprContext<'_>, expr: &Expr) -> Resul
         Expr::AggCall(_agg_call) => todo!(),
         Expr::Subquery(_subquery) => todo!(),
         Expr::LabelExpr(_label_expr) => todo!(),
-        Expr::CreateMap(create_map) => build_create_map(ctx, create_map),
+        Expr::CreateStruct(create_map) => build_create_map(ctx, create_map),
     }
 }
 
@@ -49,13 +49,13 @@ fn build_property_access(
     property_access @ PropertyAccess { expr, property, .. }: &PropertyAccess,
 ) -> Result<BoxedExpression, BuildError> {
     let input = build_expression(ctx, expr)?;
-    let token = match property {
-        IrToken::Resolved(id) => id,
+    let _token = match property {
+        IrToken::Resolved { name: _, token } => token,
         IrToken::Unresolved(key) => {
-            return Err(BuildError::unresolved_token(key.clone()));
+            return Err(BuildError::unresolved_token((*key).to_string()));
         }
     };
-    let expr = FieldAccessExpr::new(input, *token, property_access.typ());
+    let expr = FieldAccessExpr::new(input, property.clone(), property_access.typ());
     Ok(expr.boxed())
 }
 
@@ -67,12 +67,17 @@ fn build_constant(_ctx: &BuildExprContext<'_>, constant: &Constant) -> Result<Bo
     .boxed())
 }
 
-fn build_create_map(ctx: &BuildExprContext<'_>, create_map: &CreateMap) -> Result<BoxedExpression, BuildError> {
+fn build_create_map(ctx: &BuildExprContext<'_>, create_map: &CreateStruct) -> Result<BoxedExpression, BuildError> {
     let properties = create_map
         .properties
         .iter()
         .map(|(token, expr)| build_expression(ctx, expr).map(|expr| (token.clone(), expr)))
         .collect::<Result<Vec<_>, _>>()?;
 
-    Ok(CreateStructExpr { fields: properties }.boxed())
+    Ok(CreateStructExpr {
+        fields: properties,
+        typ: create_map.typ().clone(),
+        physical_type: create_map.typ().physical_type(),
+    }
+    .boxed())
 }

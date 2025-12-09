@@ -3,12 +3,12 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use async_stream::stream;
-use futures::stream::BoxStream;
 use futures::Stream;
+use futures::stream::BoxStream;
 use mojito_catalog::Catalog;
 use mojito_catalog::error::CatalogError;
 use mojito_common::array::chunk::DataChunk;
-use mojito_common::scalar::{Datum, Row};
+use mojito_common::array::datum::{Row, ScalarValue};
 use mojito_common::{TokenId, TokenKind};
 use mojito_cypher::plan_context::PlanContext;
 use mojito_cypher::session::{PlannerSession, parse_statement, plan_query};
@@ -59,7 +59,7 @@ impl Session {
     pub async fn execute(
         self: &Arc<Self>,
         query: String,
-        _params: HashMap<String, Datum>,
+        _params: HashMap<String, ScalarValue>,
     ) -> Result<Pin<Box<dyn ResultHandle>>, Error> {
         let ast = parse_statement(&query)?;
         match ast {

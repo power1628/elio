@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use mojito_common::IrToken;
 use mojito_common::data_type::DataType;
 
@@ -6,24 +8,26 @@ use crate::expr::{Expr, ExprNode};
 /// Create Property Map
 /// TODO(pgao): should guaranteee Expr return type is only can be viewed as propety value types
 #[derive(Debug, Hash, Clone, Eq, PartialEq)]
-pub struct CreateMap {
-    pub properties: Vec<(IrToken, Expr)>,
+pub struct CreateStruct {
+    pub properties: Vec<(Arc<str>, Expr)>,
+    typ: DataType,
 }
 
-impl CreateMap {
-    pub fn new(properties: Vec<(IrToken, Expr)>) -> Self {
-        Self { properties }
+impl CreateStruct {
+    pub fn new(properties: Vec<(Arc<str>, Expr)>) -> Self {
+        let typ = DataType::new_struct(properties.iter().map(|(name, expr)| (name.clone(), expr.typ())));
+        Self { properties, typ }
     }
 }
 
-impl ExprNode for CreateMap {
+impl ExprNode for CreateStruct {
     fn typ(&self) -> DataType {
-        DataType::PropertyMap
+        self.typ.clone()
     }
 }
 
-impl From<CreateMap> for Expr {
-    fn from(value: CreateMap) -> Self {
-        Expr::CreateMap(value)
+impl From<CreateStruct> for Expr {
+    fn from(value: CreateStruct) -> Self {
+        Expr::CreateStruct(value)
     }
 }

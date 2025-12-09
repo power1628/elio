@@ -1,5 +1,5 @@
 use futures::Stream;
-use mojito_common::scalar::Row;
+use mojito_common::array::datum::Row;
 
 use crate::error::Error;
 

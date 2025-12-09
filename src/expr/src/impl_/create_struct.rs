@@ -12,8 +12,8 @@ use crate::impl_::{BoxedExpression, EvalCtx, Expression};
 pub struct CreateStructExpr {
     // struct keys and values
     pub fields: Vec<(Arc<str>, BoxedExpression)>,
-    typ: DataType,
-    physical_type: PhysicalType,
+    pub typ: DataType,
+    pub physical_type: PhysicalType,
 }
 
 impl CreateStructExpr {

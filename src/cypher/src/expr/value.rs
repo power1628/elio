@@ -1,39 +1,39 @@
+use mojito_common::array::datum::ScalarValue;
 use mojito_common::data_type::{DataType, F64};
-use mojito_common::scalar::{Datum, ScalarImpl};
 
 use crate::expr::{Expr, ExprNode};
 
 #[derive(Debug, Hash, Clone, Eq, PartialEq)]
 pub struct Constant {
-    pub data: Datum,
+    pub data: Option<ScalarValue>,
     pub typ: DataType,
 }
 
 impl Constant {
     pub fn boolean(b: bool) -> Self {
         Self {
-            data: Some(ScalarImpl::Bool(b)),
+            data: Some(ScalarValue::Bool(b)),
             typ: DataType::Bool,
         }
     }
 
     pub fn integer(i: i64) -> Self {
         Self {
-            data: Some(ScalarImpl::Integer(i)),
+            data: Some(ScalarValue::Integer(i)),
             typ: DataType::Integer,
         }
     }
 
     pub fn float(f: F64) -> Self {
         Self {
-            data: Some(ScalarImpl::Float(f)),
+            data: Some(ScalarValue::Float(f)),
             typ: DataType::Float,
         }
     }
 
     pub fn string(s: String) -> Self {
         Self {
-            data: Some(ScalarImpl::String(s)),
+            data: Some(ScalarValue::String(s)),
             typ: DataType::String,
         }
     }

@@ -568,7 +568,7 @@ fn bind_properties(pctx: &PatternContext, var: &Variable, props: &ast::Expr) -> 
             let prop = Expr::PropertyAccess(PropertyAccess::new_unchecked(
                 Box::new(Expr::from_variable(var)),
                 &token,
-                &DataType::Property,
+                &DataType::Any,
             ));
             let equal = prop.equal(value);
             filter.push(equal);

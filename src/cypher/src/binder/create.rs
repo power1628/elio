@@ -11,7 +11,7 @@ use crate::binder::pattern::PatternContext;
 use crate::binder::query::ClauseKind;
 use crate::binder::scope::{Scope, ScopeItem};
 use crate::error::{PlanError, SemanticError};
-use crate::expr::CreateMap;
+use crate::expr::CreateStruct;
 use crate::ir::mutating_pattern::{CreateNode, CreatePattern, CreateRel};
 
 pub fn bind_create(
@@ -222,7 +222,7 @@ fn bind_label_expr_for_create(
     Ok(tokens)
 }
 
-fn bind_properties_for_create(ectx: &ExprContext, properties: Option<&ast::Expr>) -> Result<CreateMap, PlanError> {
+fn bind_properties_for_create(ectx: &ExprContext, properties: Option<&ast::Expr>) -> Result<CreateStruct, PlanError> {
     let props = if let Some(ast::Expr::MapExpression { keys, values }) = properties {
         // do not allow referece outer scope
         bind_map_expr_to_property_map(ectx, &[], keys, values)?
@@ -230,5 +230,5 @@ fn bind_properties_for_create(ectx: &ExprContext, properties: Option<&ast::Expr>
         vec![]
     };
 
-    Ok(CreateMap::new(props))
+    Ok(CreateStruct::new(props))
 }

@@ -43,7 +43,7 @@ impl Expression for FieldAccessExpr {
 
         // struct type
         if let ArrayImpl::Struct(input) = input.as_ref() {
-            return struct_field_access(input, &key);
+            return struct_field_access(input, key);
         }
 
         // node type
@@ -52,7 +52,7 @@ impl Expression for FieldAccessExpr {
             let mut builder = AnyArrayBuilder::with_capacity(input.len());
             input.props_iter().for_each(|props| {
                 if let Some(props) = props {
-                    builder.push(props.field_at(&key));
+                    builder.push(props.field_at(key));
                 }
             });
             return Ok(Arc::new(builder.finish().into()));
@@ -63,18 +63,21 @@ impl Expression for FieldAccessExpr {
             let mut builder = AnyArrayBuilder::with_capacity(input.len());
             input.props_iter().for_each(|props| {
                 if let Some(props) = props {
-                    builder.push(props.field_at(&key));
+                    builder.push(props.field_at(key));
                 }
             });
             return Ok(Arc::new(builder.finish().into()));
         }
 
-        return Err(EvalError::type_error(
+        Err(EvalError::type_error(
             "FieldAccess expected to have input of Node/Rel/Struct",
-        ));
+        ))
     }
 }
 
 fn struct_field_access(input: &StructArray, field: &str) -> Result<ArrayRef, EvalError> {
-    input.field_at(field).ok_or(EvalError::FieldNotFound(field.to_string()))
+    input
+        .field_at(field)
+        .ok_or(EvalError::FieldNotFound(field.to_string()))
+        .cloned()
 }

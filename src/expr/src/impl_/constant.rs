@@ -10,7 +10,7 @@ use crate::impl_::{EvalCtx, Expression};
 
 #[derive(Debug)]
 pub struct ConstantExpr {
-    pub value: ScalarValue,
+    pub value: Option<ScalarValue>,
     pub typ: DataType,
 }
 
@@ -27,7 +27,7 @@ impl Expression for ConstantExpr {
             .into_any()
             .map_err(|_| EvalError::type_error(format!("consant only allow basic types, got {}", self.typ)))?;
 
-        builder.push_n(Some(&self.value), chunk.row_len());
+        builder.push_n(self.value.as_ref().map(|x| x.as_scalar_ref()), chunk.row_len());
 
         Ok(Arc::new(builder.finish().into()))
     }

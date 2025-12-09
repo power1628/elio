@@ -42,7 +42,7 @@ pub trait Array: Send + Sync + Sized + 'static + Into<ArrayImpl> + std::fmt::Deb
     /// The corresponding [`ArrayBuilder`] of this [`Array`].
     ///
     /// We constriant the associated type so that `Self::Builder::Array = Self`.
-    type Builder: ArrayBuilder<Array = Self>;
+    // type Builder: ArrayBuilder<Array = Self>;
 
     /// The owned item of this array.
     // type OwnedItem: Scalar<ArrayType = Self>;
@@ -64,31 +64,11 @@ pub trait Array: Send + Sync + Sized + 'static + Into<ArrayImpl> + std::fmt::Deb
     }
 
     /// Get iterator of this array.
-    fn iter(&self) -> ArrayIterator<Self> {
+    fn iter(&self) -> ArrayIterator<'_, Self> {
         ArrayIterator::new(self)
     }
 
     fn physical_type(&self) -> PhysicalType;
-}
-
-/// [`ArrayBuilder`] builds an [`Array`].
-pub trait ArrayBuilder {
-    /// The corresponding [`Array`] of this [`ArrayBuilder`].
-    ///
-    /// Here we use associated type to constraint the [`Array`] type of this builder, so that
-    /// `Self::Array::Builder == Self`. This property is very useful when constructing generic
-    /// functions, and may help a lot when implementing expressions.
-    type Array: Array<Builder = Self>;
-
-    /// Append a value to builder.
-    fn push_n(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>, repeat: usize);
-
-    fn push(&mut self, value: Option<<Self::Array as Array>::RefItem<'_>>) {
-        self.push_n(value, 1);
-    }
-
-    /// Finish build and return a new array.
-    fn finish(self) -> Self::Array;
 }
 
 pub type ArrayRef = Arc<ArrayImpl>;

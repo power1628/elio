@@ -4,7 +4,7 @@ use std::sync::Arc;
 use bitvec::prelude::*;
 
 use crate::NodeId;
-use crate::array::datum::{NodeValue, NodeValueRef, StructValue};
+use crate::array::datum::{NodeValue, NodeValueRef, ScalarRefVTable, StructValue};
 use crate::array::{Array, PhysicalType};
 
 #[derive(Debug, Clone)]
@@ -23,7 +23,7 @@ impl Array for NodeArray {
         self.valid.get(idx).map(|_| NodeValueRef {
             id: self.ids[idx],
             labels: &self.label_values[self.label_offsets[idx]..self.label_offsets[idx + 1]],
-            props: &self.props[idx],
+            props: self.props[idx].as_scalar_ref(),
         })
     }
 
@@ -71,11 +71,12 @@ impl NodeArrayBuilder {
         }
     }
 
-    pub fn push_n(&mut self, value: Option<&NodeValue>, repeat: usize) {
+    pub fn push_n(&mut self, value: Option<NodeValueRef<'_>>, repeat: usize) {
         if let Some(value) = value {
             self.ids.extend(std::iter::repeat_n(value.id, repeat));
-            self.labels.extend(std::iter::repeat_n(value.labels.clone(), repeat));
-            self.props.extend(std::iter::repeat_n(value.props.clone(), repeat));
+            self.labels.extend(std::iter::repeat_n(value.labels.to_vec(), repeat));
+            self.props
+                .extend(std::iter::repeat_n(value.props.to_owned_value(), repeat));
             self.valid.extend(std::iter::repeat_n(true, repeat));
         } else {
             self.ids.extend(std::iter::repeat_n(NodeId::default(), repeat));
@@ -85,7 +86,7 @@ impl NodeArrayBuilder {
         }
     }
 
-    pub fn push(&mut self, value: Option<&NodeValue>) {
+    pub fn push(&mut self, value: Option<NodeValueRef<'_>>) {
         self.push_n(value, 1);
     }
 

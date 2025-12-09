@@ -5,7 +5,7 @@ use mojito_common::variable::VariableName;
 use mojito_parser::ast::SemanticDirection;
 use pretty_xmlish::XmlNode;
 
-use crate::expr::{BoxedExpr, CreateMap};
+use crate::expr::{BoxedExpr, CreateStruct};
 use crate::pretty_utils::pretty_display_iter;
 
 pub enum MutatingPattern {
@@ -44,7 +44,7 @@ pub struct CreateNode {
     pub labels: HashSet<IrToken>,
     // CREATE (a:{name: "Bob"})
     // properties: (name, "bob")
-    pub properties: CreateMap,
+    pub properties: CreateStruct,
 }
 
 impl std::fmt::Display for CreateNode {
@@ -75,7 +75,7 @@ pub struct CreateRel {
     pub right: VariableName,
     pub reltype: IrToken,
     pub direction: SemanticDirection,
-    pub properties: CreateMap,
+    pub properties: CreateStruct,
 }
 
 impl std::fmt::Display for CreateRel {

@@ -20,7 +20,7 @@ pub enum DataType {
     VirtualRel,
     Node,
     Rel,
-    // Path,
+    Path,
     // structure
     #[display("List({})", _0)]
     List(Box<DataType>),
@@ -71,6 +71,7 @@ impl DataType {
                     .collect::<Vec<_>>();
                 PhysicalType::Struct(fields.into_boxed_slice())
             }
+            DataType::Path => todo!("not supported"),
         }
     }
 }

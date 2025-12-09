@@ -26,7 +26,7 @@ impl Array for RelArray {
             reltype: &self.reltypes[idx],
             start_id: self.start_ids[idx],
             end_id: self.end_ids[idx],
-            props: &self.props[idx],
+            props: self.props[idx].as_scalar_ref(),
         })
     }
 

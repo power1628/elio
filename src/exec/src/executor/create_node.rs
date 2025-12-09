@@ -34,13 +34,7 @@ impl CreateNodeExectuor {
             // create string to token mapping
             let mut labels = vec![];
             for label in self.labels.iter() {
-                match label{
-                    IrToken::Resolved(label) => labels.push(*label),
-                    IrToken::Unresolved(key) => {
-                        let token_id = ctx.catalog().get_or_create_label_id(key)?;
-                        labels.push(token_id);
-                    },
-                }
+                labels.push(label.name().to_string());
             }
 
             // execute the stream
@@ -48,9 +42,8 @@ impl CreateNodeExectuor {
             while let Some(chunk) = input_stream.next().await{
                 let mut chunk = chunk?;
                 let prop = self.properties.eval_batch(&chunk, &eval_ctx)?;
-                let ids = ctx.tx().node_create(&labels, prop.as_property_map().unwrap())?;
-                // TODO add node column
-                chunk.add_column(ids.into());
+                let output= ctx.tx().node_create(&labels, &prop)?;
+                chunk.add_column(Arc::new(output.into()));
                 yield chunk;
             }
         }

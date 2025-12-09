@@ -41,6 +41,14 @@ impl StructArray {
         Self { fields, valid }
     }
 
+    pub fn fields(&self) -> &[(Arc<str>, ArrayRef)] {
+        &self.fields
+    }
+
+    pub fn field_at_pos(&self, idx: usize) -> Option<&(Arc<str>, ArrayRef)> {
+        self.fields.get(idx)
+    }
+
     /// Return the field at given name.
     /// NOTICE: the valid map will not be joined
     pub fn field_at(&self, name: &str) -> Option<&ArrayRef> {

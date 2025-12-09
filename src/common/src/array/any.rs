@@ -3,7 +3,7 @@ use std::sync::Arc;
 use bitvec::prelude::*;
 
 use crate::array::datum::{ScalarRef, ScalarValue};
-use crate::array::{Array, ArrayBuilder, PhysicalType};
+use crate::array::{Array, PhysicalType};
 
 #[derive(Debug, Clone)]
 pub struct AnyArray {
@@ -12,11 +12,10 @@ pub struct AnyArray {
 }
 
 impl Array for AnyArray {
-    type Builder = AnyArrayBuilder;
     type RefItem<'a> = ScalarRef<'a>;
 
     fn get(&self, idx: usize) -> Option<Self::RefItem<'_>> {
-        self.valid.get(idx).map(|_| ScalarRef::from(&self.data[idx]))
+        self.valid.get(idx).map(|_| self.data[idx].as_scalar_ref())
     }
 
     fn len(&self) -> usize {
@@ -44,24 +43,6 @@ pub struct AnyArrayBuilder {
     valid: BitVec,
 }
 
-impl ArrayBuilder for AnyArrayBuilder {
-    type Array = AnyArray;
-
-    fn push_n(&mut self, item: Option<ScalarRef<'_>>, repeat: usize) {
-        if let Some(item) = item {
-            self.data.extend(std::iter::repeat_n(item.to_owned(), repeat));
-            self.valid.extend(std::iter::repeat_n(true, repeat));
-        } else {
-            self.data.extend(std::iter::repeat_n(ScalarValue::default(), repeat));
-            self.valid.extend(std::iter::repeat_n(false, repeat));
-        }
-    }
-
-    fn finish(self) -> Self::Array {
-        todo!()
-    }
-}
-
 impl AnyArrayBuilder {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
@@ -70,9 +51,9 @@ impl AnyArrayBuilder {
         }
     }
 
-    pub fn push_n(&mut self, item: Option<&ScalarValue>, repeat: usize) {
+    pub fn push_n(&mut self, item: Option<ScalarRef<'_>>, repeat: usize) {
         if let Some(item) = item {
-            self.data.extend(std::iter::repeat_n(item.to_owned(), repeat));
+            self.data.extend(std::iter::repeat_n(item.to_owned_value(), repeat));
             self.valid.extend(std::iter::repeat_n(true, repeat));
         } else {
             self.data.extend(std::iter::repeat_n(ScalarValue::default(), repeat));
@@ -80,7 +61,7 @@ impl AnyArrayBuilder {
         }
     }
 
-    pub fn push(&mut self, item: Option<&ScalarValue>) {
+    pub fn push(&mut self, item: Option<ScalarRef<'_>>) {
         self.push_n(item, 1);
     }
 
