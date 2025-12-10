@@ -71,11 +71,9 @@ where
     // construct batch
     let cf = tx.inner._db.cf_handle(cf_topology::CF_NAME).unwrap();
     let mut guard = tx.write_state.lock().unwrap();
-    for (k, v) in out_keys.iter().chain(in_keys.iter()).zip(values.iter()) {
-        guard.batch.put_cf(&cf, k, v);
-    }
-    for (k, v) in out_keys.iter().chain(in_keys.iter()).zip(values.iter()) {
-        guard.batch.put_cf(&cf, k, v);
+    for i in 0..values.len() {
+        guard.batch.put_cf(&cf, &out_keys[i], &values[i]);
+        guard.batch.put_cf(&cf, &in_keys[i], &values[i]);
     }
     drop(guard);
 

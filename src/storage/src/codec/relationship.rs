@@ -34,7 +34,7 @@ impl RelFormat {
     }
 
     pub fn decode_key(buf: &[u8]) -> (NodeId, RelDirection, TokenId, NodeId, RelationshipId) {
-        assert_eq!(buf.len(), 25);
+        assert!(buf.len() >= 25);
         let src_node_id = NodeId::from_be_bytes(buf[1..9].try_into().unwrap());
         let direction = RelDirection::from(buf[9]);
         let reltype = TokenId::from_be_bytes(buf[10..12].try_into().unwrap());

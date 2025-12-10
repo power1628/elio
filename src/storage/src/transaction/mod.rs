@@ -24,31 +24,6 @@ pub trait DataChunkIterator: Send {
     fn next_batch(&mut self) -> Result<Option<DataChunk>, GraphStoreError>;
 }
 
-// #[async_trait]
-// pub trait Transaction: Send + Sync {
-//     // readonly
-//     fn rel_scan(&self, opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError>;
-//     fn node_scan(&self, opts: NodeScanOptions) -> Result<Box<dyn DataChunkIterator + '_>, GraphStoreError>;
-//     fn materialize_node(&self, node: &VirtualNodeArray) -> Result<NodeArray, GraphStoreError>;
-//     // read-write
-//     fn node_create(&self, label: &[String], prop: &ArrayImpl) -> Result<NodeArray, GraphStoreError>;
-//     fn relationship_create<A, B>(
-//         &self,
-//         rtype: &str,
-//         start: &A,          // VirtualNode/Node
-//         end: &B,            // VirtualNode/Node
-//         prop: &StructArray, // Struct or Any
-//     ) -> Result<RelArray, GraphStoreError>
-//     where
-//         A: NodeIdContainer,
-//         B: NodeIdContainer;
-//     fn node_delete(&self, node: &DataChunk) -> Result<(), GraphStoreError>;
-//     fn relationship_delete(&self, rel: &DataChunk) -> Result<(), GraphStoreError>;
-//     // commit
-//     fn commit(&self) -> Result<(), GraphStoreError>;
-//     fn abort(&self) -> Result<(), GraphStoreError>;
-// }
-
 // Simple transaction implementation with snapshot and write batch buffer
 pub struct TransactionImpl {
     pub(crate) inner: OwnedSnapshot,
