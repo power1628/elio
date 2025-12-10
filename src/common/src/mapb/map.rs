@@ -171,7 +171,9 @@ impl PropertyMapMut {
         let mut offset = 0;
         // entry
         self.entries.iter_mut().for_each(|entry| {
-            entry.key.set_offset(offset);
+            if !entry.is_inlined() {
+                entry.key.set_offset(offset);
+            }
             offset += entry.val.as_ref().map_or(0, |x| x.len());
             buf.put_slice(entry.key.0.as_slice());
         });

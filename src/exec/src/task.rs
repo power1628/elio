@@ -46,6 +46,7 @@ impl ExecContext {
 
 pub struct EvalCtxImpl {
     pub catalog: Arc<Catalog>,
+    pub tx: Arc<dyn Transaction>,
 }
 
 impl EvalCtx for EvalCtxImpl {
@@ -80,6 +81,7 @@ impl TaskExecContext {
     pub fn derive_eval_ctx(&self) -> EvalCtxImpl {
         EvalCtxImpl {
             catalog: self.exec_ctx.catalog().clone(),
+            tx: self.tx.clone(),
         }
     }
 }

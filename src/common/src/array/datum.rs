@@ -10,7 +10,11 @@ use crate::{NodeId, RelationshipId};
 #[derive(Debug, Clone, Default, Eq, PartialEq, Hash)]
 pub struct NodeValue {
     pub id: NodeId,
+    // TODO(pgao): Vec<Arc<str>>
     pub labels: Vec<String>,
+    // TODO(pgao): PropertyMap
+    // NodeValue properties have constraint on property types.
+    // not general structure value
     pub props: StructValue,
 }
 
@@ -78,6 +82,12 @@ pub struct VirtualRelRef<'a> {
 #[derive(Debug, Clone, Default, Eq, PartialEq, Hash)]
 pub struct ListValue {
     values: Vec<ScalarValue>,
+}
+
+impl ListValue {
+    pub fn new(values: Vec<ScalarValue>) -> Self {
+        Self { values }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -189,6 +199,10 @@ pub struct StructValue {
 }
 
 impl StructValue {
+    pub fn new(fields: Vec<(Arc<str>, ScalarValue)>) -> Self {
+        Self { fields }
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = (&Arc<str>, &ScalarValue)> {
         self.fields.iter().map(|(k, v)| (k, v))
     }

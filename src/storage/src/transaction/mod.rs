@@ -3,12 +3,12 @@ use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::{ArrayImpl, NodeArray};
+use mojito_common::array::{ArrayImpl, NodeArray, VirtualNodeArray};
 
 use crate::dict::IdStore;
 use crate::error::GraphStoreError;
 use crate::token::TokenStore;
-use crate::transaction::node::{batch_node_create, batch_node_scan};
+use crate::transaction::node::{batch_materialize_node, batch_node_create, batch_node_scan};
 
 mod node;
 // mod relationship;
@@ -28,6 +28,7 @@ pub trait Transaction: Send + Sync {
     // readonly
     fn rel_scan(&self, opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError>;
     fn node_scan(&self, opts: NodeScanOptions) -> Result<Box<dyn DataChunkIterator + '_>, GraphStoreError>;
+    fn materialize_node(&self, node: &VirtualNodeArray) -> Result<NodeArray, GraphStoreError>;
     // read-write
     fn node_create(&self, label: &[String], prop: &ArrayImpl) -> Result<NodeArray, GraphStoreError>;
     fn relationship_create(&self, rel: &DataChunk) -> Result<DataChunk, GraphStoreError>;
@@ -73,6 +74,10 @@ impl Transaction for TransactionImpl {
 
     fn node_scan(&self, opts: NodeScanOptions) -> Result<Box<dyn DataChunkIterator + '_>, GraphStoreError> {
         batch_node_scan(self, opts)
+    }
+
+    fn materialize_node(&self, node_ids: &VirtualNodeArray) -> Result<NodeArray, GraphStoreError> {
+        batch_materialize_node(self, node_ids)
     }
 
     fn node_create(&self, label: &[String], prop: &ArrayImpl) -> Result<NodeArray, GraphStoreError> {

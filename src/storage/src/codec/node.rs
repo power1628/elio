@@ -8,7 +8,7 @@
 
 use bytes::{BufMut, Bytes, BytesMut};
 use mojito_common::array::datum::StructValueRef;
-use mojito_common::mapb::PropertyMapMut;
+use mojito_common::mapb::{PropertyMapMut, PropertyMapRef};
 use mojito_common::{LabelId, NodeId, TokenId};
 
 pub struct NodeFormat;
@@ -60,5 +60,50 @@ impl NodeFormat {
         }
         mapb_mut.freeze().write(&mut buf);
         Ok(buf.freeze())
+    }
+
+    pub fn decode_node_value(buf: &[u8]) -> Result<(LabelIdListRef<'_>, PropertyMapRef<'_>), String> {
+        if buf.len() < 6 {
+            return Err("buffer too short for header".to_string());
+        }
+        let label_len = u16::from_le_bytes(buf[0..2].try_into().unwrap()) as usize;
+        let prop_byte_len = u32::from_le_bytes(buf[2..6].try_into().unwrap()) as usize;
+        // check buf length
+        let totoal_byte_len = 6 + label_len * 2 + prop_byte_len;
+        if buf.len() < totoal_byte_len {
+            return Err(format!(
+                "buf len {} is less than totoal byte len {}",
+                buf.len(),
+                totoal_byte_len
+            ));
+        }
+        let label_block = &buf[6..6 + label_len * 2];
+        let prop_block = &buf[6 + label_len * 2..6 + label_len * 2 + prop_byte_len];
+        // deserialize labels
+        let label_ids = LabelIdListRef {
+            data: label_block,
+            len: label_len,
+        };
+        // deserialize properties
+        let prop_map = PropertyMapRef::new(prop_block);
+        Ok((label_ids, prop_map))
+    }
+}
+
+pub struct LabelIdListRef<'a> {
+    // # layout: | u16_le | u16_le | u16_le | ... |
+    //           ^
+    //         data
+    data: &'a [u8],
+    len: usize,
+}
+
+impl<'a> LabelIdListRef<'a> {
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = LabelId> {
+        (0..self.len).map(move |i| LabelId::from_le_bytes(self.data[i * 2..i * 2 + 2].try_into().unwrap()))
     }
 }

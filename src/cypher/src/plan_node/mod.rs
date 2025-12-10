@@ -21,6 +21,7 @@ pub mod filter;
 pub mod get_prop;
 pub mod pagination;
 pub mod plan_base;
+pub mod produce_result;
 pub mod project;
 pub mod sort;
 pub mod unit;
@@ -34,6 +35,7 @@ pub use expand::*;
 pub use filter::*;
 pub use get_prop::*;
 pub use pagination::*;
+pub use produce_result::*;
 pub use project::*;
 pub use sort::*;
 pub use unit::*;
@@ -47,6 +49,7 @@ pub enum PlanExpr {
     Apply(Apply),
     Argument(Argument),
     Unit(Unit),
+    ProduceResult(ProduceResult),
     // graph-modify
     CreateNode(CreateNode),
     CreateRel(CreateRel),
@@ -133,6 +136,7 @@ impl_plan_node_common!(Sort, SortInner);
 impl_plan_node_common!(Filter, FilterInner);
 impl_plan_node_common!(Pagination, PaginationInner);
 impl_plan_node_common!(Empty, EmptyInner);
+impl_plan_node_common!(ProduceResult, ProduceResultInner);
 
 macro_rules! impl_plan_expr_dispatch {
     ($($plan_node:ident),*) => {
@@ -183,5 +187,6 @@ impl_plan_expr_dispatch!(
     Sort,
     Filter,
     Pagination,
-    Empty
+    Empty,
+    ProduceResult
 );

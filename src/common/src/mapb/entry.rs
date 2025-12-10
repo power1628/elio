@@ -2,7 +2,9 @@ use core::panic;
 use std::marker::PhantomData;
 
 use bytes::{Buf, BufMut, BytesMut};
+use itertools::Itertools;
 
+use crate::array::datum::{ListValue, ScalarValue};
 use crate::data_type::F64;
 use crate::mapb::meta::{
     BOOL_TAG, EntryMeta, FLOAT_TAG, INTEGER_TAG, LIST_BOOL_TAG, LIST_FLOAT_TAG, LIST_INTEGER_TAG, LIST_STRING_TAG,
@@ -64,6 +66,30 @@ pub enum EntryValueRef<'a> {
     ListInteger(PrimitiveListRef<'a, i64>),
     ListFloat(PrimitiveListRef<'a, f64>),
     ListString(ListStringRef<'a>),
+}
+
+impl<'a> EntryValueRef<'a> {
+    pub fn to_owned_scalar(&self) -> ScalarValue {
+        match self {
+            EntryValueRef::Null => ScalarValue::Unknown,
+            EntryValueRef::Bool(b) => ScalarValue::Bool(*b),
+            EntryValueRef::Integer(i) => ScalarValue::Integer(*i),
+            EntryValueRef::Float(f) => ScalarValue::Float(F64::from(*f)),
+            EntryValueRef::String(s) => ScalarValue::String(s.to_string()),
+            EntryValueRef::ListBool(list) => ScalarValue::List(Box::new(ListValue::new(
+                list.iter().map(|x| ScalarValue::Bool(*x)).collect_vec(),
+            ))),
+            EntryValueRef::ListInteger(list) => ScalarValue::List(Box::new(ListValue::new(
+                list.iter().map(ScalarValue::Integer).collect_vec(),
+            ))),
+            EntryValueRef::ListFloat(list) => ScalarValue::List(Box::new(ListValue::new(
+                list.iter().map(|x| ScalarValue::Float(F64::from(x))).collect_vec(),
+            ))),
+            EntryValueRef::ListString(list) => ScalarValue::List(Box::new(ListValue::new(
+                list.iter().map(|x| ScalarValue::String(x.to_owned())).collect_vec(),
+            ))),
+        }
+    }
 }
 
 impl<'a> EntryValueRef<'a> {
@@ -354,6 +380,11 @@ impl EntryMut {
 
     pub fn key_id(&self) -> u16 {
         self.key.key_id()
+    }
+
+    // true on entry value is inlined in entry meta
+    pub fn is_inlined(&self) -> bool {
+        self.key.is_inlined()
     }
 
     pub fn estimated_size(&self) -> usize {

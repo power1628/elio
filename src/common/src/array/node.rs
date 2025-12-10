@@ -12,6 +12,11 @@ pub struct NodeArray {
     ids: Arc<[NodeId]>,
     label_offsets: Arc<[usize]>,
     label_values: Arc<[String]>,
+    // TODO(pgao): this is actually not struct value
+    // the properties can be stored in node and rel have some constraint.
+    // only supported type can be stored in it
+    // an optimization would be store an row bytes as props
+    // and when query props, we can deserialize it on the fly
     props: Arc<[StructValue]>,
     valid: BitVec,
 }

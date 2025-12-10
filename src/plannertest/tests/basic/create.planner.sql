@@ -8,8 +8,9 @@ RootIR { names: [n] }
     └─mutating_pattern
       └─CreatePattern { nodes: [(n@0):Person create_map{name: Alice, age: 30}], rels: [] }
 RootPlan { names: [n] }
-└─CreateNode { variable: n@0, labels: [Person], properties: create_map{name: Alice, age: 30} }
-  └─Unit
+└─ProduceResult { return_columns: n@0 }
+  └─CreateNode { variable: n@0, labels: [Person], properties: create_map{name: Alice, age: 30} }
+    └─Unit
 */
 
 -- Create a node with properties, with return clause
@@ -23,9 +24,10 @@ RootIR { names: [n] }
   │   └─CreatePattern { nodes: [(n@0):Person create_map{name: Alice, age: 30}], rels: [] }
   └─Project { items: [n@0 AS n@0] }
 RootPlan { names: [n] }
-└─Project { exprs: [n@0 AS n@0] }
-  └─CreateNode { variable: n@0, labels: [Person], properties: create_map{name: Alice, age: 30} }
-    └─Unit
+└─ProduceResult { return_columns: n@0 }
+  └─Project { exprs: [n@0 AS n@0] }
+    └─CreateNode { variable: n@0, labels: [Person], properties: create_map{name: Alice, age: 30} }
+      └─Unit
 */
 
 -- Create a node with properties, with return clause, only return node
@@ -39,9 +41,10 @@ RootIR { names: [n] }
   │   └─CreatePattern { nodes: [(n@0):Person create_map{name: Alice, age: 30}], rels: [] }
   └─Project { items: [n@1 AS n@0] }
 RootPlan { names: [n] }
-└─Project { exprs: [n@1 AS n@0] }
-  └─CreateNode { variable: n@0, labels: [Person], properties: create_map{name: Alice, age: 30} }
-    └─Unit
+└─ProduceResult { return_columns: n@1 }
+  └─Project { exprs: [n@1 AS n@0] }
+    └─CreateNode { variable: n@0, labels: [Person], properties: create_map{name: Alice, age: 30} }
+      └─Unit
 */
 
 -- create multiple nodes
@@ -55,8 +58,9 @@ RootIR { names: [n, m] }
       ├─CreatePattern { nodes: [(n@0):Person create_map{name: Alice, age: 30}], rels: [] }
       └─CreatePattern { nodes: [(m@1):Person create_map{name: Bob, age: 31}], rels: [] }
 RootPlan { names: [n, m] }
-└─CreateNode { variable: m@1, labels: [Person], properties: create_map{name: Bob, age: 31} }
-  └─CreateNode { variable: n@0, labels: [Person], properties: create_map{name: Alice, age: 30} }
-    └─Unit
+└─ProduceResult { return_columns: n@0,m@1 }
+  └─CreateNode { variable: m@1, labels: [Person], properties: create_map{name: Bob, age: 31} }
+    └─CreateNode { variable: n@0, labels: [Person], properties: create_map{name: Alice, age: 30} }
+      └─Unit
 */
 
