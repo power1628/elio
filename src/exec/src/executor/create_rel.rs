@@ -27,10 +27,10 @@ impl Executor for CreateRelExectuor {
     fn build_stream(self: Box<Self>, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
         let stream = try_stream! {
             let eval_ctx = ctx.derive_eval_ctx();
-            let mut input_stream = self.input.build_stream(ctx.clone())?;
+            let input_stream = self.input.build_stream(ctx.clone())?;
 
             // execute the stream
-            while let Some(chunk) = input_stream.next().await{
+            for await chunk in input_stream {
                 let mut chunk = chunk?;
                 // for each variable execute create node
                 for (i, item) in self.items.iter().enumerate() {
@@ -47,27 +47,30 @@ impl Executor for CreateRelExectuor {
 
                     let output = match (start.as_ref(), end.as_ref()) {
                         (ArrayImpl::VirtualNode(start), ArrayImpl::VirtualNode(end)) => {
-                            ctx.tx().relationship_create(&item.rtype, start, end, prop)?
+                            ctx.tx().relationship_create(&item.rtype, start, end, prop).map_err(|e| e.into())
                         }
                         (ArrayImpl::Node(start), ArrayImpl::Node(end)) => {
-                            ctx.tx().relationship_create(&item.rtype, start, end, prop)?
+                            ctx.tx().relationship_create(&item.rtype, start, end, prop).map_err(|e| e.into())
                         }
                         (ArrayImpl::VirtualNode(start), ArrayImpl::Node(end)) => {
-                            ctx.tx().relationship_create(&item.rtype, start, end, prop)?
+                            ctx.tx().relationship_create(&item.rtype, start, end, prop).map_err(|e| e.into())
                         }
                         (ArrayImpl::Node(start), ArrayImpl::VirtualNode(end)) => {
-                            ctx.tx().relationship_create(&item.rtype, start, end, prop)?
+                            ctx.tx().relationship_create(&item.rtype, start, end, prop).map_err(|e| e.into())
                         }
-                        _=> {
-                            let err = Err(ExecError::type_mismatch(
-                                format!("create rel item {}", i),
+                        (s, e) => {
+                            let pt = if !matches!(s, ArrayImpl::Node(_) | ArrayImpl::VirtualNode(_)) {
+                                s.physical_type()
+                            } else {
+                                e.physical_type()
+                            };
+                            Err(ExecError::type_mismatch(
+                                format!("create rel item {} node", i),
                                 "node or virtual node",
-                                start.physical_type(),
-                            ));
-                            err?;
-                            continue;
+                                pt,
+                            ))
                         }
-                    };
+                    }?;
                     chunk.add_column(Arc::new(output.into()));
                 }
                 yield chunk;
