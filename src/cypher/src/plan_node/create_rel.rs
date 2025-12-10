@@ -31,21 +31,23 @@ impl PlanNode for CreateRel {
     }
 
     fn xmlnode(&self) -> XmlNode<'_> {
-        let fields = vec![
-            ("variable", Pretty::from(self.inner.variable.name.as_ref())),
-            ("reltype", Pretty::from(self.inner.reltype.to_string())),
-            ("start_node", Pretty::from(self.inner.start_node.pretty())),
-            ("end_node", Pretty::from(self.inner.end_node.pretty())),
-            ("properties", Pretty::from(self.inner.properties.pretty())),
-        ];
+        let fields = vec![(
+            "items",
+            Pretty::Array(
+                self.inner
+                    .rels
+                    .iter()
+                    .map(|x| Pretty::Record(x.xmlnode()))
+                    .collect_vec(),
+            ),
+        )];
         let children = vec![Pretty::Record(self.inner.input.xmlnode())];
         XmlNode::simple_record("CreateRel", fields, children)
     }
 }
 
 #[derive(Clone, Debug)]
-pub struct CreateRelInner {
-    pub(crate) input: Box<PlanExpr>,
+pub struct CreateRelItem {
     pub(crate) reltype: IrToken,
     pub(crate) start_node: BoxedExpr,
     pub(crate) end_node: BoxedExpr,
@@ -53,10 +55,31 @@ pub struct CreateRelInner {
     pub(crate) variable: Variable,
 }
 
+impl CreateRelItem {
+    pub fn xmlnode(&self) -> XmlNode<'_> {
+        let fields = vec![
+            ("variable", Pretty::from(self.variable.name.as_ref())),
+            ("reltype", Pretty::from(self.reltype.to_string())),
+            ("start_node", Pretty::from(self.start_node.pretty())),
+            ("end_node", Pretty::from(self.end_node.pretty())),
+            ("properties", Pretty::from(self.properties.pretty())),
+        ];
+        XmlNode::simple_record("CreateRelItem", fields, vec![])
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct CreateRelInner {
+    pub(crate) input: Box<PlanExpr>,
+    pub rels: Vec<CreateRelItem>,
+}
+
 impl CreateRelInner {
     fn build_schema(&self) -> Arc<Schema> {
         let mut schema = Schema::from_arc(self.input.schema());
-        schema.add_column(self.variable.clone());
+        for item in self.rels.iter() {
+            schema.add_column(item.variable.clone());
+        }
         schema.into()
     }
 }

@@ -1,18 +1,14 @@
 use mojito_parser::ast;
 
-use crate::{
-    binder::{
-        BindContext,
-        builder::IrSingleQueryBuilder,
-        expr::bind_expr,
-        pattern::{PatternContext, bind_pattern},
-        query::ClauseKind,
-        scope::Scope,
-    },
-    error::PlanError,
-    expr::FilterExprs,
-    ir::query_graph::QueryGraph,
-};
+use crate::binder::BindContext;
+use crate::binder::builder::IrSingleQueryBuilder;
+use crate::binder::expr::bind_expr;
+use crate::binder::pattern::{PatternContext, bind_pattern};
+use crate::binder::query::ClauseKind;
+use crate::binder::scope::Scope;
+use crate::error::PlanError;
+use crate::expr::FilterExprs;
+use crate::ir::query_graph::QueryGraph;
 
 pub(crate) fn bind_match(
     bctx: &BindContext,
@@ -39,7 +35,7 @@ pub(crate) fn bind_match(
         reject_named_path: false,
         reject_selective: false,
     };
-    let (paths, scope) = bind_pattern(&pctx, scope, &pattern.patterns)?;
+    let (paths, mut scope) = bind_pattern(&pctx, scope, &pattern.patterns)?;
 
     let qg = {
         let mut qg = QueryGraph::empty();
@@ -67,5 +63,6 @@ pub(crate) fn bind_match(
     builder.tail_mut().unwrap().query_graph.add_filter(filter);
 
     // TODO(pgao): semantic check match mode
+    scope.remove_anonymous();
     Ok(scope)
 }

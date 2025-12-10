@@ -1,14 +1,13 @@
 use std::backtrace::Backtrace;
 use std::sync::Arc;
 
-use itertools::Itertools;
 use mojito_common::variable::VariableName;
 use mojito_cypher::plan_node::{self, CreateNode, PlanExpr, PlanNode, Project};
 use mojito_cypher::planner::RootPlan;
 
 use crate::builder::expression::{BuildExprContext, build_expression};
 use crate::executor::all_node_scan::AllNodeScanExectuor;
-use crate::executor::create_node::CreateNodeExectuor;
+use crate::executor::create_node::{CreateNodeExectuor, CreateNodeItem};
 use crate::executor::produce_result::ProduceResultExecutor;
 use crate::executor::project::ProjectExecutor;
 use crate::executor::unit::UnitExecutor;
@@ -128,12 +127,24 @@ fn build_create_node(
     let schema = input.schema().clone();
     let ectx = BuildExprContext::new(&schema, ctx);
 
-    let properties = build_expression(&ectx, &node.inner.properties)?;
+    fn build_item(node: &plan_node::CreateNodeItem, ectx: &BuildExprContext) -> Result<CreateNodeItem, BuildError> {
+        Ok(CreateNodeItem {
+            labels: node.labels.clone(),
+            properties: build_expression(ectx, &node.properties)?,
+            variable: node.variable.clone(),
+        })
+    }
+
+    let items = node
+        .inner
+        .nodes
+        .iter()
+        .map(|x| build_item(x, &ectx))
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(CreateNodeExectuor {
         input,
-        labels: node.inner.labels.clone(),
-        properties,
+        items,
         schema: node.schema().clone(),
     }
     .boxed())

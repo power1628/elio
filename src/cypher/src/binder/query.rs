@@ -118,7 +118,7 @@ fn bind_with(
     // remove anonymous variables in in_scope
     in_scope.remove_anonymous();
     // bind projection
-    let scope = bind_return_items(bctx, builder, in_scope, *distinct, &ClauseKind::With, return_items)?;
+    let mut scope = bind_return_items(bctx, builder, in_scope, *distinct, &ClauseKind::With, return_items)?;
     // bind order by
     if let Some(order_by) = order_by {
         bind_order_by(bctx, builder, &scope, order_by)?;
@@ -130,6 +130,7 @@ fn bind_with(
         let filter = bind_where(bctx, &scope, where_)?;
         builder.tail_mut().unwrap().update_projection(|p| p.set_filter(filter));
     }
+    scope.remove_anonymous();
     Ok(scope)
 }
 
@@ -148,12 +149,13 @@ fn bind_return(
     // remove anonymous variables in in_scope
     in_scope.remove_anonymous();
     // bind projection
-    let scope = bind_return_items(bctx, builder, in_scope, *distinct, &ClauseKind::Return, return_items)?;
+    let mut scope = bind_return_items(bctx, builder, in_scope, *distinct, &ClauseKind::Return, return_items)?;
     // bind order by
     if let Some(order_by) = order_by {
         bind_order_by(bctx, builder, &scope, order_by)?;
     }
     // bind pagination
     bind_pagination(bctx, builder, &scope, skip.as_deref(), limit.as_deref())?;
+    scope.remove_anonymous();
     Ok(scope)
 }

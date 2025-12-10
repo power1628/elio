@@ -17,6 +17,10 @@ impl CreateStruct {
         let typ = DataType::new_struct(properties.iter().map(|(name, expr)| (name.clone(), expr.typ())));
         Self { properties, typ }
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.properties.is_empty()
+    }
 }
 
 impl ExprNode for CreateStruct {
