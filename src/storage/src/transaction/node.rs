@@ -17,7 +17,6 @@ pub(crate) fn batch_node_create(
     labels: &[String],
     props: &ArrayImpl,
 ) -> Result<NodeArray, GraphStoreError> {
-    assert_eq!(labels.len(), props.len());
     let len = labels.len();
 
     // props

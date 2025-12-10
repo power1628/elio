@@ -32,8 +32,11 @@ async fn main() {
 
     let q1 = "CREATE (n:Person {name: 'Alice', age: 30}) RETURN *";
     let q2 = "MATCH (n) RETURN n";
+    let q3 = "CREATE (a:Person {name: 'Alice', age: 30}), (b:Person {name: 'Bob', age: 31}), (a)-[r:KNOWS]->(b)";
 
     execute_cypher(&sess, q1).await;
     println!("---");
     execute_cypher(&sess, q2).await;
+    println!("---");
+    execute_cypher(&sess, q3).await;
 }

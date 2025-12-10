@@ -96,7 +96,7 @@ impl RelArrayBuilder {
                     .extend(std::iter::repeat_n(item.reltype.to_owned(), repeat));
                 self.start_ids.extend(std::iter::repeat_n(item.start_id, repeat));
                 self.end_ids.extend(std::iter::repeat_n(item.end_id, repeat));
-                self.props.extend(iter::repeat(item.props.to_owned_value()));
+                self.props.extend(iter::repeat_n(item.props.to_owned_value(), repeat));
                 self.valid.extend(std::iter::repeat_n(true, repeat));
             }
             None => {
@@ -104,7 +104,7 @@ impl RelArrayBuilder {
                 self.reltypes.extend(std::iter::repeat_n(String::default(), repeat));
                 self.start_ids.extend(std::iter::repeat_n(NodeId::default(), repeat));
                 self.end_ids.extend(std::iter::repeat_n(NodeId::default(), repeat));
-                self.props.extend(iter::repeat(StructValue::default()));
+                self.props.extend(iter::repeat_n(StructValue::default(), repeat));
                 self.valid.extend(std::iter::repeat_n(false, repeat));
             }
         }

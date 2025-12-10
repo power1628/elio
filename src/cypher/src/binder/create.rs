@@ -239,6 +239,9 @@ fn bind_create_part(
         new_rels.push(create);
     }
 
+    // remove reference node
+    new_nodes.retain(|node| !node.labels.is_empty());
+
     create_nodes.extend(new_nodes);
     create_rels.extend(new_rels);
 
