@@ -17,6 +17,10 @@ pub struct TokenStore {
     labels: RwLock<HashMap<String, LabelId>>,
     reltypes: RwLock<HashMap<String, RelationshipTypeId>>,
     property_keys: RwLock<HashMap<String, PropertyKeyId>>,
+
+    id2label: RwLock<HashMap<LabelId, String>>,
+    id2reltype: RwLock<HashMap<RelationshipTypeId, String>>,
+    id2property_key: RwLock<HashMap<PropertyKeyId, String>>,
 }
 
 impl TokenStore {
@@ -29,6 +33,9 @@ impl TokenStore {
             labels: RwLock::new(HashMap::new()),
             reltypes: RwLock::new(HashMap::new()),
             property_keys: RwLock::new(HashMap::new()),
+            id2label: RwLock::new(HashMap::new()),
+            id2reltype: RwLock::new(HashMap::new()),
+            id2property_key: RwLock::new(HashMap::new()),
         };
         store.load_from_db()?;
         Ok(store)
@@ -108,12 +115,26 @@ impl TokenStore {
         Ok(token_id)
     }
 
+    pub fn get_token_val(&self, id: TokenId, kind: TokenKind) -> Result<Arc<str>, GraphStoreError> {
+        let id2str = match kind {
+            TokenKind::Label => &self.id2label,
+            TokenKind::RelationshipType => &self.id2reltype,
+            TokenKind::PropertyKey => &self.id2property_key,
+        };
+        let id2str = id2str.read().unwrap();
+        id2str
+            .get(&id)
+            .cloned()
+            .map(Arc::from)
+            .ok_or(GraphStoreError::Token(id.to_string()))
+    }
+
     fn load_token_dict(&mut self, token_kind: TokenKind) -> Result<(), GraphStoreError> {
         let tokens = self.db_get_all_token(token_kind)?;
-        let dict = match token_kind {
-            TokenKind::Label => &mut self.labels,
-            TokenKind::RelationshipType => &mut self.reltypes,
-            TokenKind::PropertyKey => &mut self.property_keys,
+        let (dict, id2str) = match token_kind {
+            TokenKind::Label => (&mut self.labels, &mut self.id2label),
+            TokenKind::RelationshipType => (&mut self.reltypes, &mut self.id2reltype),
+            TokenKind::PropertyKey => (&mut self.property_keys, &mut self.id2property_key),
         };
         // update next id
         let next_id = match tokens.iter().map(|(_, id)| id).max() {
@@ -128,7 +149,10 @@ impl TokenStore {
 
         let mut dict = dict.write().unwrap();
         dict.clear();
-        dict.extend(tokens);
+        dict.extend(tokens.clone());
+        let mut id2str = id2str.write().unwrap();
+        id2str.clear();
+        id2str.extend(tokens.into_iter().map(|(token, id)| (id, token)));
         Ok(())
     }
 

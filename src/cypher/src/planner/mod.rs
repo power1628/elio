@@ -8,7 +8,7 @@ use pretty_xmlish::{Pretty, PrettyConfig};
 use crate::error::PlanError;
 use crate::ir::query::{IrQuery, IrQueryRoot, IrSingleQueryPart};
 use crate::plan_context::PlanContext;
-use crate::plan_node::PlanExpr;
+use crate::plan_node::{PlanExpr, ProduceResult, ProduceResultInner};
 use crate::planner::single_query::plan_single_query;
 use crate::session::PlannerSession;
 
@@ -74,6 +74,16 @@ pub fn plan_root(
     }
 
     let plan = plan_single_query(&mut ctx, &queries[0])?;
+
+    // plan produce result
+    let plan = {
+        let inner = ProduceResultInner {
+            input: plan,
+            return_columns: names.iter().map(|(_, v)| v.clone()).collect_vec(),
+        };
+        PlanExpr::ProduceResult(ProduceResult::new(inner)).boxed()
+    };
+
     Ok(RootPlan {
         plan,
         names: names.clone(),

@@ -1,6 +1,7 @@
 use std::backtrace::Backtrace;
 use std::sync::Arc;
 
+use itertools::Itertools;
 use mojito_common::variable::VariableName;
 use mojito_cypher::plan_node::{self, CreateNode, PlanExpr, PlanNode, Project};
 use mojito_cypher::planner::RootPlan;
@@ -8,6 +9,7 @@ use mojito_cypher::planner::RootPlan;
 use crate::builder::expression::{BuildExprContext, build_expression};
 use crate::executor::all_node_scan::AllNodeScanExectuor;
 use crate::executor::create_node::CreateNodeExectuor;
+use crate::executor::produce_result::ProduceResultExecutor;
 use crate::executor::project::ProjectExecutor;
 use crate::executor::unit::UnitExecutor;
 use crate::executor::{BoxedExecutor, Executor};
@@ -64,6 +66,7 @@ fn build_node(ctx: &mut ExecutorBuildContext, node: &PlanExpr) -> Result<BoxedEx
         PlanExpr::Apply(_apply) => todo!(),
         PlanExpr::Argument(_argument) => todo!(),
         PlanExpr::Unit(_unit) => Ok(UnitExecutor::default().boxed()),
+        PlanExpr::ProduceResult(produce_result) => build_produce_result(ctx, produce_result, inputs),
         PlanExpr::CreateNode(create_node) => build_create_node(ctx, create_node, inputs),
         PlanExpr::CreateRel(_create_rel) => todo!(),
         PlanExpr::Project(project) => build_project(ctx, project, inputs),
@@ -82,6 +85,31 @@ fn build_all_node_scan(
     assert_eq!(inputs.len(), 0);
     let schema = all_node_scan.schema();
     Ok(AllNodeScanExectuor::new(schema).boxed())
+}
+
+fn build_produce_result(
+    _ctx: &mut ExecutorBuildContext,
+    produce_result: &plan_node::ProduceResult,
+    inputs: Vec<BoxedExecutor>,
+) -> Result<BoxedExecutor, BuildError> {
+    assert_eq!(inputs.len(), 1);
+    let [input]: [BoxedExecutor; 1] = inputs.try_into().unwrap();
+
+    let schema = input.schema().clone();
+    let name2col = schema.name_to_col_map();
+    let return_columns = produce_result
+        .inner()
+        .return_columns
+        .iter()
+        .map(|var| name2col[var])
+        .collect_vec();
+
+    Ok(ProduceResultExecutor {
+        input,
+        return_columns,
+        schema: produce_result.schema().clone(),
+    }
+    .boxed())
 }
 
 fn build_create_node(

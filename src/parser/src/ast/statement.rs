@@ -1,6 +1,6 @@
-use crate::ast::RegularQuery;
-
 use derive_more::Display;
+
+use crate::ast::RegularQuery;
 
 #[derive(Debug, Display)]
 #[display("{}", _0)]

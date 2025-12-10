@@ -10,8 +10,11 @@ use crate::impl_::{BoxedExpression, EvalCtx, Expression};
 
 // Property Access or Field Access
 // Expected input to be type of Struct
-// If input is Node/Rel type, will access the property fields
-// if input is struct type, will access sub fields
+// If input is Node/Rel type, will access the property fields via key.token.
+// If input is VirtualNode type, will access property fields from the store on the fly.
+// Current does not support VirtualRel type, since we assume the virtual rel type is retrived by
+// Expand operator.
+// if input is struct type, will access sub fields via key.name
 #[derive(Debug)]
 pub struct FieldAccessExpr {
     pub input: BoxedExpression,
@@ -68,6 +71,7 @@ impl Expression for FieldAccessExpr {
             });
             return Ok(Arc::new(builder.finish().into()));
         }
+        // virtual Node
 
         Err(EvalError::type_error(
             "FieldAccess expected to have input of Node/Rel/Struct",
