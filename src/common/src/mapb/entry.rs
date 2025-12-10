@@ -382,6 +382,11 @@ impl EntryMut {
         self.key.key_id()
     }
 
+    // true on entry value is inlined in entry meta
+    pub fn is_inlined(&self) -> bool {
+        self.key.is_inlined()
+    }
+
     pub fn estimated_size(&self) -> usize {
         size_of::<EntryMeta>() + self.val.as_ref().map_or(0, |x| x.buffer.len())
     }

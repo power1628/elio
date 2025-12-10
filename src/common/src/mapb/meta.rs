@@ -122,4 +122,8 @@ impl EntryMeta {
     pub fn offset(&self) -> usize {
         (&self.0[4..12]).get_u64_le() as usize
     }
+
+    pub fn is_inlined(&self) -> bool {
+        matches!(self.type_tag(), NULL_TAG | BOOL_TAG | INTEGER_TAG | FLOAT_TAG)
+    }
 }

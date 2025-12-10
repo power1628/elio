@@ -101,8 +101,13 @@ fn build_produce_result(
         .inner()
         .return_columns
         .iter()
-        .map(|var| name2col[var])
-        .collect_vec();
+        .map(|var| {
+            name2col
+                .get(var)
+                .copied()
+                .ok_or_else(|| BuildError::variable_not_found(var.clone()))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(ProduceResultExecutor {
         input,

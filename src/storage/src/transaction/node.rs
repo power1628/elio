@@ -117,7 +117,13 @@ pub(crate) fn batch_materialize_node(
     let batch = tx.inner.snapshot.multi_get_cf(keys_cf);
     let mut batch_iter = batch.into_iter();
 
-    for node_id in node_ids.iter().flatten() {
+    for node_id in node_ids.iter() {
+        if node_id.is_none() {
+            builder.push(None);
+            continue;
+        }
+
+        let node_id = node_id.unwrap();
         // SAFETY: rocksdb will guarantee the length of batch eq to length of valid node_ids
         let val = batch_iter.next().unwrap()?;
         if let Some(val) = val {

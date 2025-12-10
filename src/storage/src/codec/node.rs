@@ -63,6 +63,9 @@ impl NodeFormat {
     }
 
     pub fn decode_node_value(buf: &[u8]) -> Result<(LabelIdListRef<'_>, PropertyMapRef<'_>), String> {
+        if buf.len() < 6 {
+            return Err("buffer too short for header".to_string());
+        }
         let label_len = u16::from_le_bytes(buf[0..2].try_into().unwrap()) as usize;
         let prop_byte_len = u32::from_le_bytes(buf[2..6].try_into().unwrap()) as usize;
         // check buf length

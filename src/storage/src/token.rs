@@ -88,10 +88,13 @@ impl TokenStore {
 
 impl TokenStore {
     pub fn get_or_create_token(&self, token: &str, token_kind: TokenKind) -> Result<u16, GraphStoreError> {
-        let mut tokens = match token_kind {
-            TokenKind::Label => self.labels.write().unwrap(),
-            TokenKind::RelationshipType => self.reltypes.write().unwrap(),
-            TokenKind::PropertyKey => self.property_keys.write().unwrap(),
+        let (mut tokens, mut id2str) = match token_kind {
+            TokenKind::Label => (self.labels.write().unwrap(), self.id2label.write().unwrap()),
+            TokenKind::RelationshipType => (self.reltypes.write().unwrap(), self.id2reltype.write().unwrap()),
+            TokenKind::PropertyKey => (
+                self.property_keys.write().unwrap(),
+                self.id2property_key.write().unwrap(),
+            ),
         };
         if let Some(token_id) = tokens.get(token) {
             return Ok(*token_id);
@@ -104,6 +107,7 @@ impl TokenStore {
             TokenKind::PropertyKey => self.next_property_key_id.fetch_add(1, Ordering::Relaxed),
         };
         tokens.insert(token.to_string(), token_id);
+        id2str.insert(token_id, token.to_string());
         // write to db
         let cf = self.db.cf_handle(cf_meta::CF_NAME).unwrap();
         {
@@ -147,12 +151,20 @@ impl TokenStore {
             TokenKind::PropertyKey => self.next_property_key_id.store(next_id, Ordering::Relaxed),
         }
 
-        let mut dict = dict.write().unwrap();
-        dict.clear();
-        dict.extend(tokens.clone());
-        let mut id2str = id2str.write().unwrap();
-        id2str.clear();
-        id2str.extend(tokens.into_iter().map(|(token, id)| (id, token)));
+        {
+            let mut dict = dict.write().unwrap();
+            dict.clear();
+            let mut id2str = id2str.write().unwrap();
+            id2str.clear();
+
+            dict.reserve(tokens.len());
+            id2str.reserve(tokens.len());
+
+            for (token, id) in tokens {
+                dict.insert(token.clone(), id);
+                id2str.insert(id, token);
+            }
+        }
         Ok(())
     }
 

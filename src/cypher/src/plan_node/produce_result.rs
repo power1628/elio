@@ -44,7 +44,11 @@ impl ProduceResultInner {
         for var in self.return_columns.iter() {
             schema.add_column(Variable {
                 name: var.clone(),
-                typ: input_schema.column_by_name(var).unwrap().typ.clone(),
+                typ: input_schema
+                    .column_by_name(var)
+                    .expect("column in return list must exist in input schema")
+                    .typ
+                    .clone(),
             });
         }
         Arc::new(schema)
