@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use bitvec::prelude::*;
 
-use crate::array::datum::{RelValue, RelValueRef, StructValue, VirtualRel, VirtualRelRef};
+use crate::array::datum::{RelValueRef, ScalarRefVTable, StructValue, VirtualRel, VirtualRelRef};
 use crate::array::{Array, PhysicalType};
 use crate::{NodeId, RelationshipId};
 
@@ -84,14 +84,19 @@ impl RelArrayBuilder {
         }
     }
 
-    pub fn push_n(&mut self, item: Option<&RelValue>, repeat: usize) {
+    pub fn push(&mut self, item: Option<RelValueRef<'_>>) {
+        self.push_n(item, 1);
+    }
+
+    pub fn push_n(&mut self, item: Option<RelValueRef<'_>>, repeat: usize) {
         match item {
             Some(item) => {
                 self.ids.extend(std::iter::repeat_n(item.id, repeat));
-                self.reltypes.extend(std::iter::repeat_n(item.reltype.clone(), repeat));
+                self.reltypes
+                    .extend(std::iter::repeat_n(item.reltype.to_owned(), repeat));
                 self.start_ids.extend(std::iter::repeat_n(item.start_id, repeat));
                 self.end_ids.extend(std::iter::repeat_n(item.end_id, repeat));
-                self.props.extend(iter::repeat(item.props.clone()));
+                self.props.extend(iter::repeat(item.props.to_owned_value()));
                 self.valid.extend(std::iter::repeat_n(true, repeat));
             }
             None => {

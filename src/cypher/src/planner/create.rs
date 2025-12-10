@@ -64,8 +64,8 @@ fn plan_create_rels(
 
             CreateRelItem {
                 reltype: rel.reltype.clone(),
-                start_node: Expr::from_variable(&Variable::new(&start, &DataType::Node)).boxed(),
-                end_node: Expr::from_variable(&Variable::new(&end, &DataType::Node)).boxed(),
+                start_node: Variable::new(&start, &DataType::Node),
+                end_node: Variable::new(&end, &DataType::Node),
                 properties: Expr::from(rel.properties.clone()).boxed(),
                 variable: Variable::new(&rel.variable.clone(), &DataType::Rel),
             }

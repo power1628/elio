@@ -74,6 +74,7 @@ pub struct CreateRel {
     pub left: VariableName,
     pub right: VariableName,
     pub reltype: IrToken,
+    // TODO(pgao): Direction should be RelDirection
     pub direction: SemanticDirection,
     pub properties: CreateStruct,
 }

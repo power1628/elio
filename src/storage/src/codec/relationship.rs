@@ -1,44 +1,63 @@
-//! Relationship
+//! Relationship stored in key-value database.
 //!
-//! RelationshipKey ::= <relationship_id>
+//! RelationshipKey ::= <cf_topology::REL_KEY_PREFIX> <src_node_id> <DIRECTION> <reltype_id> <dst_node_id> <rel_id>
+//! DIRECTION ::= <cf_topology::DIR_OUT> | <cf_topology::DIR_IN>
 //!
 //! RelationshipValue ::= <PropertyBlock>
 
 use bytes::{BufMut, Bytes, BytesMut};
-use mojito_common::{PropertyKeyId, RelationshipId, store_types::PropertyValue};
+use mojito_common::array::datum::StructValueRef;
+use mojito_common::mapb::{PropertyMapMut, PropertyMapRef};
+use mojito_common::store_types::RelDirection;
+use mojito_common::{NodeId, RelationshipId, TokenId};
 
-use crate::codec::{PropertyWriter, REL_KEY_PREFIX};
+use crate::cf_topology;
 
-pub struct RelationshipFormat;
+pub struct RelFormat;
 
-impl RelationshipFormat {
-    pub fn encode_relationship_key(relid: RelationshipId) -> Bytes {
+impl RelFormat {
+    pub fn encode_key(
+        src_node_id: NodeId,
+        direction: RelDirection,
+        reltype: TokenId,
+        dst_node_id: NodeId,
+        rel_id: RelationshipId,
+    ) -> Bytes {
         let mut bytes = BytesMut::new();
-        bytes.put_u8(REL_KEY_PREFIX);
-        bytes.put_u64_le(relid);
+        bytes.put_u8(cf_topology::REL_KEY_PREFIX);
+        bytes.put_u64(*src_node_id);
+        bytes.put_u8(direction as u8);
+        bytes.put_u16(reltype);
+        bytes.put_u64(*dst_node_id);
+        bytes.put_u64(*rel_id);
         bytes.freeze()
     }
 
-    pub fn decode_relationship_key(buf: &[u8]) -> RelationshipId {
-        assert_eq!(buf.len(), 9);
-        u64::from_le_bytes(buf[1..9].try_into().unwrap())
-    }
-}
-
-pub struct RelationshipFormatWriter<'a> {
-    buf: &'a mut BytesMut,
-}
-
-impl<'a> RelationshipFormatWriter<'a> {
-    pub fn new(buf: &'a mut BytesMut) -> Self {
-        Self { buf }
+    pub fn decode_key(buf: &[u8]) -> (NodeId, RelDirection, TokenId, NodeId, RelationshipId) {
+        assert_eq!(buf.len(), 25);
+        let src_node_id = NodeId::from_be_bytes(buf[1..9].try_into().unwrap());
+        let direction = RelDirection::from(buf[9]);
+        let reltype = TokenId::from_be_bytes(buf[10..12].try_into().unwrap());
+        let dst_node_id = NodeId::from_be_bytes(buf[12..20].try_into().unwrap());
+        let rel_id = RelationshipId::from_be_bytes(buf[20..28].try_into().unwrap());
+        (src_node_id, direction, reltype, dst_node_id, rel_id)
     }
 
-    pub fn write_properties(&mut self, keys: &[PropertyKeyId], values: &[PropertyValue]) {
-        let mut writer = PropertyWriter::new(self.buf, keys.len());
+    pub fn encode_value(key_ids: &[TokenId], property_map: StructValueRef<'_>) -> Result<Bytes, String> {
+        let mut buf = BytesMut::new();
+        let mut mapb_mut = PropertyMapMut::with_capacity(key_ids.len());
 
-        for (key, value) in keys.iter().zip(values) {
-            writer.add_property(key, value);
+        assert_eq!(key_ids.len(), property_map.len());
+
+        // put properties
+        for (key_id, (_, prop)) in key_ids.iter().zip(property_map.iter()) {
+            mapb_mut.insert(*key_id, Some(&prop))?;
         }
+        mapb_mut.freeze().write(&mut buf);
+        Ok(buf.freeze())
+    }
+
+    pub fn decode_value(buf: &[u8]) -> Result<PropertyMapRef<'_>, String> {
+        Ok(PropertyMapRef::new(buf))
     }
 }

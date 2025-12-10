@@ -1,6 +1,7 @@
 use std::backtrace::Backtrace;
 use std::sync::Arc;
 
+use mojito_common::schema::Name2ColumnMap;
 use mojito_common::variable::VariableName;
 use mojito_cypher::plan_node::{self, CreateNode, PlanExpr, PlanNode, Project};
 use mojito_cypher::planner::RootPlan;
@@ -8,6 +9,7 @@ use mojito_cypher::planner::RootPlan;
 use crate::builder::expression::{BuildExprContext, build_expression};
 use crate::executor::all_node_scan::AllNodeScanExectuor;
 use crate::executor::create_node::{CreateNodeExectuor, CreateNodeItem};
+use crate::executor::create_rel::{CreateRelExectuor, CreateRelItem};
 use crate::executor::produce_result::ProduceResultExecutor;
 use crate::executor::project::ProjectExecutor;
 use crate::executor::unit::UnitExecutor;
@@ -67,7 +69,7 @@ fn build_node(ctx: &mut ExecutorBuildContext, node: &PlanExpr) -> Result<BoxedEx
         PlanExpr::Unit(_unit) => Ok(UnitExecutor::default().boxed()),
         PlanExpr::ProduceResult(produce_result) => build_produce_result(ctx, produce_result, inputs),
         PlanExpr::CreateNode(create_node) => build_create_node(ctx, create_node, inputs),
-        PlanExpr::CreateRel(_create_rel) => todo!(),
+        PlanExpr::CreateRel(create_rel) => build_create_rel(ctx, create_rel, inputs),
         PlanExpr::Project(project) => build_project(ctx, project, inputs),
         PlanExpr::Sort(_sort) => todo!(),
         PlanExpr::Filter(_filter) => todo!(),
@@ -143,6 +145,49 @@ fn build_create_node(
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(CreateNodeExectuor {
+        input,
+        items,
+        schema: node.schema().clone(),
+    }
+    .boxed())
+}
+
+fn build_create_rel(
+    ctx: &mut ExecutorBuildContext,
+    node: &plan_node::CreateRel,
+    inputs: Vec<BoxedExecutor>,
+) -> Result<BoxedExecutor, BuildError> {
+    assert_eq!(inputs.len(), 1);
+    let [input]: [BoxedExecutor; 1] = inputs.try_into().unwrap();
+
+    let schema = input.schema().clone();
+    let ectx = BuildExprContext::new(&schema, ctx);
+    let name2col = schema.name_to_col_map();
+
+    fn build_item(
+        name2col: &Name2ColumnMap,
+        rel: &plan_node::CreateRelItem,
+        ectx: &BuildExprContext,
+    ) -> Result<CreateRelItem, BuildError> {
+        let start = name2col[&rel.start_node.name];
+        let end = name2col[&rel.end_node.name];
+
+        Ok(CreateRelItem {
+            properties: build_expression(ectx, &rel.properties)?,
+            rtype: rel.reltype.name().clone(),
+            start,
+            end,
+        })
+    }
+
+    let items = node
+        .inner()
+        .rels
+        .iter()
+        .map(|x| build_item(&name2col, x, &ectx))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(CreateRelExectuor {
         input,
         items,
         schema: node.schema().clone(),

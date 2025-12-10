@@ -3,15 +3,16 @@ use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::{ArrayImpl, NodeArray, VirtualNodeArray};
+use mojito_common::array::{ArrayImpl, NodeArray, RelArray, StructArray, VirtualNodeArray};
 
 use crate::dict::IdStore;
 use crate::error::GraphStoreError;
 use crate::token::TokenStore;
 use crate::transaction::node::{batch_materialize_node, batch_node_create, batch_node_scan};
+use crate::transaction::relationship::{NodeIdContainer, batch_rel_create};
 
 mod node;
-// mod relationship;
+mod relationship;
 
 pub struct RelScanOptions {}
 pub struct NodeScanOptions {
@@ -23,21 +24,30 @@ pub trait DataChunkIterator: Send {
     fn next_batch(&mut self) -> Result<Option<DataChunk>, GraphStoreError>;
 }
 
-#[async_trait]
-pub trait Transaction: Send + Sync {
-    // readonly
-    fn rel_scan(&self, opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError>;
-    fn node_scan(&self, opts: NodeScanOptions) -> Result<Box<dyn DataChunkIterator + '_>, GraphStoreError>;
-    fn materialize_node(&self, node: &VirtualNodeArray) -> Result<NodeArray, GraphStoreError>;
-    // read-write
-    fn node_create(&self, label: &[String], prop: &ArrayImpl) -> Result<NodeArray, GraphStoreError>;
-    fn relationship_create(&self, rel: &DataChunk) -> Result<DataChunk, GraphStoreError>;
-    fn node_delete(&self, node: &DataChunk) -> Result<(), GraphStoreError>;
-    fn relationship_delete(&self, rel: &DataChunk) -> Result<(), GraphStoreError>;
-    // commit
-    fn commit(&self) -> Result<(), GraphStoreError>;
-    fn abort(&self) -> Result<(), GraphStoreError>;
-}
+// #[async_trait]
+// pub trait Transaction: Send + Sync {
+//     // readonly
+//     fn rel_scan(&self, opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError>;
+//     fn node_scan(&self, opts: NodeScanOptions) -> Result<Box<dyn DataChunkIterator + '_>, GraphStoreError>;
+//     fn materialize_node(&self, node: &VirtualNodeArray) -> Result<NodeArray, GraphStoreError>;
+//     // read-write
+//     fn node_create(&self, label: &[String], prop: &ArrayImpl) -> Result<NodeArray, GraphStoreError>;
+//     fn relationship_create<A, B>(
+//         &self,
+//         rtype: &str,
+//         start: &A,          // VirtualNode/Node
+//         end: &B,            // VirtualNode/Node
+//         prop: &StructArray, // Struct or Any
+//     ) -> Result<RelArray, GraphStoreError>
+//     where
+//         A: NodeIdContainer,
+//         B: NodeIdContainer;
+//     fn node_delete(&self, node: &DataChunk) -> Result<(), GraphStoreError>;
+//     fn relationship_delete(&self, rel: &DataChunk) -> Result<(), GraphStoreError>;
+//     // commit
+//     fn commit(&self) -> Result<(), GraphStoreError>;
+//     fn abort(&self) -> Result<(), GraphStoreError>;
+// }
 
 // Simple transaction implementation with snapshot and write batch buffer
 pub struct TransactionImpl {
@@ -67,43 +77,54 @@ impl TransactionImpl {
     }
 }
 
-impl Transaction for TransactionImpl {
-    fn rel_scan(&self, _opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
+// impl Transaction for TransactionImpl {
+impl TransactionImpl {
+    pub fn rel_scan(&self, _opts: &RelScanOptions) -> Result<Box<dyn DataChunkIterator>, GraphStoreError> {
         todo!()
     }
 
-    fn node_scan(&self, opts: NodeScanOptions) -> Result<Box<dyn DataChunkIterator + '_>, GraphStoreError> {
+    pub fn node_scan(&self, opts: NodeScanOptions) -> Result<Box<dyn DataChunkIterator + '_>, GraphStoreError> {
         batch_node_scan(self, opts)
     }
 
-    fn materialize_node(&self, node_ids: &VirtualNodeArray) -> Result<NodeArray, GraphStoreError> {
+    pub fn materialize_node(&self, node_ids: &VirtualNodeArray) -> Result<NodeArray, GraphStoreError> {
         batch_materialize_node(self, node_ids)
     }
 
-    fn node_create(&self, label: &[String], prop: &ArrayImpl) -> Result<NodeArray, GraphStoreError> {
+    pub fn node_create(&self, label: &[String], prop: &ArrayImpl) -> Result<NodeArray, GraphStoreError> {
         batch_node_create(self, label, prop)
     }
 
-    fn relationship_create(&self, _rel: &DataChunk) -> Result<DataChunk, GraphStoreError> {
+    pub fn relationship_create<A, B>(
+        &self,
+        rtype: &str,
+        start: &A,          // VirtualNode/Node
+        end: &B,            // VirtualNode/Node
+        prop: &StructArray, // Struct or Any
+    ) -> Result<RelArray, GraphStoreError>
+    where
+        A: NodeIdContainer,
+        B: NodeIdContainer,
+    {
+        batch_rel_create(self, rtype, start, end, prop)
+    }
+
+    pub fn node_delete(&self, _node: &DataChunk) -> Result<(), GraphStoreError> {
         todo!()
     }
 
-    fn node_delete(&self, _node: &DataChunk) -> Result<(), GraphStoreError> {
+    pub fn relationship_delete(&self, _rel: &DataChunk) -> Result<(), GraphStoreError> {
         todo!()
     }
 
-    fn relationship_delete(&self, _rel: &DataChunk) -> Result<(), GraphStoreError> {
-        todo!()
-    }
-
-    fn commit(&self) -> Result<(), GraphStoreError> {
+    pub fn commit(&self) -> Result<(), GraphStoreError> {
         let mut state = self.write_state.lock().unwrap();
         let batch = std::mem::take(&mut state.batch);
         self.inner._db.write(batch)?;
         Ok(())
     }
 
-    fn abort(&self) -> Result<(), GraphStoreError> {
+    pub fn abort(&self) -> Result<(), GraphStoreError> {
         let mut state = self.write_state.lock().unwrap();
         state.batch.clear();
         Ok(())

@@ -48,11 +48,11 @@ impl PlanNode for CreateRel {
 
 #[derive(Clone, Debug)]
 pub struct CreateRelItem {
-    pub(crate) reltype: IrToken,
-    pub(crate) start_node: BoxedExpr,
-    pub(crate) end_node: BoxedExpr,
-    pub(crate) properties: BoxedExpr,
-    pub(crate) variable: Variable,
+    pub reltype: IrToken,
+    pub start_node: Variable,
+    pub end_node: Variable,
+    pub properties: BoxedExpr,
+    pub variable: Variable,
 }
 
 impl CreateRelItem {
@@ -60,8 +60,8 @@ impl CreateRelItem {
         let fields = vec![
             ("variable", Pretty::from(self.variable.name.as_ref())),
             ("reltype", Pretty::from(self.reltype.to_string())),
-            ("start_node", Pretty::from(self.start_node.pretty())),
-            ("end_node", Pretty::from(self.end_node.pretty())),
+            ("start_node", Pretty::from(self.start_node.name.as_ref())),
+            ("end_node", Pretty::from(self.end_node.name.as_ref())),
             ("properties", Pretty::from(self.properties.pretty())),
         ];
         XmlNode::simple_record("CreateRelItem", fields, vec![])
