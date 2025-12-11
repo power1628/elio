@@ -1,8 +1,0 @@
-[package]
-name = "mojito_propb"
-version.workspace = true
-edition.workspace = true
-
-[dependencies]
-bytes = { workspace = true }
-itertools = { workspace = true }
