@@ -9,6 +9,15 @@ on:
   pull_request:
     branches: [ "main" ]
 
+
+concurrency:
+  # group name:
+  # 1. github.workflow: work flow name(i.e. CI)
+  # 2. github.ref: branch name(e.g. refs/pull/123/merge)
+  # workflow-ref is the group name
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
 
