@@ -7,7 +7,8 @@ use crate::array::{Array, ArrayImpl, StructArray};
 use crate::data_type::F64;
 use crate::{NodeId, RelationshipId};
 
-#[derive(Debug, Clone, Default, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Default, Eq, PartialEq, Hash, derive_more::Display)]
+#[display("Node{{id: {}, labels: [{}], props: {}}}", id, labels.iter().map(|l| l.to_string()).collect::<Vec<_>>().join(", "), props)]
 pub struct NodeValue {
     pub id: NodeId,
     // TODO(pgao): Vec<Arc<str>>
@@ -35,7 +36,15 @@ impl<'a> NodeValueRef<'a> {
     }
 }
 
-#[derive(Debug, Clone, Default, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Default, Eq, PartialEq, Hash, derive_more::Display)]
+#[display(
+    "Rel{{id: {}, rtype: {}, start: {}, end: {}, props: {}}}",
+    id,
+    reltype,
+    start_id,
+    end_id,
+    props
+)]
 pub struct RelValue {
     pub id: RelationshipId,
     pub reltype: String,
@@ -64,7 +73,8 @@ impl<'a> RelValueRef<'a> {
     }
 }
 
-#[derive(Debug, Clone, Default, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Default, Eq, PartialEq, Hash, derive_more::Display)]
+#[display("VirtualRel{{id: {}, rtype: {}, start: {}, end: {}}}", id, reltype, start_id, end_id)]
 pub struct VirtualRel {
     pub id: RelationshipId,
     pub reltype: String,
@@ -79,7 +89,8 @@ pub struct VirtualRelRef<'a> {
     pub end_id: NodeId,
 }
 
-#[derive(Debug, Clone, Default, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Default, Eq, PartialEq, Hash, derive_more::Display)]
+#[display("[{}]", values.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(", "))]
 pub struct ListValue {
     values: Vec<ScalarValue>,
 }
@@ -192,7 +203,8 @@ impl<'a> ScalarRefVTable for ListValueRef<'a> {
     }
 }
 
-#[derive(Debug, Clone, Default, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Default, Eq, PartialEq, Hash, derive_more::Display)]
+#[display("{{{}}}", fields.iter().map(|(k, v)| format!("{}: {}", k, v)).collect::<Vec<_>>().join(", "))]
 pub struct StructValue {
     // fields must be unique and ordered
     fields: Vec<(Arc<str>, ScalarValue)>,
@@ -314,17 +326,20 @@ impl<'a> ExactSizeIterator for StructValueRefIter<'a> {
     }
 }
 
-#[derive(Debug, Hash, Clone, Default, EnumAsInner, Eq, PartialEq)]
+#[derive(derive_more::Display, Debug, Hash, Clone, Default, EnumAsInner, Eq, PartialEq)]
 pub enum ScalarValue {
     // this is the place holder for null values
     #[default]
+    #[display("null")]
     Unknown,
     // primitives
     Bool(bool),
     Integer(i64),
     Float(F64),
+    #[display("'{}'", _0)]
     String(String),
     // graph
+    #[display("VirtualNode{{_0}}")]
     VirtualNode(NodeId),
     VirtualRel(VirtualRel),
     Node(Box<NodeValue>),

@@ -22,6 +22,10 @@ fn test_create() {
     assert_snapshot!(clause!(
         "CREATE (a:Person{name: 'Alice'}), (b:Person{name: 'Bob'})-[:KNOWS]->(c:Person{name: 'Charlie'})"), 
         @"CREATE (a:Person{name: 'Alice'}), (b:Person{name: 'Bob'})-[:KNOWS]->(c:Person{name: 'Charlie'})");
+
+    assert_snapshot!(clause!(
+        "CREATE (a:Person{name: 'Alex', age: 30}), (b:Person{name: 'Bob', age: 20}), (a)-[:KNOWS]->(b), (b)-[:KNOWS]->(a)"),
+        @"CREATE (a:Person{name: 'Alex', age: 30}), (b:Person{name: 'Bob', age: 20}), (a)-[:KNOWS]->(b), (b)-[:KNOWS]->(a)");
 }
 
 #[test]
