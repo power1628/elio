@@ -7,6 +7,7 @@ members = [
     "src/cypher",
     "src/exec",
     "src/expr",
+    "src/logictest",
     "src/parser",
     "src/plannertest",
     "src/storage",
@@ -52,8 +53,10 @@ tokio = { version = "1.48.0", features = ["full"] }
 tracing = "0.1.43"
 
 # dev-depencies
-insta = { version = "1.43.1", features = ["yaml"] }
-tempfile = "3.5.0"
+datatest-stable = "0.3"
+insta = { version = "1.43", features = ["yaml"] }
+sqllogictest = "0.28"
+tempfile = "3"
 
 [profile.dev.package]
 # make insta run faster

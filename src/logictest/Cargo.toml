@@ -1,0 +1,18 @@
+[package]
+name = "logictest"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+async-trait = { workspace = true }
+datatest-stable = { workspace = true }
+futures = { workspace = true }
+mojito_common = { workspace = true }
+mojito_core = { workspace = true }
+sqllogictest = { workspace = true }
+tempfile = { workspace = true }
+tokio = { workspace = true, features = ["rt-multi-thread", "time"] }
+
+[[test]]
+name = "drive"
+harness = false

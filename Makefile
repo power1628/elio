@@ -24,10 +24,16 @@ build-release:
 	cargo build --release --workspace --bins
 
 planner-test:
-	cargo nextest -p plannertest
+	cargo run -p plannertest
 
 rewrite-planner-test:
 	cargo run -p plannertest --bin apply
+
+logic-test:
+	cargo nextest run -p logictest
+
+rewrite-logic-test:
+	REWRITE=1 cargo nextest run -p logictest
 	
 doc-test:
 	cargo test --no-fail-fast --doc --all-features --workspace

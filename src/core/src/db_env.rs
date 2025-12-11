@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::sync::Arc;
 
 use mojito_catalog::Catalog;
@@ -12,8 +13,10 @@ pub struct DbConfig {
 }
 
 impl DbConfig {
-    pub fn with_db_path(db_path: String) -> Self {
-        Self { store_path: db_path }
+    pub fn with_db_path<P: AsRef<Path>>(db_path: P) -> Self {
+        Self {
+            store_path: db_path.as_ref().to_path_buf().into_os_string().into_string().unwrap(),
+        }
     }
 }
 
