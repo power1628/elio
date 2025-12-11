@@ -24,12 +24,6 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
      
-      # 2. Install the Rust toolchain
-      # Using dtolnay/rust-toolchain is the recommended approach in the community,
-      # as it is more flexible than the default.
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@master
-
       # 3. Set up caching
       # This caches ~/.cargo and ./target, greatly shortening subsequent CI runs.
       - name: Rust Cache
