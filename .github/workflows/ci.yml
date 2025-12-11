@@ -24,6 +24,10 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
      
+      # 2. Install the Rust toolchain
+      - name: 'Install rust-toolchain.toml'
+        run: rustup toolchain install
+
       # 3. Set up caching
       # This caches ~/.cargo and ./target, greatly shortening subsequent CI runs.
       - name: Rust Cache
