@@ -39,12 +39,7 @@ fn convert_row(row: Row) -> Vec<String> {
 }
 
 pub fn graphdb_column_validator<T: ColumnType>(a: &Vec<T>, b: &Vec<T>) -> bool {
-    for (a, b) in a.iter().zip(b.iter()) {
-        if !a.eq(b) {
-            return false;
-        }
-    }
-    true
+    a == b
 }
 
 /// The valid types are:
@@ -93,7 +88,7 @@ impl AsyncDB for EmbeddedGraphDB {
 
     /// Shutdown the connection gracefully.
     async fn shutdown(&mut self) {
-        todo!()
+        // cleanup handled by drop
     }
 
     /// Engine name of current database.

@@ -15,7 +15,11 @@ pub struct DbConfig {
 impl DbConfig {
     pub fn with_db_path<P: AsRef<Path>>(db_path: P) -> Self {
         Self {
-            store_path: db_path.as_ref().to_path_buf().into_os_string().into_string().unwrap(),
+            store_path: db_path
+                .as_ref()
+                .to_str()
+                .expect("database path must be valid utf-8 string")
+                .to_string(),
         }
     }
 }

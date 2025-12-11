@@ -11,7 +11,7 @@ datatest_stable::harness! {{test=run_slt_file, root="tests/basic/", pattern=r".*
 
 fn run_slt_file(path: &Path) -> datatest_stable::Result<()> {
     let make_conn = || async {
-        let temp_dir = tempdir().unwrap();
+        let temp_dir = tempdir().expect("failed to create temp dir for testing db");
         let db = EmbeddedGraphDB::open(temp_dir)?;
         Ok(db)
     };
@@ -19,7 +19,7 @@ fn run_slt_file(path: &Path) -> datatest_stable::Result<()> {
     let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
-        .unwrap();
+        .expect("failed to build tokio runtime");
 
     let mut runner = Runner::new(make_conn);
 
