@@ -1,7 +1,8 @@
 use derive_more::Display;
 use itertools::{self, Itertools};
 
-use crate::ast::{Expr, MatchPattern, OrderBy, ReturnItems, pattern::UpdatePattern};
+use crate::ast::pattern::UpdatePattern;
+use crate::ast::{Expr, MatchPattern, OrderBy, ReturnItems};
 
 #[derive(Debug)]
 pub struct RegularQuery {

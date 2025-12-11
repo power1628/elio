@@ -1,5 +1,5 @@
-use mojito_common::array::chunk::DataChunk;
 use mojito_common::array::ArrayRef;
+use mojito_common::array::chunk::DataChunk;
 use mojito_common::data_type::DataType;
 use mojito_common::{TokenId, TokenKind};
 

@@ -1,5 +1,5 @@
 [toolchain]
-#channel = "stable"
 # thiserror backtrace feature is nightly only
 channel = "nightly-2025-11-01"
-components = ["rustfmt", "clippy", "rust-analyzer"]
+components = ["rustfmt", "clippy"]
+# components = ["rustfmt", "clippy", "rust-analyzer"]

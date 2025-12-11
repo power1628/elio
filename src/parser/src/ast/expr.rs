@@ -41,45 +41,55 @@ impl Expr {
             lit: Literal::Boolean(value),
         }
     }
+
     pub fn new_integer(value: String) -> Self {
         Expr::Literal {
             lit: Literal::Integer(value),
         }
     }
+
     pub fn new_float(value: String) -> Self {
         Expr::Literal {
             lit: Literal::Float(value),
         }
     }
+
     pub fn new_string(value: String) -> Self {
         Expr::Literal {
             lit: Literal::String(value),
         }
     }
+
     pub fn new_null() -> Self {
         Expr::Literal { lit: Literal::Null }
     }
+
     pub fn new_variable(name: String) -> Self {
         Expr::Variable { name }
     }
+
     pub fn new_parameter(name: String) -> Self {
         Expr::Parameter { name }
     }
+
     pub fn new_map_expression(keys: Vec<String>, values: Vec<Expr>) -> Self {
         Expr::MapExpression { keys, values }
     }
+
     pub fn new_property_access(map: Expr, key: String) -> Self {
         Expr::PropertyAccess {
             map: Box::new(map),
             key,
         }
     }
+
     pub fn new_unary(op: UnaryOperator, oprand: Expr) -> Self {
         Expr::Unary {
             op,
             oprand: Box::new(oprand),
         }
     }
+
     pub fn new_binary(left: Expr, op: BinaryOperator, right: Expr) -> Self {
         Expr::Binary {
             left: Box::new(left),
@@ -87,6 +97,7 @@ impl Expr {
             right: Box::new(right),
         }
     }
+
     pub fn new_function_call(name: String, distinct: bool, args: Vec<Expr>) -> Self {
         Expr::FunctionCall { name, distinct, args }
     }
@@ -257,6 +268,7 @@ impl LabelExpr {
     pub fn new_label(label: String) -> Self {
         Self::Label(label)
     }
+
     pub fn new_or(left: Self, right: Self) -> Self {
         Self::Or(Box::new(left), Box::new(right))
     }

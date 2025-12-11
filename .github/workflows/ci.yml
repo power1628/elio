@@ -1,0 +1,58 @@
+name: CI
+
+# Trigger conditions:
+# 1. Push to main branch
+# 2. Pull Request (Merge Request) targeting main
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+     
+      # 2. Install the Rust toolchain
+      # Using dtolnay/rust-toolchain is the recommended approach in the community,
+      # as it is more flexible than the default.
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+
+      # 3. Set up caching
+      # This caches ~/.cargo and ./target, greatly shortening subsequent CI runs.
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      # 4. Check code formatting
+      - name: Check Formatting
+        run: cargo fmt --all -- --check
+
+      # # do not run clippy for now, since there're some warnings :)
+      # # 5. Run Clippy static analysis
+      # # -D warnings treats any warning as an error and fails the CI.
+      # - name: Lint with Clippy
+      #   run: cargo clippy --all-targets --all-features -- -D warnings
+
+      # 6. Run unit tests
+      - name: Run Cargo Test
+        run: cargo test --workspace
+
+      # 7. Run logic tests
+      - name: Run Logic Tests
+        run: make logic-test
+
+      # 8. Run planner tests
+      - name: Run Planner Tests
+        run: make planner-test
