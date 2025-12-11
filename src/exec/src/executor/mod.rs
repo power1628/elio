@@ -11,6 +11,7 @@ use crate::task::TaskExecContext;
 
 pub mod all_node_scan;
 pub mod create_node;
+pub mod create_rel;
 pub mod filter;
 pub mod produce_result;
 pub mod project;

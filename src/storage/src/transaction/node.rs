@@ -17,8 +17,7 @@ pub(crate) fn batch_node_create(
     labels: &[String],
     props: &ArrayImpl,
 ) -> Result<NodeArray, GraphStoreError> {
-    assert_eq!(labels.len(), props.len());
-    let len = labels.len();
+    let len = props.len();
 
     // props
     let props = props
@@ -42,7 +41,6 @@ pub(crate) fn batch_node_create(
     let node_ids = tx.dict.batch_node_id(len)?;
 
     // create node fields for the batch
-
     let mut keys = Vec::with_capacity(len);
     let mut values = Vec::with_capacity(len);
 
@@ -64,12 +62,11 @@ pub(crate) fn batch_node_create(
     drop(guard);
 
     // create node array
-
     let mut builder = NodeArrayBuilder::with_capacity(len);
 
-    for i in 0..len {
+    for (i, node_id) in node_ids.iter().enumerate() {
         let node_ref = NodeValueRef {
-            id: node_ids[i],
+            id: *node_id,
             labels,
             props: props.get(i).unwrap(),
         };

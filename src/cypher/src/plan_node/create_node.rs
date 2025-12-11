@@ -12,7 +12,6 @@ use crate::plan_node::{InnerNode, PlanExpr, PlanNode};
 pub struct CreateNode {
     pub base: PlanBase,
     pub inner: CreateNodeInner,
-    _priv: (),
 }
 
 impl CreateNode {
@@ -20,7 +19,6 @@ impl CreateNode {
         Self {
             base: inner.build_base(),
             inner,
-            _priv: (),
         }
     }
 }
@@ -33,20 +31,16 @@ impl PlanNode for CreateNode {
     }
 
     fn xmlnode(&self) -> XmlNode<'_> {
-        let fields = vec![
-            ("variable", Pretty::display(&self.inner.variable.name)),
-            (
-                "labels",
-                Pretty::Array(
-                    self.inner
-                        .labels
-                        .iter()
-                        .map(|x| Pretty::from(x.to_string()))
-                        .collect_vec(),
-                ),
+        let fields = vec![(
+            "items",
+            Pretty::Array(
+                self.inner
+                    .nodes
+                    .iter()
+                    .map(|x| Pretty::Record(x.xmlnode()))
+                    .collect_vec(),
             ),
-            ("properties", Pretty::from(self.inner.properties.pretty())),
-        ];
+        )];
         let children = vec![Pretty::Record(self.inner.input.xmlnode())];
         XmlNode::simple_record("CreateNode", fields, children)
     }
@@ -55,15 +49,36 @@ impl PlanNode for CreateNode {
 #[derive(Clone, Debug)]
 pub struct CreateNodeInner {
     pub input: Box<PlanExpr>,
+    pub nodes: Vec<CreateNodeItem>,
+}
+
+#[derive(Debug, Clone)]
+pub struct CreateNodeItem {
     pub labels: Vec<IrToken>,
     pub properties: BoxedExpr,
     pub variable: Variable,
 }
 
+impl CreateNodeItem {
+    pub fn xmlnode(&self) -> XmlNode<'_> {
+        let fields = vec![
+            ("variable", Pretty::display(&self.variable.name)),
+            (
+                "labels",
+                Pretty::Array(self.labels.iter().map(|x| Pretty::from(x.to_string())).collect_vec()),
+            ),
+            ("properties", Pretty::from(self.properties.pretty())),
+        ];
+        XmlNode::simple_record("CreateNodeItem", fields, vec![])
+    }
+}
+
 impl CreateNodeInner {
     fn build_schema(&self) -> Arc<Schema> {
         let mut schema = Schema::from_arc(self.input.schema());
-        schema.add_column(self.variable.clone());
+        for node in &self.nodes {
+            schema.add_column(node.variable.clone());
+        }
         schema.into()
     }
 }

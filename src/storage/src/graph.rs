@@ -6,14 +6,8 @@ use rocksdb::{ColumnFamilyDescriptor, Options};
 use crate::dict::IdStore;
 use crate::error::GraphStoreError;
 use crate::token::TokenStore;
-use crate::transaction::{Transaction, TransactionImpl};
-
-// metadata store
-pub const CF_META: &str = "cf_meta";
-// relationships store
-pub const CF_TOPOLOGY: &str = "cf_topology";
-// node store
-pub const CF_PROPERTY: &str = "cf_property";
+use crate::transaction::TransactionImpl;
+use crate::{cf_meta, cf_property, cf_topology};
 
 pub struct GraphStore {
     db: Arc<rocksdb::TransactionDB>,
@@ -33,9 +27,9 @@ impl GraphStore {
         opts.create_missing_column_families(true);
 
         let cf_descriptors = vec![
-            ColumnFamilyDescriptor::new(CF_META, Options::default()),
-            ColumnFamilyDescriptor::new(CF_TOPOLOGY, Options::default()),
-            ColumnFamilyDescriptor::new(CF_PROPERTY, Options::default()),
+            ColumnFamilyDescriptor::new(cf_meta::CF_NAME, Options::default()),
+            ColumnFamilyDescriptor::new(cf_topology::CF_NAME, Options::default()),
+            ColumnFamilyDescriptor::new(cf_property::CF_NAME, Options::default()),
         ];
         let tx_db_opts = rocksdb::TransactionDBOptions::default();
 
@@ -48,9 +42,9 @@ impl GraphStore {
 
                 // create cf
                 let cf_opts = Options::default();
-                db.create_cf(CF_META, &cf_opts)?;
-                db.create_cf(CF_TOPOLOGY, &cf_opts)?;
-                db.create_cf(CF_PROPERTY, &cf_opts)?;
+                db.create_cf(cf_meta::CF_NAME, &cf_opts)?;
+                db.create_cf(cf_topology::CF_NAME, &cf_opts)?;
+                db.create_cf(cf_property::CF_NAME, &cf_opts)?;
 
                 db
             }
@@ -67,7 +61,7 @@ impl GraphStore {
         &self.token
     }
 
-    pub fn transaction(&self) -> Arc<dyn Transaction> {
+    pub fn transaction(&self) -> Arc<TransactionImpl> {
         Arc::new(TransactionImpl::new(
             self.db.clone(),
             self.dict.clone(),

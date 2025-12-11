@@ -113,3 +113,9 @@ impl NodeId {
 )]
 #[repr(transparent)]
 pub struct RelationshipId(pub u64);
+
+impl RelationshipId {
+    pub fn from_be_bytes(bytes: [u8; 8]) -> Self {
+        Self(u64::from_be_bytes(bytes))
+    }
+}

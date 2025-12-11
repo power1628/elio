@@ -6,6 +6,7 @@ edition.workspace = true
 [dependencies]
 # workspace
 async-trait = { workspace = true }
+bitvec = { workspace = true }
 bytes = { workspace = true }
 futures = { workspace = true }
 mojito_common = { workspace = true }

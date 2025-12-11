@@ -1,8 +1,9 @@
 use std::collections::HashSet;
 
 use mojito_common::data_type::DataType;
+use mojito_common::store_types::RelDirection;
 use mojito_common::{EntityKind, IrToken, TokenKind};
-use mojito_parser::ast::{self, NodePattern, RelationshipPattern, UpdatePattern};
+use mojito_parser::ast::{self, NodePattern, RelationshipPattern, SemanticDirection, UpdatePattern};
 
 use crate::binder::BindContext;
 use crate::binder::builder::IrSingleQueryBuilder;
@@ -32,7 +33,8 @@ pub fn bind_create(
         reject_selective: true,
     };
 
-    let scope = bind_create_pattern(&pctx, builder, in_scope, pattern)?;
+    let mut scope = bind_create_pattern(&pctx, builder, in_scope, pattern)?;
+    scope.remove_anonymous();
     Ok(scope)
 }
 
@@ -113,25 +115,58 @@ fn bind_create_part(
         // predicate must be non
         let labels = bind_label_expr_for_create(&ectx, label_expr.as_ref(), &EntityKind::Node)?;
         let properties = bind_properties_for_create(&ectx, properties.as_ref())?;
-        if predicate.is_some() || variable.is_none() {
-            return Err(SemanticError::invalid_create_entity(&pattern_str).into());
-        }
-        // symbol
-        let symbol = variable.as_deref().unwrap();
-        // check symbol not defined in inscope and create scope
-        if in_scope.resolve_symbol(symbol).is_some() || create_scope.resolve_symbol(symbol).is_some() {
+        if predicate.is_some() {
             return Err(SemanticError::invalid_create_entity(&pattern_str).into());
         }
 
-        // add symbol to create_scope
-        let var_name = pctx.bctx.variable_generator.named(symbol);
-        let item = ScopeItem {
-            symbol: Some(symbol.to_owned()),
-            variable: var_name.clone(),
-            expr: Default::default(),
-            typ: DataType::Node,
+        // bind var
+        let var_name = {
+            if let Some(symbol) = variable.as_deref() {
+                let (is_reference, var_name) = {
+                    if let Some(item) = create_scope.resolve_symbol(symbol) {
+                        (true, item.variable.clone())
+                    } else if let Some(item) = in_scope.resolve_symbol(symbol) {
+                        (true, item.variable.clone())
+                    } else {
+                        // add symbol to create_scope
+                        let var_name = pctx.bctx.variable_generator.named(symbol);
+                        let item = ScopeItem {
+                            symbol: Some(symbol.to_owned()),
+                            variable: var_name.clone(),
+                            expr: Default::default(),
+                            typ: DataType::Node,
+                        };
+                        create_scope.add_item(item);
+                        (false, var_name)
+                    }
+                };
+
+                if is_reference && (!labels.is_empty() || !properties.is_empty()) {
+                    return Err(SemanticError::invalid_create_entity(&pattern_str).into());
+                }
+
+                if !is_reference && (labels.is_empty()) {
+                    return Err(SemanticError::invalid_create_entity(&pattern_str).into());
+                }
+                var_name
+            } else {
+                // anonymous, new variable, label should not be empty
+                if labels.is_empty() {
+                    return Err(SemanticError::invalid_create_entity(&pattern_str).into());
+                }
+
+                // add variable to create_scope
+                let var_name = pctx.bctx.variable_generator.unnamed();
+                let item = ScopeItem {
+                    symbol: None,
+                    variable: var_name.clone(),
+                    expr: Default::default(),
+                    typ: DataType::Node,
+                };
+                create_scope.add_item(item);
+                var_name
+            }
         };
-        create_scope.add_item(item);
 
         let create = CreateNode {
             variable: var_name,
@@ -153,37 +188,69 @@ fn bind_create_part(
         },
     ) in relationships.iter().enumerate()
     {
-        let labels = bind_label_expr_for_create(&ectx, label_expr.as_ref(), &EntityKind::Node)?;
+        let labels = bind_label_expr_for_create(&ectx, label_expr.as_ref(), &EntityKind::Rel)?;
         let properties = bind_properties_for_create(&ectx, properties.as_ref())?;
-        if variable.is_none() || predicate.is_some() || length.is_some() || direction.is_both() {
+        // only can be directed
+        if predicate.is_some() || length.is_some() || direction.is_both() {
             return Err(SemanticError::invalid_create_entity(&pattern_str).into());
         }
-        // relationship symbol must be unqiue
-        let symbol = variable.as_deref().unwrap();
-        // check symbol not defined in inscope and create_scope
-        if in_scope.resolve_symbol(symbol).is_some() || create_scope.resolve_symbol(symbol).is_some() {
-            return Err(SemanticError::invalid_create_entity(&pattern_str).into());
-        }
-        // add symbol to create_scope
-        let var_name = pctx.bctx.variable_generator.named(symbol);
-        let item = ScopeItem {
-            symbol: Some(symbol.to_owned()),
-            variable: var_name.clone(),
-            expr: Default::default(),
-            typ: DataType::Rel,
+
+        // bind var
+        let var_name = {
+            if let Some(symbol) = variable.as_deref() {
+                // check symbol not defined in inscope and create_scope
+                if in_scope.resolve_symbol(symbol).is_some() || create_scope.resolve_symbol(symbol).is_some() {
+                    return Err(SemanticError::invalid_create_entity(&pattern_str).into());
+                }
+                // add symbol to create_scope
+                let var_name = pctx.bctx.variable_generator.named(symbol);
+                let item = ScopeItem {
+                    symbol: Some(symbol.to_owned()),
+                    variable: var_name.clone(),
+                    expr: Default::default(),
+                    typ: DataType::Rel,
+                };
+                create_scope.add_item(item);
+                var_name
+            } else {
+                // anonymous, label should not be empty
+                if labels.is_empty() {
+                    return Err(SemanticError::invalid_create_entity(&pattern_str).into());
+                }
+                // add variable to create_scope
+                let var_name = pctx.bctx.variable_generator.unnamed();
+                let item = ScopeItem {
+                    symbol: None,
+                    variable: var_name.clone(),
+                    expr: Default::default(),
+                    typ: DataType::Rel,
+                };
+                create_scope.add_item(item);
+                var_name
+            }
         };
-        create_scope.add_item(item);
+
+        let direction = match direction {
+            SemanticDirection::Outgoing => RelDirection::Out,
+            SemanticDirection::Incoming => RelDirection::In,
+            SemanticDirection::Both => {
+                return Err(SemanticError::invalid_create_entity(&pattern_str).into());
+            }
+        };
 
         let create = CreateRel {
             variable: var_name,
             left: new_nodes[i].variable.clone(),
             right: new_nodes[i + 1].variable.clone(),
             reltype: labels.into_iter().next().unwrap(),
-            direction: *direction,
+            direction,
             properties,
         };
         new_rels.push(create);
     }
+
+    // remove reference node
+    new_nodes.retain(|node| !node.labels.is_empty());
 
     create_nodes.extend(new_nodes);
     create_rels.extend(new_rels);
@@ -196,7 +263,14 @@ fn bind_label_expr_for_create(
     label_expr: Option<&ast::LabelExpr>,
     kind: &EntityKind,
 ) -> Result<Vec<IrToken>, PlanError> {
-    let label_expr = label_expr.ok_or(PlanError::from(SemanticError::invalid_create_entity(ectx.name)))?;
+    // let label_expr = label_expr.ok_or(PlanError::from(SemanticError::invalid_create_entity(ectx.name)))?;
+
+    let label_expr = match label_expr {
+        Some(lexpr) => lexpr,
+        None => {
+            return Ok(vec![]);
+        }
+    };
 
     let labels = {
         if !label_expr.contains_only_and() {

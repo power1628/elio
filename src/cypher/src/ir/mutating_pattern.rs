@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 
 use mojito_common::IrToken;
+use mojito_common::store_types::RelDirection;
 use mojito_common::variable::VariableName;
-use mojito_parser::ast::SemanticDirection;
 use pretty_xmlish::XmlNode;
 
 use crate::expr::{BoxedExpr, CreateStruct};
@@ -74,16 +74,15 @@ pub struct CreateRel {
     pub left: VariableName,
     pub right: VariableName,
     pub reltype: IrToken,
-    pub direction: SemanticDirection,
+    pub direction: RelDirection,
     pub properties: CreateStruct,
 }
 
 impl std::fmt::Display for CreateRel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let (ldir, rdir) = match self.direction {
-            SemanticDirection::Outgoing => ("-", "->"),
-            SemanticDirection::Both => ("<-", "->"),
-            SemanticDirection::Incoming => ("<-", "-"),
+            RelDirection::Out => ("-", "->"),
+            RelDirection::In => ("<-", "-"),
         };
         write!(
             f,
@@ -101,7 +100,7 @@ impl std::fmt::Display for CreateRel {
 impl CreateRel {
     // Return (start, end) node
     pub fn start_end_nodes(&self) -> (&VariableName, &VariableName) {
-        if matches!(self.direction, SemanticDirection::Outgoing | SemanticDirection::Both) {
+        if matches!(self.direction, RelDirection::Out) {
             (&self.left, &self.right)
         } else {
             (&self.right, &self.left)

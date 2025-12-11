@@ -11,7 +11,7 @@ use mojito_cypher::planner::RootPlan;
 use mojito_expr::error::EvalError;
 use mojito_expr::impl_::EvalCtx;
 use mojito_storage::graph::GraphStore;
-use mojito_storage::transaction::Transaction;
+use mojito_storage::transaction::TransactionImpl;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 use crate::builder::{ExecutorBuildContext, build_executor};
@@ -46,7 +46,7 @@ impl ExecContext {
 
 pub struct EvalCtxImpl {
     pub catalog: Arc<Catalog>,
-    pub tx: Arc<dyn Transaction>,
+    pub tx: Arc<TransactionImpl>,
 }
 
 impl EvalCtx for EvalCtxImpl {
@@ -62,7 +62,7 @@ pub struct TaskExecContext {
     exec_ctx: Arc<ExecContext>,
     // task specific context here
     // TODO(pgao): maybe we should transaction also into catalog api?
-    tx: Arc<dyn Transaction>,
+    tx: Arc<TransactionImpl>,
 }
 
 impl TaskExecContext {
@@ -74,7 +74,7 @@ impl TaskExecContext {
         self.exec_ctx.store()
     }
 
-    pub fn tx(&self) -> &Arc<dyn Transaction> {
+    pub fn tx(&self) -> &Arc<TransactionImpl> {
         &self.tx
     }
 

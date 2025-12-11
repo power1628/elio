@@ -17,8 +17,26 @@
     - bind
     - plan
 - sql: |
-    CREATE (n:Person {name: 'Alice', age: 30}) CREATE (m:Person {name: 'Bob', age: 31})
+    CREATE (n:Person {name: 'Alice', age: 30}), (m:Person {name: 'Bob', age: 31})
   desc: create multiple nodes
+  tasks:
+    - bind
+    - plan
+- sql: |
+    CREATE (:Person{name: 'Alice', age: 30}), (:Person{name: 'Bob', age: 31})
+  desc: create without variable
+  tasks:
+    - bind
+    - plan
+- sql: |
+    CREATE (a:Person {name: 'Alice', age: 30}), (b:Person {name: 'Bob', age: 31}), (a)-[:KNOWS]->(b)
+  desc: create multiple nodes with relationships
+  tasks:
+    - bind
+    - plan
+- sql: |
+    CREATE (a:Person {name: 'Alice', age: 30}), (b:Person {name: 'Bob', age: 31}), (a)-[r:KNOWS]->(b)
+  desc: create multiple nodes with relationships and return r
   tasks:
     - bind
     - plan

@@ -76,9 +76,22 @@ impl PropertyValue {
     }
 }
 
-#[repr(C)]
-#[derive(Copy, Clone)]
+#[repr(u8)]
+#[derive(Copy, Clone, Debug)]
 pub enum RelDirection {
-    Incoming, // 0
-    Outgoing, // 1
+    Out, // 0
+    In,  // 1
 }
+
+impl From<u8> for RelDirection {
+    fn from(u: u8) -> Self {
+        match u {
+            DIR_OUT => Self::Out,
+            DIR_IN => Self::In,
+            _ => panic!("invalid rel direction"),
+        }
+    }
+}
+
+pub const DIR_OUT: u8 = 0x00;
+pub const DIR_IN: u8 = 0x01;

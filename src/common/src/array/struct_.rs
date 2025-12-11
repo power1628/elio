@@ -51,6 +51,10 @@ impl StructArray {
         &self.fields
     }
 
+    pub fn field_names(&self) -> impl Iterator<Item = &Arc<str>> + '_ {
+        self.fields.iter().map(|(n, _)| n)
+    }
+
     pub fn field_at_pos(&self, idx: usize) -> Option<&(Arc<str>, ArrayRef)> {
         self.fields.get(idx)
     }

@@ -18,6 +18,7 @@ pub(crate) mod cf_meta {
 
 pub(crate) mod cf_topology {
     pub const CF_NAME: &str = "cf_topology";
+    pub const REL_KEY_PREFIX: u8 = 0x01;
 }
 
 pub(crate) mod cf_property {
