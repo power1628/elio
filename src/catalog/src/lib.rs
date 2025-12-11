@@ -8,7 +8,6 @@ pub mod error;
 pub mod func;
 pub use func::FunctionCatalog;
 
-
 /// Catalog contains
 ///  - Registered functions
 ///  - Token to TokenId Mapping

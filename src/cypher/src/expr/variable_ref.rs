@@ -1,4 +1,6 @@
-use mojito_common::{data_type::DataType, schema::Variable, variable::VariableName};
+use mojito_common::data_type::DataType;
+use mojito_common::schema::Variable;
+use mojito_common::variable::VariableName;
 
 use crate::expr::{Expr, ExprNode};
 

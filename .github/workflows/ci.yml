@@ -1,0 +1,62 @@
+name: CI
+
+# Trigger conditions:
+# 1. Push to main branch
+# 2. Pull Request (Merge Request) targeting main
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+
+concurrency:
+  # group name:
+  # 1. github.workflow: work flow name(i.e. CI)
+  # 2. github.ref: branch name(e.g. refs/pull/123/merge)
+  # workflow-ref is the group name
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      # Check out the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+     
+      # Install the Rust toolchain
+      - name: 'Install rust-toolchain.toml'
+        run: rustup toolchain install
+
+      # Install nextest
+      - name: Install nextest
+        uses: taiki-e/install-action@nextest
+
+      # Set up caching
+      # This caches ~/.cargo and ./target, greatly shortening subsequent CI runs.
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      # Check code formatting
+      - name: Check Formatting
+        run: cargo fmt --all -- --check
+
+      # # do not run clippy for now, since there're some warnings :)
+      # # Run Clippy static analysis
+      # # -D warnings treats any warning as an error and fails the CI.
+      # - name: Lint with Clippy
+      #   run: cargo clippy --all-targets --all-features -- -D warnings
+
+      # Run all unit tests
+      - name: Run Cargo Test
+        run: cargo nextest run

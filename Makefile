@@ -9,7 +9,7 @@ fmt-check:
 
 fmt:
 	cargo fmt --all
-	taplo format
+	#taplo format
 
 clippy-check:
 	cargo clippy --workspace --all-targets --all-features -- -D warnings
