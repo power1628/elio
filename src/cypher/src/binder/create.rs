@@ -1,8 +1,9 @@
 use std::collections::HashSet;
 
 use mojito_common::data_type::DataType;
+use mojito_common::store_types::RelDirection;
 use mojito_common::{EntityKind, IrToken, TokenKind};
-use mojito_parser::ast::{self, NodePattern, RelationshipPattern, UpdatePattern};
+use mojito_parser::ast::{self, NodePattern, RelationshipPattern, SemanticDirection, UpdatePattern};
 
 use crate::binder::BindContext;
 use crate::binder::builder::IrSingleQueryBuilder;
@@ -189,6 +190,7 @@ fn bind_create_part(
     {
         let labels = bind_label_expr_for_create(&ectx, label_expr.as_ref(), &EntityKind::Rel)?;
         let properties = bind_properties_for_create(&ectx, properties.as_ref())?;
+        // only can be directed
         if predicate.is_some() || length.is_some() || direction.is_both() {
             return Err(SemanticError::invalid_create_entity(&pattern_str).into());
         }
@@ -228,12 +230,20 @@ fn bind_create_part(
             }
         };
 
+        let direction = match direction {
+            SemanticDirection::Outgoing => RelDirection::Out,
+            SemanticDirection::Incoming => RelDirection::In,
+            SemanticDirection::Both => {
+                return Err(SemanticError::invalid_create_entity(&pattern_str).into());
+            }
+        };
+
         let create = CreateRel {
             variable: var_name,
             left: new_nodes[i].variable.clone(),
             right: new_nodes[i + 1].variable.clone(),
             reltype: labels.into_iter().next().unwrap(),
-            direction: *direction,
+            direction,
             properties,
         };
         new_rels.push(create);

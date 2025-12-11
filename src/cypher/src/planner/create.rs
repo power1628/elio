@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use mojito_common::data_type::DataType;
 use mojito_common::schema::Variable;
-use mojito_parser::ast;
+use mojito_common::store_types::RelDirection;
 
 use crate::error::PlanError;
 use crate::expr::Expr;
@@ -56,9 +56,8 @@ fn plan_create_rels(
         .map(|rel| {
             let (start, end) = {
                 match rel.direction {
-                    ast::SemanticDirection::Outgoing => (rel.left.clone(), rel.right.clone()),
-                    ast::SemanticDirection::Incoming => (rel.right.clone(), rel.left.clone()),
-                    ast::SemanticDirection::Both => unreachable!("create rel must be directed"),
+                    RelDirection::Out => (rel.left.clone(), rel.right.clone()),
+                    RelDirection::In => (rel.right.clone(), rel.left.clone()),
                 }
             };
 
