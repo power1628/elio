@@ -180,7 +180,11 @@ impl<'a> Iterator for RelIterForNode<'a> {
                     if from != self.from_id {
                         return None;
                     }
-                    if !dir.satisfies(self.dir) || !self.rtypes.contains(&reltype) {
+                    if !dir.satisfies(self.dir) {
+                        continue;
+                    }
+                    // TODO(pgao): rtypes.is_empty() can be put in outer loop
+                    if !self.rtypes.is_empty() && !self.rtypes.contains(&reltype) {
                         continue;
                     }
                     return Some(Ok((from, dir, reltype, end, rel_id, val)));
