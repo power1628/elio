@@ -73,7 +73,7 @@ impl BoolArrayBuilder {
     }
 
     pub fn finish(self) -> BoolArray {
-        let data = self.data.into();
+        let data = self.data;
         let valid = self.valid;
         BoolArray { data, valid }
     }
