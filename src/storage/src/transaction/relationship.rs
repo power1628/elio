@@ -102,7 +102,6 @@ pub(crate) fn rel_iter_for_node<'a>(
 ) -> Result<RelIterForNode<'a>, GraphStoreError> {
     let cf = tx.inner._db.cf_handle(cf_topology::CF_NAME).unwrap();
     let prefix = RelFormat::node_rel_iter_prefix(node_id, dir);
-    println!("{:x?}", prefix);
 
     let mut readopts = rocksdb::ReadOptions::default();
     readopts.set_prefix_same_as_start(true);
@@ -184,7 +183,7 @@ impl<'a> Iterator for RelIterForNode<'a> {
                     if !dir.satisfies(self.dir) || !self.rtypes.contains(&reltype) {
                         continue;
                     }
-                    return Some(Ok((from, dir, reltype, end, rel_id, val.to_vec().into())));
+                    return Some(Ok((from, dir, reltype, end, rel_id, val)));
                 }
             }
         }

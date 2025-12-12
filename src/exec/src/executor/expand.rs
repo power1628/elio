@@ -36,15 +36,17 @@ impl Executor for ExpandAllExecutor {
                 let outer = chunk?;
                 for row in outer.iter(){
                     // if from is null, then remove this row
-                    let from_id = match row[self.from]{
-                        None => continue,
-                        Some(id) => id.get_node_id().unwrap(),
+                    let from_id = match row[self.from].and_then(|id| id.get_node_id()){
+                        Some(id) => id,
+                        None => continue, // if from is null, then skip this row
                     };
                     let rel_iter = ctx.tx().rel_iter_for_node(from_id, self.dir, &self.rtype)?;
                     for rel_kv in rel_iter {
                         let (from_id, _rel_dir, token_id, to_id, rel_id, value) = rel_kv?;
                         let mut row = row.clone();
                         // add rel to row
+                        // SAFETY
+                        //  planner and executor builder will only generate valid token_id
                         let reltype = ctx.store().token_store().get_token_val(token_id, TokenKind::RelationshipType).unwrap();
                         // TODO(pgao): lazy deserialize
                         let prop_map = RelFormat::decode_value(&value);

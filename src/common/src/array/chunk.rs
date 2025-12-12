@@ -142,7 +142,7 @@ impl DataChunkBuilder {
     }
 
     pub fn yield_chunk(&mut self) -> Option<DataChunk> {
-        if self.len == 0 { None } else { Some(self.build_chunk()) }
+        (self.len > 0).then(|| self.build_chunk())
     }
 
     // build the data chunk and reset the builder
