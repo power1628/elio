@@ -43,9 +43,7 @@ impl Executor for ExpandAllExecutor {
                     let rel_iter = ctx.tx().rel_iter_for_node(from_id, self.dir, &self.rtype)?;
                     for rel_kv in rel_iter {
                         let (from_id, _rel_dir, token_id, to_id, rel_id, value) = rel_kv?;
-                                                   
                         let mut row = row.clone();
-
                         // add rel to row
                         let reltype = ctx.store().token_store().get_token_val(token_id, TokenKind::RelationshipType).unwrap();
                         // TODO(pgao): lazy deserialize
