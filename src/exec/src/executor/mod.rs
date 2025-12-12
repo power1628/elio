@@ -4,6 +4,7 @@ use std::sync::Arc;
 use futures::Stream;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::schema::Schema;
+use mojito_expr::impl_::BoxedExpression;
 use tracing;
 
 use crate::error::ExecError;

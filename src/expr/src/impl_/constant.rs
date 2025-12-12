@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use mojito_common::array::ArrayRef;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::array::datum::ScalarValue;
+use mojito_common::array::{ArrayImpl, ArrayRef};
 use mojito_common::data_type::DataType;
 
 use crate::error::EvalError;

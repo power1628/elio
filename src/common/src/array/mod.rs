@@ -8,9 +8,8 @@
 //! generics around the Array and ArrayBuilder.
 //! This file is derived from type-exercise-in-rust and modified by Mojito.
 
-// pub mod array;
-// pub mod basic;
 pub mod any;
+pub mod bool;
 pub mod chunk;
 pub mod datum;
 pub mod list;
@@ -32,6 +31,7 @@ pub use node::*;
 pub use rel::*;
 pub use struct_::*;
 
+use crate::array::bool::{BoolArray, BoolArrayBuilder};
 use crate::array::iter::ArrayIterator;
 
 /// [`Array`] is a collection of data of the same type.
@@ -76,6 +76,7 @@ pub type ArrayRef = Arc<ArrayImpl>;
 #[derive(EnumAsInner, Clone, Debug)]
 pub enum ArrayImpl {
     Any(AnyArray),
+    Bool(BoolArray),
     // graph
     VirtualNode(VirtualNodeArray),
     VirtualRel(VirtualRelArray),
@@ -123,7 +124,7 @@ macro_rules! impl_array_dispatch {
     };
 }
 
-impl_array_dispatch!(Any, VirtualNode, VirtualRel, Node, Rel, List, Struct);
+impl_array_dispatch!(Any, Bool, VirtualNode, VirtualRel, Node, Rel, List, Struct);
 
 macro_rules! impl_array_convert {
     ($({$Abc:ident, $AbcArray:ident}),*) => {
@@ -141,6 +142,7 @@ macro_rules! impl_array_convert {
 
 impl_array_convert!(
 {Any, AnyArray},
+{Bool, BoolArray},
 {VirtualNode, VirtualNodeArray},
 {VirtualRel, VirtualRelArray},
 {Node, NodeArray},
@@ -151,6 +153,7 @@ impl_array_convert!(
 #[derive(Debug, EnumAsInner)]
 pub enum ArrayBuilderImpl {
     Any(AnyArrayBuilder),
+    Bool(BoolArrayBuilder),
     // graph
     VirtualNode(VirtualNodeArrayBuilder),
     VirtualRel(VirtualRelArrayBuilder),
@@ -166,6 +169,10 @@ impl ArrayBuilderImpl {
         match self {
             ArrayBuilderImpl::Any(any) => {
                 any.push_n(item, repeat);
+            }
+            ArrayBuilderImpl::Bool(b) => {
+                let item = item.map(|x| x.into_bool().expect("type mismatch expected bool"));
+                b.push_n(item, repeat);
             }
             ArrayBuilderImpl::VirtualNode(vnode) => {
                 let item = item.map(|x| x.into_virtual_node().expect("type mismatch expected virtual node"));
@@ -211,13 +218,14 @@ macro_rules! impl_array_builder_dispatch {
     };
 }
 
-impl_array_builder_dispatch!(Any, VirtualNode, VirtualRel, Node, Rel, List, Struct);
+impl_array_builder_dispatch!(Any, Bool, VirtualNode, VirtualRel, Node, Rel, List, Struct);
 
 // physical array type
 #[derive(Debug)]
 pub enum PhysicalType {
     // basic
     Any,
+    Bool, // for filter
     // graph
     VirtualNode,
     VirtualRel,
@@ -233,6 +241,7 @@ impl PhysicalType {
     pub fn array_builder(&self, capacity: usize) -> ArrayBuilderImpl {
         match self {
             PhysicalType::Any => ArrayBuilderImpl::Any(AnyArrayBuilder::with_capacity(capacity)),
+            PhysicalType::Bool => ArrayBuilderImpl::Bool(BoolArrayBuilder::with_capacity(capacity)),
             PhysicalType::VirtualNode => {
                 ArrayBuilderImpl::VirtualNode(VirtualNodeArrayBuilder::with_capacity(capacity))
             }
