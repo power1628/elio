@@ -4,12 +4,13 @@ use std::sync::{Arc, Mutex};
 use async_trait::async_trait;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::array::{ArrayImpl, NodeArray, RelArray, StructArray, VirtualNodeArray};
+use mojito_common::{NodeId, SemanticDirection, TokenId};
 
 use crate::dict::IdStore;
 use crate::error::GraphStoreError;
 use crate::token::TokenStore;
 use crate::transaction::node::{batch_materialize_node, batch_node_create, batch_node_scan};
-use crate::transaction::relationship::{NodeIdContainer, batch_rel_create};
+use crate::transaction::relationship::{NodeIdContainer, RelIterForNode, batch_rel_create, rel_iter_for_node};
 
 mod node;
 mod relationship;
@@ -90,6 +91,15 @@ impl TransactionImpl {
 
     pub fn relationship_delete(&self, _rel: &DataChunk) -> Result<(), GraphStoreError> {
         todo!()
+    }
+
+    pub fn rel_iter_for_node(
+        &self,
+        node_id: NodeId,
+        dir: SemanticDirection,
+        rtypes: &[TokenId],
+    ) -> Result<RelIterForNode<'_>, GraphStoreError> {
+        rel_iter_for_node(self, node_id, dir, rtypes)
     }
 
     pub fn commit(&self) -> Result<(), GraphStoreError> {

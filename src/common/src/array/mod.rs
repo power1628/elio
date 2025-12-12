@@ -161,6 +161,44 @@ pub enum ArrayBuilderImpl {
     Struct(StructArrayBuilder),
 }
 
+impl ArrayBuilderImpl {
+    pub fn push_n(&mut self, item: Option<ScalarRef<'_>>, repeat: usize) {
+        match self {
+            ArrayBuilderImpl::Any(any) => {
+                any.push_n(item, repeat);
+            }
+            ArrayBuilderImpl::VirtualNode(vnode) => {
+                let item = item.map(|x| x.into_virtual_node().expect("type mismatch expected virtual node"));
+                vnode.push_n(item, repeat);
+            }
+            ArrayBuilderImpl::VirtualRel(vrel) => {
+                let item = item.map(|x| x.into_virtual_rel().expect("type mismatch expected virtual rel"));
+                vrel.push_n(item, repeat);
+            }
+            ArrayBuilderImpl::Node(node) => {
+                let item = item.map(|x| x.into_node().expect("type mismatch expected node"));
+                node.push_n(item, repeat);
+            }
+            ArrayBuilderImpl::Rel(rel) => {
+                let item = item.map(|x| x.into_rel().expect("type mismatch expected rel"));
+                rel.push_n(item, repeat);
+            }
+            ArrayBuilderImpl::List(list) => {
+                let item = item.map(|x| x.into_list().expect("type mismatch expected list"));
+                list.push_n(item, repeat);
+            }
+            ArrayBuilderImpl::Struct(struct_array_builder) => {
+                let item = item.map(|x| x.into_struct().expect("type mismatch expected struct"));
+                struct_array_builder.push_n(item, repeat);
+            }
+        }
+    }
+
+    pub fn push(&mut self, item: Option<ScalarRef<'_>>) {
+        self.push_n(item, 1);
+    }
+}
+
 macro_rules! impl_array_builder_dispatch {
     ($($variant:ident),*) => {
         impl ArrayBuilderImpl {

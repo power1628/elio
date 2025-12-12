@@ -9,7 +9,7 @@ use bytes::{BufMut, Bytes, BytesMut};
 use mojito_common::array::datum::StructValueRef;
 use mojito_common::mapb::{PropertyMapMut, PropertyMapRef};
 use mojito_common::store_types::RelDirection;
-use mojito_common::{NodeId, RelationshipId, TokenId};
+use mojito_common::{NodeId, RelationshipId, SemanticDirection, TokenId};
 
 use crate::cf_topology;
 
@@ -57,7 +57,42 @@ impl RelFormat {
         Ok(buf.freeze())
     }
 
-    pub fn decode_value(buf: &[u8]) -> Result<PropertyMapRef<'_>, String> {
-        Ok(PropertyMapRef::new(buf))
+    pub fn decode_value(buf: &[u8]) -> PropertyMapRef<'_> {
+        PropertyMapRef::new(buf)
+    }
+
+    // node out rel prefix: node_id and direction
+    pub fn node_rel_iter_prefix(node_id: NodeId, dir: SemanticDirection) -> Bytes {
+        let mut bytes = BytesMut::new();
+        bytes.put_u8(cf_topology::REL_KEY_PREFIX);
+        bytes.put_u64(*node_id);
+        match dir {
+            SemanticDirection::Outgoing => bytes.put_u8(RelDirection::Out as u8),
+            SemanticDirection::Incoming => bytes.put_u8(RelDirection::In as u8),
+            SemanticDirection::Both => ()/* put nothing */,
+        }
+        bytes.freeze()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_encode_decode_key() {
+        let key = RelFormat::encode_key(
+            NodeId::from(1),
+            RelDirection::Out,
+            2,
+            NodeId::from(3),
+            RelationshipId::from(4),
+        );
+        let (src_node_id, direction, reltype, dst_node_id, rel_id) = RelFormat::decode_key(&key);
+        assert_eq!(src_node_id, NodeId::from(1));
+        assert_eq!(direction, RelDirection::Out);
+        assert_eq!(reltype, 2);
+        assert_eq!(dst_node_id, NodeId::from(3));
+        assert_eq!(rel_id, RelationshipId::from(4));
     }
 }

@@ -1,8 +1,7 @@
 use educe::{self, Educe};
 use indexmap::IndexSet;
-use mojito_common::IrToken;
 use mojito_common::variable::{PathElement, VariableName};
-use mojito_parser::ast::SemanticDirection;
+use mojito_common::{IrToken, SemanticDirection};
 
 use crate::expr::FilterExprs;
 

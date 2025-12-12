@@ -7,6 +7,7 @@ mod statement;
 mod typ;
 
 pub use expr::*;
+pub(crate) use mojito_common::SemanticDirection;
 pub(crate) use mojito_common::order::SortDirection;
 pub use order::*;
 pub use pattern::*;

@@ -19,6 +19,7 @@ pub struct NodeValue {
     pub props: StructValue,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct NodeValueRef<'a> {
     pub id: NodeId,
     pub labels: &'a [String],
@@ -47,12 +48,14 @@ impl<'a> NodeValueRef<'a> {
 )]
 pub struct RelValue {
     pub id: RelationshipId,
+    // Arc<str>
     pub reltype: String,
     pub start_id: NodeId,
     pub end_id: NodeId,
     pub props: StructValue,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct RelValueRef<'a> {
     pub id: RelationshipId,
     pub reltype: &'a str,
@@ -82,6 +85,7 @@ pub struct VirtualRel {
     pub end_id: NodeId,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct VirtualRelRef<'a> {
     pub id: RelationshipId,
     pub reltype: &'a str,
@@ -101,7 +105,7 @@ impl ListValue {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum ListValueRef<'a> {
     Index {
         child: &'a ArrayImpl,
@@ -117,6 +121,13 @@ impl<'a> ListValueRef<'a> {
             "[{}]",
             self.iter().map(|item| item.pretty()).collect::<Vec<_>>().join(", ")
         )
+    }
+
+    pub fn len(&self) -> usize {
+        match self {
+            ListValueRef::Index { child: _, start, end } => end - start,
+            ListValueRef::Slice(scalar_values) => scalar_values.len(),
+        }
     }
 
     pub fn iter(&self) -> ListValueIter<'a> {
@@ -235,7 +246,7 @@ impl StructValue {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum StructValueRef<'a> {
     Index { array: &'a StructArray, idx: usize },
     Value { value: &'a StructValue },
@@ -382,6 +393,7 @@ impl ScalarValue {
     }
 }
 
+#[derive(Debug, EnumAsInner, Clone, Copy)]
 pub enum ScalarRef<'a> {
     Null,
     Bool(bool),
@@ -404,6 +416,14 @@ pub trait ScalarRefVTable {
 }
 
 impl<'a> ScalarRef<'a> {
+    pub fn get_node_id(&self) -> Option<NodeId> {
+        match self {
+            ScalarRef::VirtualNode(node_id) => Some(*node_id),
+            ScalarRef::Node(node_value_ref) => Some(node_value_ref.id),
+            _ => None,
+        }
+    }
+
     pub fn pretty(&self) -> String {
         match self {
             ScalarRef::Null => "null".to_string(),

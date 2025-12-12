@@ -48,7 +48,7 @@ impl ProduceResultInner {
                     .column_by_name(var)
                     .expect("column in return list must exist in input schema")
                     .typ
-                    .clone(),
+                    .materialize(),
             });
         }
         Arc::new(schema)

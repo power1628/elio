@@ -41,6 +41,13 @@ impl IrToken {
             Self::Unresolved(name) => name,
         }
     }
+
+    pub fn token_id(&self) -> Option<TokenId> {
+        match self {
+            Self::Resolved { token, .. } => Some(*token),
+            Self::Unresolved(_) => None,
+        }
+    }
 }
 
 impl From<(String, TokenId)> for IrToken {
@@ -117,5 +124,30 @@ pub struct RelationshipId(pub u64);
 impl RelationshipId {
     pub fn from_be_bytes(bytes: [u8; 8]) -> Self {
         Self(u64::from_be_bytes(bytes))
+    }
+}
+
+#[derive(Default, Debug, Copy, Clone, PartialEq, Eq, Hash, derive_more::Display)]
+pub enum SemanticDirection {
+    #[default]
+    #[display("->")]
+    Outgoing, // ->
+    #[display("<-")]
+    Incoming, // <-
+    #[display("-")]
+    Both, // -
+}
+
+impl SemanticDirection {
+    pub fn is_both(&self) -> bool {
+        matches!(self, Self::Both)
+    }
+
+    pub fn rev(&self) -> Self {
+        match self {
+            Self::Outgoing => Self::Incoming,
+            Self::Incoming => Self::Outgoing,
+            Self::Both => Self::Both,
+        }
     }
 }
