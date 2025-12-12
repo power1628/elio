@@ -17,7 +17,7 @@ pub enum DataType {
     Any,
     // graph
     VirtualNode,
-    VirtualRel,
+    VirtualRel, // TODO(pgao): should be removed in the future
     Node,
     Rel,
     Path,
@@ -50,6 +50,14 @@ impl DataType {
 
     pub fn new_list(inner: DataType) -> Self {
         Self::List(Box::new(inner))
+    }
+
+    pub fn materialize(&self) -> Self {
+        match self {
+            DataType::VirtualNode => DataType::Node,
+            DataType::VirtualRel => DataType::Rel,
+            _ => self.clone(),
+        }
     }
 }
 

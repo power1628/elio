@@ -5,6 +5,7 @@ use super::*;
 // TODO(pgao): associate the catalog object here?
 // seems we should have an logical plan here?
 
+// Return VirtualNode
 #[derive(Debug, Clone)]
 pub struct AllNodeScan {
     pub base: PlanBase,
@@ -59,7 +60,7 @@ impl AllNodeScanInner {
         let mut schema = Schema::empty();
         schema.fields.push(Variable {
             name: self.variable.clone(),
-            typ: DataType::Node,
+            typ: DataType::VirtualNode,
         });
         schema.fields.extend(self.arguments.clone());
         schema.into()

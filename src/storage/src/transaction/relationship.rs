@@ -102,6 +102,7 @@ pub(crate) fn rel_iter_for_node<'a>(
 ) -> Result<RelIterForNode<'a>, GraphStoreError> {
     let cf = tx.inner._db.cf_handle(cf_topology::CF_NAME).unwrap();
     let prefix = RelFormat::node_rel_iter_prefix(node_id, dir);
+    println!("{:x?}", prefix);
 
     let mut readopts = rocksdb::ReadOptions::default();
     readopts.set_prefix_same_as_start(true);

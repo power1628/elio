@@ -1,5 +1,5 @@
 -- expand all
-MATCH (a)-[r]-(b) RETURN *
+MATCH (a)-[r:KNOWS]-(b) RETURN *
 
 /*
 RootIR { names: [a, b, r] }
@@ -9,7 +9,7 @@ RootIR { names: [a, b, r] }
 RootPlan { names: [a, b, r] }
 └─ProduceResult { return_columns: a@0,b@1,r@2 }
   └─Project { exprs: [a@0 AS a@0, b@1 AS b@1, r@2 AS r@2] }
-    └─Expand { from: a@0, to: b@1, rel: r@2, direction: -, types: [], kind: All }
+    └─Expand { from: a@0, to: b@1, rel: r@2, direction: -, types: [KNOWS], kind: All }
       └─AllNodeScan { variable: a@0 }
 */
 

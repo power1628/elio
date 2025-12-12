@@ -78,7 +78,7 @@ impl PropertyValue {
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum RelDirection {
     Out, // 0
     In,  // 1

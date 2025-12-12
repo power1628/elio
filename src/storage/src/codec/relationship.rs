@@ -74,3 +74,25 @@ impl RelFormat {
         bytes.freeze()
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_encode_decode_key() {
+        let key = RelFormat::encode_key(
+            NodeId::from(1),
+            RelDirection::Out,
+            2,
+            NodeId::from(3),
+            RelationshipId::from(4),
+        );
+        let (src_node_id, direction, reltype, dst_node_id, rel_id) = RelFormat::decode_key(&key);
+        assert_eq!(src_node_id, NodeId::from(1));
+        assert_eq!(direction, RelDirection::Out);
+        assert_eq!(reltype, 2);
+        assert_eq!(dst_node_id, NodeId::from(3));
+        assert_eq!(rel_id, RelationshipId::from(4));
+    }
+}

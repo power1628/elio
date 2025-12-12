@@ -1,5 +1,5 @@
 - sql: |
-    MATCH (a)-[r]-(b) RETURN *
+    MATCH (a)-[r:KNOWS]-(b) RETURN *
   desc: expand all
   tasks: 
     - bind

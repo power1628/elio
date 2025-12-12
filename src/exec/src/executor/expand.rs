@@ -92,7 +92,7 @@ impl Executor for ExpandAllExecutor {
     }
 
     fn schema(&self) -> &Schema {
-        todo!()
+        &self.schema
     }
 }
 

@@ -13,6 +13,7 @@ pub enum ExpandKind {
     Into,
 }
 
+// Output Rel and VirtualNode
 #[derive(Clone, Debug)]
 pub struct Expand {
     pub base: PlanBase,
@@ -76,7 +77,7 @@ impl ExpandInner {
             ExpandKind::All => {
                 // add [r, to] to output
                 schema.fields.push(Variable::new(&self.rel, &DataType::Rel));
-                schema.fields.push(Variable::new(&self.to, &DataType::Node));
+                schema.fields.push(Variable::new(&self.to, &DataType::VirtualNode));
             }
             // add [r] to output
             ExpandKind::Into => schema.fields.push(Variable::new(&self.rel, &DataType::Rel)),
