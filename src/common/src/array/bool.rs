@@ -22,7 +22,7 @@ impl Array for BoolArray {
     }
 
     fn physical_type(&self) -> PhysicalType {
-        PhysicalType::VirtualNode
+        PhysicalType::Bool
     }
 }
 
