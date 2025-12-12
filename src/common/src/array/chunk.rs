@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
 use bitvec::vec::BitVec;
+use itertools::Itertools;
 
-use crate::array::datum::Row;
-use crate::array::{ArrayImpl, ArrayRef};
+use crate::array::datum::ScalarRef;
+use crate::array::{ArrayBuilderImpl, ArrayImpl, ArrayRef, PhysicalType};
 
 pub struct DataChunk {
     columns: Vec<Arc<ArrayImpl>>,
@@ -86,14 +87,15 @@ pub struct ChunkIter<'a> {
 }
 
 impl<'a> Iterator for ChunkIter<'a> {
-    type Item = Row;
+    type Item = Vec<Option<ScalarRef<'a>>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         while self.idx < self.len {
+            // TODO(pgao): optimize visibility map
             if self.chunk.visibility[self.idx] {
                 let mut row = vec![];
                 for col in self.chunk.columns.iter() {
-                    row.push(col.get(self.idx).map(|x| x.to_owned_value()));
+                    row.push(col.get(self.idx));
                 }
                 self.idx += 1;
                 return Some(row);
@@ -101,5 +103,62 @@ impl<'a> Iterator for ChunkIter<'a> {
             self.idx += 1;
         }
         None
+    }
+}
+
+pub struct DataChunkBuilder {
+    // array data types
+    types: Vec<PhysicalType>,
+    // chunk capacity, if full build the data chunk
+    capacity: usize,
+
+    columns: Vec<ArrayBuilderImpl>,
+    len: usize,
+}
+
+impl DataChunkBuilder {
+    pub fn new(types: impl Iterator<Item = PhysicalType>, capacity: usize) -> Self {
+        let types = types.collect_vec();
+        let columns = types.iter().map(|t| t.array_builder(capacity)).collect_vec();
+        Self {
+            types,
+            capacity,
+            columns,
+            len: 0,
+        }
+    }
+
+    pub fn append_row(&mut self, row: Vec<Option<ScalarRef<'_>>>) -> Option<DataChunk> {
+        assert_eq!(row.len(), self.columns.len());
+        for (col, item) in self.columns.iter_mut().zip_eq(row) {
+            col.push(item);
+        }
+        self.len += 1;
+        if self.len >= self.capacity {
+            Some(self.build_chunk())
+        } else {
+            None
+        }
+    }
+
+    pub fn yield_chunk(&mut self) -> Option<DataChunk> {
+        if self.len == 0 { None } else { Some(self.build_chunk()) }
+    }
+
+    // build the data chunk and reset the builder
+    fn build_chunk(&mut self) -> DataChunk {
+        let builders = std::mem::take(&mut self.columns);
+        let columns = builders.into_iter().map(|b| Arc::new(b.finish())).collect_vec();
+        let chunk = DataChunk::new(columns);
+        self.reset();
+        chunk
+    }
+
+    fn reset(&mut self) {
+        self.len = 0;
+        self.columns.clear();
+        for dtype in self.types.iter() {
+            self.columns.push(dtype.array_builder(self.capacity));
+        }
     }
 }

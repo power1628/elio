@@ -1,5 +1,4 @@
-use mojito_common::IrToken;
-use mojito_parser::ast::SemanticDirection;
+use mojito_common::{IrToken, SemanticDirection};
 
 use super::*;
 

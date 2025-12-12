@@ -10,6 +10,7 @@ use crate::builder::expression::{BuildExprContext, build_expression};
 use crate::executor::all_node_scan::AllNodeScanExectuor;
 use crate::executor::create_node::{CreateNodeExectuor, CreateNodeItem};
 use crate::executor::create_rel::{CreateRelExectuor, CreateRelItem};
+use crate::executor::expand::ExpandAllExecutor;
 use crate::executor::produce_result::ProduceResultExecutor;
 use crate::executor::project::ProjectExecutor;
 use crate::executor::unit::UnitExecutor;
@@ -63,7 +64,7 @@ fn build_node(ctx: &mut ExecutorBuildContext, node: &PlanExpr) -> Result<BoxedEx
     match node {
         PlanExpr::AllNodeScan(all_node_scan) => build_all_node_scan(ctx, all_node_scan, inputs),
         PlanExpr::GetProperty(_get_property) => todo!(),
-        PlanExpr::Expand(_expand) => todo!(),
+        PlanExpr::Expand(expand) => build_expand(ctx, expand, inputs),
         PlanExpr::Apply(_apply) => todo!(),
         PlanExpr::Argument(_argument) => todo!(),
         PlanExpr::Unit(_unit) => Ok(UnitExecutor::default().boxed()),
@@ -86,6 +87,45 @@ fn build_all_node_scan(
     assert_eq!(inputs.len(), 0);
     let schema = all_node_scan.schema();
     Ok(AllNodeScanExectuor::new(schema).boxed())
+}
+
+fn build_expand(
+    _ctx: &mut ExecutorBuildContext,
+    expand: &plan_node::Expand,
+    inputs: Vec<BoxedExecutor>,
+) -> Result<BoxedExecutor, BuildError> {
+    assert_eq!(inputs.len(), 1);
+    let [input]: [BoxedExecutor; 1] = inputs.try_into().unwrap();
+    let schema = input.schema();
+    let name2col = schema.name_to_col_map();
+
+    let from = name2col
+        .get(&expand.inner().from)
+        .copied()
+        .ok_or_else(|| BuildError::variable_not_found(expand.inner().from.clone()))?;
+
+    // assume all rtypes are token ids
+    let rtype = expand
+        .inner()
+        .types
+        .iter()
+        .map(|x| match x {
+            mojito_common::IrToken::Resolved { token, .. } => Ok(*token),
+            mojito_common::IrToken::Unresolved(name) => Err(BuildError::unresolved_token(name.to_string())),
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+
+    if expand.inner().kind == plan_node::ExpandKind::All {
+        return Ok(ExpandAllExecutor {
+            input,
+            from,
+            dir: expand.inner().direction,
+            rtype,
+            schema: expand.schema().clone(),
+        }
+        .boxed());
+    }
+    todo!("expand kind {:?}", expand.inner().kind);
 }
 
 fn build_produce_result(

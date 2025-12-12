@@ -9,7 +9,7 @@ use bytes::{BufMut, Bytes, BytesMut};
 use mojito_common::array::datum::StructValueRef;
 use mojito_common::mapb::{PropertyMapMut, PropertyMapRef};
 use mojito_common::store_types::RelDirection;
-use mojito_common::{NodeId, RelationshipId, TokenId};
+use mojito_common::{NodeId, RelationshipId, SemanticDirection, TokenId};
 
 use crate::cf_topology;
 
@@ -57,7 +57,20 @@ impl RelFormat {
         Ok(buf.freeze())
     }
 
-    pub fn decode_value(buf: &[u8]) -> Result<PropertyMapRef<'_>, String> {
-        Ok(PropertyMapRef::new(buf))
+    pub fn decode_value(buf: &[u8]) -> PropertyMapRef<'_> {
+        PropertyMapRef::new(buf)
+    }
+
+    // node out rel prefix: node_id and direction
+    pub fn node_rel_iter_prefix(node_id: NodeId, dir: SemanticDirection) -> Bytes {
+        let mut bytes = BytesMut::new();
+        bytes.put_u8(cf_topology::REL_KEY_PREFIX);
+        bytes.put_u64(*node_id);
+        match dir {
+            SemanticDirection::Outgoing => bytes.put_u8(RelDirection::Out as u8),
+            SemanticDirection::Incoming => bytes.put_u8(RelDirection::In as u8),
+            SemanticDirection::Both => ()/* put nothing */,
+        }
+        bytes.freeze()
     }
 }

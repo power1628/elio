@@ -1,0 +1,6 @@
+- sql: |
+    MATCH (a)-[r]-(b) RETURN *
+  desc: expand all
+  tasks: 
+    - bind
+    - plan

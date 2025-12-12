@@ -2,6 +2,7 @@ use std::ops::Range;
 
 use derive_more::Display;
 use itertools::{self, Itertools};
+use mojito_common::SemanticDirection;
 
 use crate::ast::{Expr, LabelExpr};
 
@@ -254,32 +255,6 @@ impl std::fmt::Display for RelationshipPattern {
             SemanticDirection::Outgoing => write!(f, "]->"),
             SemanticDirection::Incoming => write!(f, "]-"),
             SemanticDirection::Both => write!(f, "]-"),
-        }
-    }
-}
-
-// TODO(pgao): move this to common
-#[derive(Default, Debug, Copy, Clone, PartialEq, Eq, Hash, derive_more::Display)]
-pub enum SemanticDirection {
-    #[default]
-    #[display("->")]
-    Outgoing, // ->
-    #[display("<-")]
-    Incoming, // <-
-    #[display("-")]
-    Both, // -
-}
-
-impl SemanticDirection {
-    pub fn is_both(&self) -> bool {
-        matches!(self, Self::Both)
-    }
-
-    pub fn rev(&self) -> Self {
-        match self {
-            Self::Outgoing => Self::Incoming,
-            Self::Incoming => Self::Outgoing,
-            Self::Both => Self::Both,
         }
     }
 }

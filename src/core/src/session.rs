@@ -88,8 +88,10 @@ impl TaskHandleBridge {
             while let Some(msg) = data.recv().await {
                 match msg {
                     Ok(chunk) => {
-                        for row in chunk.iter() {
-                            yield Ok(row);
+                        for row_ref in chunk.iter() {
+                            let row =
+                            row_ref.into_iter().map(|x| x.map(|y| y.to_owned_value())).collect::<Row>();
+                            yield Ok(row)
                         }
                     }
                     Err(e) =>{

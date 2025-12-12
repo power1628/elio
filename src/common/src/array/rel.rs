@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use bitvec::prelude::*;
 
-use crate::array::datum::{RelValueRef, ScalarRefVTable, StructValue, VirtualRel, VirtualRelRef};
+use crate::array::datum::{RelValueRef, ScalarRefVTable, StructValue, VirtualRelRef};
 use crate::array::{Array, PhysicalType};
 use crate::{NodeId, RelationshipId};
 
@@ -206,11 +206,12 @@ impl VirtualRelArrayBuilder {
         }
     }
 
-    pub fn push_n(&mut self, item: Option<&VirtualRel>, repeat: usize) {
+    pub fn push_n(&mut self, item: Option<VirtualRelRef<'_>>, repeat: usize) {
         match item {
             Some(item) => {
                 self.ids.extend(std::iter::repeat_n(item.id, repeat));
-                self.reltypes.extend(std::iter::repeat_n(item.reltype.clone(), repeat));
+                self.reltypes
+                    .extend(std::iter::repeat_n(item.reltype.to_string(), repeat));
                 self.start_ids.extend(std::iter::repeat_n(item.start_id, repeat));
                 self.end_ids.extend(std::iter::repeat_n(item.end_id, repeat));
                 self.valid.extend(std::iter::repeat_n(true, repeat));
@@ -225,7 +226,7 @@ impl VirtualRelArrayBuilder {
         }
     }
 
-    pub fn push(&mut self, item: Option<&VirtualRel>) {
+    pub fn push(&mut self, item: Option<VirtualRelRef<'_>>) {
         self.push_n(item, 1);
     }
 

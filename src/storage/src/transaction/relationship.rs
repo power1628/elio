@@ -2,7 +2,7 @@ use bitvec::vec::BitVec;
 use mojito_common::array::datum::{RelValueRef, StructValue};
 use mojito_common::array::{Array, NodeArray, RelArray, RelArrayBuilder, StructArray, VirtualNodeArray};
 use mojito_common::store_types::RelDirection;
-use mojito_common::{NodeId, TokenKind};
+use mojito_common::{NodeId, RelationshipId, SemanticDirection, TokenId, TokenKind};
 
 use crate::cf_topology;
 use crate::codec::RelFormat;
@@ -94,6 +94,27 @@ where
     Ok(builder.finish())
 }
 
+pub(crate) fn rel_iter_for_node<'a>(
+    tx: &'a TransactionImpl,
+    node_id: NodeId,
+    dir: SemanticDirection,
+    rtypes: &[TokenId],
+) -> Result<RelIterForNode<'a>, GraphStoreError> {
+    let cf = tx.inner._db.cf_handle(cf_topology::CF_NAME).unwrap();
+    let prefix = RelFormat::node_rel_iter_prefix(node_id, dir);
+
+    let mut readopts = rocksdb::ReadOptions::default();
+    readopts.set_prefix_same_as_start(true);
+    let mode = rocksdb::IteratorMode::From(&prefix, rocksdb::Direction::Forward);
+    let iter = tx.inner.snapshot.iterator_cf_opt(&cf, readopts, mode);
+    Ok(RelIterForNode {
+        iter,
+        from_id: node_id,
+        dir,
+        rtypes: rtypes.into(),
+    })
+}
+
 pub trait NodeIdContainer: Sized {
     fn len(&self) -> usize;
     fn get_unchecked(&self, index: usize) -> NodeId;
@@ -127,5 +148,45 @@ impl NodeIdContainer for VirtualNodeArray {
 
     fn valid_map(&self) -> &BitVec {
         self.valid_map()
+    }
+}
+
+pub struct RelIterForNode<'a> {
+    iter: rocksdb::DBIteratorWithThreadMode<'a, rocksdb::DBWithThreadMode<rocksdb::MultiThreaded>>,
+    from_id: NodeId,
+    dir: SemanticDirection,
+    // TODO(pgao): use binary search?
+    rtypes: Box<[TokenId]>,
+    // TODO: filter expression etc
+    // TODO: project expression etc
+}
+
+impl<'a> Iterator for RelIterForNode<'a> {
+    // we return properties because we do not want to have another io to fetch the property
+    // values
+    // TODO(pgao): lazy materialize
+    // start, dir, reltype, end, property bytes
+    type Item = Result<(NodeId, RelDirection, TokenId, NodeId, RelationshipId, Box<[u8]>), GraphStoreError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // filter given reltypes
+        for item in self.iter.by_ref() {
+            match item {
+                Err(e) => {
+                    return Some(Err(e.into()));
+                }
+                Ok((key, val)) => {
+                    let (from, dir, reltype, end, rel_id) = RelFormat::decode_key(&key);
+                    if from != self.from_id {
+                        return None;
+                    }
+                    if !dir.satisfies(self.dir) || !self.rtypes.contains(&reltype) {
+                        continue;
+                    }
+                    return Some(Ok((from, dir, reltype, end, rel_id, val.to_vec().into())));
+                }
+            }
+        }
+        None
     }
 }

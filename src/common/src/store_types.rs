@@ -1,5 +1,6 @@
 use itertools::Itertools;
 
+use crate::SemanticDirection;
 use crate::data_type::F64;
 use crate::mapb::entry::EntryValueRef;
 
@@ -81,6 +82,16 @@ impl PropertyValue {
 pub enum RelDirection {
     Out, // 0
     In,  // 1
+}
+
+impl RelDirection {
+    pub fn satisfies(&self, dir: SemanticDirection) -> bool {
+        matches!(
+            (self, dir),
+            (RelDirection::Out, SemanticDirection::Outgoing | SemanticDirection::Both)
+                | (RelDirection::In, SemanticDirection::Incoming | SemanticDirection::Both)
+        )
+    }
 }
 
 impl From<u8> for RelDirection {

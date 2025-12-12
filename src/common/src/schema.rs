@@ -36,6 +36,10 @@ impl Schema {
         &self.fields[idx]
     }
 
+    pub fn columns(&self) -> &[Variable] {
+        &self.fields
+    }
+
     pub fn column_by_name(&self, name: &VariableName) -> Option<&Variable> {
         self.fields.iter().find(|x| x.name == *name)
     }

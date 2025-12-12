@@ -92,8 +92,23 @@ impl StructArrayBuilder {
         self.fields.get_mut(name).unwrap()
     }
 
-    pub fn push_n(&mut self, valid: bool, repeat: usize) {
-        self.valid.extend(std::iter::repeat_n(valid, repeat));
+    // panic if struct fields does not match
+    pub fn push_n(&mut self, item: Option<StructValueRef<'_>>, repeat: usize) {
+        if let Some(item) = item {
+            self.valid.extend(std::iter::repeat_n(true, repeat));
+            for (name, child) in item.iter() {
+                self.field_at(name).push_n(Some(child), repeat);
+            }
+        } else {
+            self.valid.extend(std::iter::repeat_n(false, repeat));
+            for (_, field) in self.fields.iter_mut() {
+                field.push_n(None, repeat);
+            }
+        }
+    }
+
+    pub fn push(&mut self, item: Option<StructValueRef<'_>>) {
+        self.push_n(item, 1);
     }
 
     pub fn len(&self) -> usize {
