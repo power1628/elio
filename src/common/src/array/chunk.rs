@@ -8,14 +8,14 @@ use crate::array::{ArrayBuilderImpl, ArrayImpl, ArrayRef, PhysicalType};
 
 pub struct DataChunk {
     columns: Vec<Arc<ArrayImpl>>,
-    visibility: Arc<BitVec>,
+    visibility: BitVec,
 }
 
 impl DataChunk {
     pub fn unit() -> Self {
         Self {
             columns: vec![],
-            visibility: Arc::new(BitVec::repeat(true, 1)),
+            visibility: BitVec::repeat(true, 1),
         }
     }
 
@@ -23,7 +23,7 @@ impl DataChunk {
         if columns.is_empty() {
             return Self {
                 columns: Vec::new(),
-                visibility: Arc::new(BitVec::new()),
+                visibility: BitVec::new(),
             };
         }
 
@@ -37,7 +37,7 @@ impl DataChunk {
         }
         Self {
             columns,
-            visibility: Arc::new(BitVec::repeat(true, len)),
+            visibility: BitVec::repeat(true, len),
         }
     }
 
@@ -46,11 +46,8 @@ impl DataChunk {
         self.columns.push(column);
     }
 
-    pub fn with_visibility(self, visibility: BitVec) -> Self {
-        Self {
-            visibility: Arc::new(visibility),
-            ..self
-        }
+    pub fn visibility_mut(&mut self) -> &mut BitVec {
+        &mut self.visibility
     }
 
     pub fn column(&self, idx: usize) -> ArrayRef {

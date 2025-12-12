@@ -59,4 +59,4 @@ jobs:
 
       # Run all unit tests
       - name: Run Cargo Test
-        run: cargo nextest run
+        run: RUST_BACKTRACE=full cargo nextest run

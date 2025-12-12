@@ -42,7 +42,7 @@ unit-test: doc-test
 	cargo test --no-fail-fast --lib --all-features --workspace
 
 test: doc-test
-	cargo test --no-fail-fast --all-targets --all-features --workspace
+	RUST_BACKTRACE=full cargo nextest run --no-fail-fast --all-targets --all-features --workspace
 
 check: fmt_check clippy_check build test docs_check
 
