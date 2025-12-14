@@ -5,6 +5,7 @@ use futures::StreamExt;
 use itertools::Itertools;
 use mojito_catalog::Catalog;
 use mojito_common::array::chunk::DataChunk;
+use mojito_common::array::{NodeArray, VirtualNodeArray};
 use mojito_common::schema::Schema;
 use mojito_common::{TokenId, TokenKind};
 use mojito_cypher::planner::RootPlan;
@@ -54,6 +55,12 @@ impl EvalCtx for EvalCtxImpl {
         self.catalog
             .get_or_create_token(token, kind)
             .map_err(|e| EvalError::GetOrCreateTokenError(e.to_string()))
+    }
+
+    fn materialize_node(&self, node_ids: &VirtualNodeArray) -> Result<NodeArray, EvalError> {
+        self.tx
+            .materialize_node(node_ids)
+            .map_err(|e| EvalError::materialize_node_error(e.to_string()))
     }
 }
 

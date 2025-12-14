@@ -35,6 +35,7 @@ impl FieldAccessExpr {
     }
 }
 
+// TODO(pgao): materialize node at the initialize of expression evaluation to reduce reduandent storage access
 impl Expression for FieldAccessExpr {
     fn typ(&self) -> &DataType {
         &self.typ
@@ -71,10 +72,24 @@ impl Expression for FieldAccessExpr {
             });
             return Ok(Arc::new(builder.finish().into()));
         }
-        // virtual Node
+
+        // virtual node
+        if let ArrayImpl::VirtualNode(input) = input.as_ref() {
+            // the output must be Any
+            let mut builder = AnyArrayBuilder::with_capacity(input.len());
+            // materialize node
+            let node = ctx.materialize_node(input)?;
+            // access property fields
+            node.props_iter().for_each(|props| {
+                if let Some(props) = props {
+                    builder.push(props.field_at(key));
+                }
+            });
+            return Ok(Arc::new(builder.finish().into()));
+        }
 
         Err(EvalError::type_error(
-            "FieldAccess expected to have input of Node/Rel/Struct",
+            "FieldAccess expected to have input of VirtualNode/Node/Rel/Struct",
         ))
     }
 }

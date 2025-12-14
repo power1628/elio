@@ -10,6 +10,8 @@ pub enum EvalError {
     TypeError(String),
     #[error("field not found {0}")]
     FieldNotFound(String),
+    #[error("materialize node failed {0}")]
+    MaterializeNodeError(String),
 }
 
 impl EvalError {
@@ -23,5 +25,13 @@ impl EvalError {
 
     pub fn type_error<T: Display>(msg: T) -> Self {
         Self::TypeError(msg.to_string())
+    }
+
+    pub fn field_not_found<T: Display>(msg: T) -> Self {
+        Self::FieldNotFound(msg.to_string())
+    }
+
+    pub fn materialize_node_error<T: Display>(msg: T) -> Self {
+        Self::MaterializeNodeError(msg.to_string())
     }
 }
