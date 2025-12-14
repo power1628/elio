@@ -1,5 +1,5 @@
-use mojito_common::array::ArrayRef;
 use mojito_common::array::chunk::DataChunk;
+use mojito_common::array::{ArrayRef, NodeArray, VirtualNodeArray};
 use mojito_common::data_type::DataType;
 use mojito_common::{TokenId, TokenKind};
 
@@ -18,7 +18,7 @@ pub trait EvalCtx {
     fn get_or_create_token(&self, token: &str, kind: TokenKind) -> Result<TokenId, EvalError>;
     // graph storage
     // access the storage engine and materialize node
-    // fn materialize_node(&self, chunk: &VirtualNodeArray) -> Result<NodeArray, EvalError>;
+    fn materialize_node(&self, chunk: &VirtualNodeArray) -> Result<NodeArray, EvalError>;
 }
 
 // an evaluatable expression

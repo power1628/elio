@@ -263,7 +263,7 @@ impl<'a> StructValueRef<'a> {
         )
     }
 
-    pub fn field_at(&self, name: &str) -> Option<ScalarRef<'_>> {
+    pub fn field_at(&self, name: &str) -> Option<ScalarRef<'a>> {
         match self {
             StructValueRef::Index { array, idx } => array.field_at(name).and_then(|arr| arr.get(*idx)),
             StructValueRef::Value { value } => value.field_at(name),
