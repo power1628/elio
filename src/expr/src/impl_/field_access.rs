@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use mojito_common::IrToken;
 use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::{AnyArrayBuilder, Array, ArrayImpl, ArrayRef, PhysicalType, StructArray};
+use mojito_common::array::datum::StructValueRef;
+use mojito_common::array::{
+    AnyArray, AnyArrayBuilder, Array, ArrayImpl, ArrayRef, NodeArray, PhysicalType, StructArray,
+};
 use mojito_common::data_type::DataType;
 
 use crate::error::EvalError;
@@ -53,13 +56,8 @@ impl Expression for FieldAccessExpr {
         // node type
         if let ArrayImpl::Node(input) = input.as_ref() {
             // the output must be Any
-            let mut builder = AnyArrayBuilder::with_capacity(input.len());
-            input.props_iter().for_each(|props| {
-                if let Some(props) = props {
-                    builder.push(props.field_at(key));
-                }
-            });
-            return Ok(Arc::new(builder.finish().into()));
+            let output = access_properties(input.props_iter(), input.len(), key);
+            return Ok(Arc::new(output.into()));
         }
         // rel type
         if let ArrayImpl::Rel(input) = input.as_ref() {
@@ -75,17 +73,10 @@ impl Expression for FieldAccessExpr {
 
         // virtual node
         if let ArrayImpl::VirtualNode(input) = input.as_ref() {
-            // the output must be Any
-            let mut builder = AnyArrayBuilder::with_capacity(input.len());
             // materialize node
             let node = ctx.materialize_node(input)?;
-            // access property fields
-            node.props_iter().for_each(|props| {
-                if let Some(props) = props {
-                    builder.push(props.field_at(key));
-                }
-            });
-            return Ok(Arc::new(builder.finish().into()));
+            let output = access_properties(node.props_iter(), input.len(), key);
+            return Ok(Arc::new(output.into()));
         }
 
         Err(EvalError::type_error(
@@ -99,4 +90,16 @@ fn struct_field_access(input: &StructArray, field: &str) -> Result<ArrayRef, Eva
         .field_at(field)
         .ok_or(EvalError::FieldNotFound(field.to_string()))
         .cloned()
+}
+
+fn access_properties<'a>(
+    props_iter: impl Iterator<Item = Option<StructValueRef<'a>>>,
+    len: usize,
+    key: &str,
+) -> AnyArray {
+    let mut builder = AnyArrayBuilder::with_capacity(len);
+    props_iter.for_each(|props| {
+        builder.push(props.and_then(|p| p.field_at(key)));
+    });
+    builder.finish()
 }

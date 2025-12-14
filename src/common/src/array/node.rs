@@ -4,7 +4,7 @@ use std::sync::Arc;
 use bitvec::prelude::*;
 
 use crate::NodeId;
-use crate::array::datum::{NodeValueRef, ScalarRefVTable, StructValue};
+use crate::array::datum::{NodeValueRef, ScalarRefVTable, StructValue, StructValueRef};
 use crate::array::{Array, PhysicalType};
 
 #[derive(Debug, Clone)]
@@ -56,11 +56,11 @@ impl NodeArray {
         self.valid = valid;
     }
 
-    pub fn props_iter(&self) -> impl Iterator<Item = Option<&StructValue>> + '_ {
+    pub fn props_iter(&self) -> impl Iterator<Item = Option<StructValueRef<'_>>> + '_ {
         self.valid
             .iter()
             .enumerate()
-            .map(|(i, v)| if *v { Some(&self.props[i]) } else { None })
+            .map(|(i, v)| if *v { Some(self.props[i].as_scalar_ref()) } else { None })
     }
 }
 
