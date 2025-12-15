@@ -9,6 +9,7 @@ pub mod filters;
 /// Logical expr
 pub mod func_call;
 pub mod label;
+pub mod project_path;
 pub mod property_access;
 pub mod subquery;
 pub mod utils;
@@ -19,11 +20,13 @@ pub use create_map::*;
 pub use filters::*;
 pub use func_call::*;
 pub use label::*;
+pub use project_path::*;
 pub use property_access::*;
 pub use subquery::*;
 pub use value::*;
 pub use variable_ref::*;
 
+// TODO(pgao): do we need Hash here?
 #[derive(Debug, Hash, Clone, Eq, PartialEq, EnumAsInner)]
 pub enum Expr {
     VariableRef(VariableRef),
@@ -34,6 +37,8 @@ pub enum Expr {
     Subquery(Subquery),
     LabelExpr(LabelExpr),
     CreateStruct(CreateStruct),
+    // graph
+    ProjectPath(ProjectPath),
 }
 
 pub type BoxedExpr = Box<Expr>;
@@ -74,7 +79,8 @@ impl_expr_node_for_enum!(
     AggCall,
     Subquery,
     LabelExpr,
-    CreateStruct
+    CreateStruct,
+    ProjectPath
 );
 
 impl Expr {
@@ -154,6 +160,7 @@ impl Expr {
                         .join(", ")
                 )
             }
+            Expr::ProjectPath(project_path) => project_path.pretty(),
         }
     }
 }

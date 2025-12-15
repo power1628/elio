@@ -32,6 +32,7 @@ pub(crate) fn build_expression(ctx: &BuildExprContext<'_>, expr: &Expr) -> Resul
         Expr::Subquery(_subquery) => todo!(),
         Expr::LabelExpr(_label_expr) => todo!(),
         Expr::CreateStruct(create_map) => build_create_map(ctx, create_map),
+        Expr::ProjectPath(_project_path) => todo!(),
     }
 }
 

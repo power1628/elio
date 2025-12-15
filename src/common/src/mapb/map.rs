@@ -137,7 +137,7 @@ impl PropertyMapMut {
                     return Err("list property must be integer, float, or string".to_owned());
                 }
             }
-            ScalarRef::Struct(_) => return Err("struct property type not supported".to_owned()),
+            unsupported => return Err(format!("{:?} property type not supported", unsupported)),
         };
         self.entries.push(entry);
         Ok(())

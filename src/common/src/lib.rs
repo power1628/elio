@@ -150,4 +150,20 @@ impl SemanticDirection {
             Self::Both => Self::Both,
         }
     }
+
+    pub fn l_arrow(&self) -> String {
+        match self {
+            Self::Outgoing => "-".to_string(),
+            Self::Incoming => "<-".to_string(),
+            Self::Both => "-".to_string(),
+        }
+    }
+
+    pub fn r_arrow(&self) -> String {
+        match self {
+            Self::Outgoing => "->".to_string(),
+            Self::Incoming => "-".to_string(),
+            Self::Both => "-".to_string(),
+        }
+    }
 }
