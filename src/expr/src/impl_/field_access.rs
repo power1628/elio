@@ -3,9 +3,7 @@ use std::sync::Arc;
 use mojito_common::IrToken;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::array::datum::StructValueRef;
-use mojito_common::array::{
-    AnyArray, AnyArrayBuilder, Array, ArrayImpl, ArrayRef, NodeArray, PhysicalType, StructArray,
-};
+use mojito_common::array::{AnyArray, AnyArrayBuilder, Array, ArrayImpl, ArrayRef, PhysicalType, StructArray};
 use mojito_common::data_type::DataType;
 
 use crate::error::EvalError;

@@ -62,6 +62,23 @@ impl NodeArray {
             .enumerate()
             .map(|(i, v)| if *v { Some(self.props[i].as_scalar_ref()) } else { None })
     }
+
+    pub fn slice(&self, start: usize, end: usize) -> Self {
+        let mut offsets = Vec::with_capacity(end - start + 1);
+        let mut values = Vec::new();
+        for i in start..end + 1 {
+            offsets.push(self.label_offsets[i] - self.label_offsets[start]);
+        }
+        values.extend_from_slice(&self.label_values[self.label_offsets[start]..self.label_offsets[end + 1]]);
+
+        Self {
+            ids: self.ids[start..end].to_vec().into(),
+            label_offsets: offsets.into_boxed_slice().into(),
+            label_values: values.into_boxed_slice().into(),
+            props: self.props[start..end].to_vec().into(),
+            valid: self.valid[start..end].to_bitvec(),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -159,6 +176,13 @@ impl VirtualNodeArray {
 
     pub fn set_valid_map(&mut self, valid: BitVec) {
         self.valid = valid;
+    }
+
+    pub fn slice(&self, start: usize, end: usize) -> Self {
+        Self {
+            data: self.data[start..end].to_vec().into(),
+            valid: self.valid[start..end].into(),
+        }
     }
 }
 

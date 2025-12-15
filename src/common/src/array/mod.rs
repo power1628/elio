@@ -14,6 +14,7 @@ pub mod chunk;
 pub mod datum;
 pub mod list;
 pub mod node;
+pub mod path;
 pub mod rel;
 pub mod struct_;
 
@@ -28,6 +29,7 @@ use datum::ScalarRef;
 use enum_as_inner::EnumAsInner;
 pub use list::*;
 pub use node::*;
+pub use path::*;
 pub use rel::*;
 pub use struct_::*;
 
@@ -73,19 +75,50 @@ pub trait Array: Send + Sync + Sized + 'static + Into<ArrayImpl> + std::fmt::Deb
 
 pub type ArrayRef = Arc<ArrayImpl>;
 
-#[derive(EnumAsInner, Clone, Debug)]
+#[derive(EnumAsInner, Clone, Debug, PartialEq, Eq)]
 pub enum ArrayImpl {
     Any(AnyArray),
     Bool(BoolArray),
     // graph
     VirtualNode(VirtualNodeArray),
     VirtualRel(VirtualRelArray),
+    VirtualPath(VirtualPathArray),
     Node(NodeArray),
     Rel(RelArray),
+    Path(PathArray),
     // structure
     List(ListArray),
     Struct(StructArray),
 }
+
+#[macro_export]
+macro_rules! impl_partial_eq_for_variant {
+    ($($AbcArray:ident),*) => {
+
+        $(
+            impl PartialEq for $AbcArray {
+                fn eq(&self, other: &Self) -> bool {
+                    self.len() == other.len() && self.iter().eq(other.iter())
+                }
+            }
+
+            impl Eq for $AbcArray {}
+        )*
+    };
+}
+
+impl_partial_eq_for_variant!(
+    AnyArray,
+    BoolArray,
+    VirtualNodeArray,
+    VirtualRelArray,
+    VirtualPathArray,
+    NodeArray,
+    RelArray,
+    PathArray,
+    ListArray,
+    StructArray
+);
 
 macro_rules! impl_array_dispatch {
     ($($variant:ident),*) => {
@@ -124,7 +157,18 @@ macro_rules! impl_array_dispatch {
     };
 }
 
-impl_array_dispatch!(Any, Bool, VirtualNode, VirtualRel, Node, Rel, List, Struct);
+impl_array_dispatch!(
+    Any,
+    Bool,
+    VirtualNode,
+    VirtualRel,
+    VirtualPath,
+    Node,
+    Rel,
+    Path,
+    List,
+    Struct
+);
 
 macro_rules! impl_array_convert {
     ($({$Abc:ident, $AbcArray:ident}),*) => {
@@ -136,7 +180,6 @@ macro_rules! impl_array_convert {
                 }
             }
         )*
-
     };
 }
 
@@ -145,8 +188,10 @@ impl_array_convert!(
 {Bool, BoolArray},
 {VirtualNode, VirtualNodeArray},
 {VirtualRel, VirtualRelArray},
+{VirtualPath, VirtualPathArray},
 {Node, NodeArray},
 {Rel, RelArray},
+{Path, PathArray},
 {List, ListArray},
 {Struct, StructArray});
 
@@ -157,8 +202,10 @@ pub enum ArrayBuilderImpl {
     // graph
     VirtualNode(VirtualNodeArrayBuilder),
     VirtualRel(VirtualRelArrayBuilder),
+    VirtualPath(VirtualPathArrayBuilder),
     Node(NodeArrayBuilder),
     Rel(RelArrayBuilder),
+    Path(PathArrayBuilder),
     // structure
     List(ListArrayBuilder),
     Struct(StructArrayBuilder),
@@ -182,6 +229,10 @@ impl ArrayBuilderImpl {
                 let item = item.map(|x| x.into_virtual_rel().expect("type mismatch expected virtual rel"));
                 vrel.push_n(item, repeat);
             }
+            ArrayBuilderImpl::VirtualPath(vpath) => {
+                let item = item.map(|x| x.into_virtual_path().expect("type mismatch expected virtual path"));
+                vpath.push_n(item, repeat);
+            }
             ArrayBuilderImpl::Node(node) => {
                 let item = item.map(|x| x.into_node().expect("type mismatch expected node"));
                 node.push_n(item, repeat);
@@ -189,6 +240,10 @@ impl ArrayBuilderImpl {
             ArrayBuilderImpl::Rel(rel) => {
                 let item = item.map(|x| x.into_rel().expect("type mismatch expected rel"));
                 rel.push_n(item, repeat);
+            }
+            ArrayBuilderImpl::Path(path) => {
+                let item = item.map(|x| x.into_path().expect("type mismatch expected path"));
+                path.push_n(item, repeat);
             }
             ArrayBuilderImpl::List(list) => {
                 let item = item.map(|x| x.into_list().expect("type mismatch expected list"));
@@ -218,7 +273,42 @@ macro_rules! impl_array_builder_dispatch {
     };
 }
 
-impl_array_builder_dispatch!(Any, Bool, VirtualNode, VirtualRel, Node, Rel, List, Struct);
+impl_array_builder_dispatch!(
+    Any,
+    Bool,
+    VirtualNode,
+    VirtualRel,
+    VirtualPath,
+    Node,
+    Rel,
+    Path,
+    List,
+    Struct
+);
+
+macro_rules! impl_array_builder_convert {
+    ($({ $Abc:ident, $AbcBuilder:ident }),*) => {
+        $(
+            impl From<$AbcBuilder> for ArrayBuilderImpl {
+                fn from(builder: $AbcBuilder) -> Self {
+                    ArrayBuilderImpl::$Abc(builder)
+                }
+            }
+        )*
+    };
+}
+
+impl_array_builder_convert!(
+{Any, AnyArrayBuilder},
+{Bool, BoolArrayBuilder},
+{VirtualNode, VirtualNodeArrayBuilder},
+{VirtualRel, VirtualRelArrayBuilder},
+{VirtualPath, VirtualPathArrayBuilder},
+{Node, NodeArrayBuilder},
+{Rel, RelArrayBuilder},
+{Path, PathArrayBuilder},
+{List, ListArrayBuilder},
+{Struct, StructArrayBuilder});
 
 // physical array type
 #[derive(Debug)]
@@ -229,8 +319,10 @@ pub enum PhysicalType {
     // graph
     VirtualNode,
     VirtualRel,
+    VirtualPath,
     Node,
     Rel,
+    Path,
     // structure
     List(Box<PhysicalType>),
     // (field_name, field type)
@@ -246,9 +338,12 @@ impl PhysicalType {
                 ArrayBuilderImpl::VirtualNode(VirtualNodeArrayBuilder::with_capacity(capacity))
             }
             PhysicalType::VirtualRel => ArrayBuilderImpl::VirtualRel(VirtualRelArrayBuilder::with_capacity(capacity)),
-
+            PhysicalType::VirtualPath => {
+                ArrayBuilderImpl::VirtualPath(VirtualPathArrayBuilder::with_capacity(capacity))
+            }
             PhysicalType::Node => ArrayBuilderImpl::Node(NodeArrayBuilder::with_capacity(capacity)),
             PhysicalType::Rel => ArrayBuilderImpl::Rel(RelArrayBuilder::with_capacity(capacity)),
+            PhysicalType::Path => ArrayBuilderImpl::Path(PathArrayBuilder::with_capacity(capacity)),
             PhysicalType::List(inner) => {
                 let child = inner.array_builder(capacity);
                 ArrayBuilderImpl::List(ListArrayBuilder::new(Box::new(child)))

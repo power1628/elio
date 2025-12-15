@@ -60,6 +60,17 @@ impl RelArray {
             .zip(self.valid.iter())
             .map(|(props, valid)| if *valid { Some(props) } else { None })
     }
+
+    pub fn slice(&self, start: usize, end: usize) -> Self {
+        Self {
+            ids: self.ids[start..end].to_vec().into(),
+            reltypes: self.reltypes[start..end].to_vec().into(),
+            start_ids: self.start_ids[start..end].to_vec().into(),
+            end_ids: self.end_ids[start..end].to_vec().into(),
+            props: self.props[start..end].to_vec().into(),
+            valid: self.valid[start..end].into(),
+        }
+    }
 }
 
 #[derive(Debug)]

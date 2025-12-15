@@ -1,3 +1,4 @@
+use std::hash::Hash;
 use std::sync::Arc;
 
 use enum_as_inner::EnumAsInner;
@@ -5,6 +6,7 @@ use itertools::Itertools;
 
 use crate::array::{Array, ArrayImpl, StructArray};
 use crate::data_type::F64;
+use crate::store_types::RelDirection;
 use crate::{NodeId, RelationshipId};
 
 #[derive(Debug, Clone, Default, Eq, PartialEq, Hash, derive_more::Display)]
@@ -19,7 +21,7 @@ pub struct NodeValue {
     pub props: StructValue,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct NodeValueRef<'a> {
     pub id: NodeId,
     pub labels: &'a [String],
@@ -55,7 +57,7 @@ pub struct RelValue {
     pub props: StructValue,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct RelValueRef<'a> {
     pub id: RelationshipId,
     pub reltype: &'a str,
@@ -74,6 +76,16 @@ impl<'a> RelValueRef<'a> {
             self.props.pretty()
         )
     }
+
+    pub fn relative_dir(&self, node: NodeId) -> Option<RelDirection> {
+        if node == self.start_id {
+            Some(RelDirection::Out)
+        } else if node == self.end_id {
+            Some(RelDirection::In)
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, Eq, PartialEq, Hash, derive_more::Display)]
@@ -85,13 +97,371 @@ pub struct VirtualRel {
     pub end_id: NodeId,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct VirtualRelRef<'a> {
     pub id: RelationshipId,
     pub reltype: &'a str,
     pub start_id: NodeId,
     pub end_id: NodeId,
 }
+
+#[derive(Debug, Clone)]
+pub struct VirtualPath {
+    pub nodes: Arc<ArrayImpl>,
+    pub rels: Arc<ArrayImpl>,
+}
+
+impl PartialEq for VirtualPath {
+    fn eq(&self, other: &Self) -> bool {
+        self.node_iter().eq(other.node_iter()) && self.rel_iter().eq(other.rel_iter())
+    }
+}
+impl Eq for VirtualPath {}
+
+impl Hash for VirtualPath {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.node_iter().for_each(|node| node.hash(state));
+        self.rel_iter().for_each(|rel| rel.hash(state));
+    }
+}
+
+impl VirtualPath {
+    pub fn as_scalar_ref<'a>(&'a self) -> VirtualPathRef<'a> {
+        VirtualPathRef {
+            nodes: self.nodes.as_ref(),
+            node_start: 0,
+            node_end: self.nodes.len(),
+            rels: self.rels.as_ref(),
+            rel_start: 0,
+            rel_end: self.rels.len(),
+        }
+    }
+
+    pub fn node_iter(&self) -> impl ExactSizeIterator<Item = Option<NodeId>> + '_ {
+        self.nodes.as_virtual_node().unwrap().iter()
+    }
+
+    pub fn rel_iter(&self) -> impl ExactSizeIterator<Item = Option<RelValueRef<'_>>> + '_ {
+        self.rels.as_rel().unwrap().iter()
+    }
+}
+
+// TODO(pgao): pretty vs display
+impl std::fmt::Display for VirtualPath {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        assert_eq!(self.nodes.len(), self.rels.len() + 1);
+        let nodes = self.nodes.as_virtual_node().unwrap();
+        let rels = self.rels.as_rel().unwrap();
+
+        // SAFETY
+        //  PATH element must not be null
+        write!(f, "({})", nodes.get(0).expect("path element must not be null"))?;
+        let len = rels.len();
+
+        for i in 1..len {
+            let rhs = nodes.get(i).expect("path element must not be null");
+            let rel = rels.get(i).expect("path rel must not be null");
+            let (ldir, rdir) = match rel.relative_dir(rhs) {
+                Some(RelDirection::Out) => ("<-", "-"),
+                Some(RelDirection::In) => ("-", "->"),
+                _ => unreachable!("path element must be connected"),
+            };
+            write!(f, " {ldir}[{}]{rdir}({})", rel.pretty(), rhs)?;
+        }
+        Ok(())
+    }
+}
+
+fn format_path<'a>(
+    f: &mut String,
+    mut nodes: impl ExactSizeIterator<Item = Option<NodeValueRef<'a>>>,
+    mut rels: impl ExactSizeIterator<Item = Option<RelValueRef<'a>>>,
+) -> std::fmt::Result {
+    use std::fmt::Write;
+    assert_eq!(nodes.len(), rels.len() + 1);
+
+    // SAFETY
+    //  PATH element must not be null
+    write!(f, "({})", nodes.next().unwrap().unwrap().pretty())?;
+    let len = rels.len();
+
+    for _ in 1..len {
+        let rhs = nodes.next().unwrap().unwrap().id;
+        let rel = rels.next().unwrap().unwrap();
+        let (ldir, rdir) = match rel.relative_dir(rhs) {
+            Some(RelDirection::Out) => ("<-", "-"),
+            Some(RelDirection::In) => ("-", "->"),
+            _ => unreachable!("path element must be connected"),
+        };
+        write!(f, " {ldir}[{}]{rdir}({})", rel.pretty(), rhs)?;
+    }
+    Ok(())
+}
+
+fn format_virtual_path<'a>(
+    f: &mut String,
+    mut nodes: impl ExactSizeIterator<Item = Option<NodeId>>,
+    mut rels: impl ExactSizeIterator<Item = Option<RelValueRef<'a>>>,
+) -> std::fmt::Result {
+    use std::fmt::Write;
+    assert_eq!(nodes.len(), rels.len() + 1);
+
+    // SAFETY
+    //  PATH element must not be null
+    write!(f, "({})", nodes.next().unwrap().unwrap())?;
+    let len = rels.len();
+
+    for _ in 1..len {
+        let rhs = nodes.next().unwrap().unwrap();
+        let rel = rels.next().unwrap().unwrap();
+        let (ldir, rdir) = match rel.relative_dir(rhs) {
+            Some(RelDirection::Out) => ("<-", "-"),
+            Some(RelDirection::In) => ("-", "->"),
+            _ => unreachable!("path element must be connected"),
+        };
+        write!(f, " {ldir}[{}]{rdir}({})", rel.pretty(), rhs)?;
+    }
+    Ok(())
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct VirtualPathRef<'a> {
+    pub nodes: &'a ArrayImpl, // virtual node
+    pub node_start: usize,
+    pub node_end: usize,
+    pub rels: &'a ArrayImpl, // rel
+    pub rel_start: usize,
+    pub rel_end: usize,
+}
+
+impl<'a> std::hash::Hash for VirtualPathRef<'a> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        let node_iter = self.node_iter();
+        let rel_iter = self.rel_iter();
+        for node in node_iter {
+            node.hash(state);
+        }
+        for rel in rel_iter {
+            rel.hash(state);
+        }
+    }
+}
+
+impl<'a> ScalarRefVTable for VirtualPathRef<'a> {
+    type Owned = VirtualPath;
+
+    fn to_owned_value(&self) -> Self::Owned {
+        VirtualPath {
+            nodes: Arc::new(
+                self.nodes
+                    .as_virtual_node()
+                    .unwrap()
+                    .slice(self.node_start, self.node_end)
+                    .into(),
+            ),
+            rels: Arc::new(self.rels.as_rel().unwrap().slice(self.rel_start, self.rel_end).into()),
+        }
+    }
+}
+
+impl<'a> VirtualPathRef<'a> {
+    pub fn node_list_ref(&'a self) -> ListValueRef<'a> {
+        ListValueRef::Index {
+            child: self.nodes,
+            start: self.node_start,
+            end: self.node_end,
+        }
+    }
+
+    pub fn rel_list_ref(&'a self) -> ListValueRef<'a> {
+        ListValueRef::Index {
+            child: self.rels,
+            start: self.rel_start,
+            end: self.rel_end,
+        }
+    }
+
+    pub fn node_iter(&'a self) -> impl ExactSizeIterator<Item = Option<NodeId>> {
+        (self.node_start..self.node_end).map(|idx| self.nodes.as_virtual_node().unwrap().get(idx))
+    }
+
+    pub fn rel_iter(&'a self) -> impl ExactSizeIterator<Item = Option<RelValueRef<'a>>> {
+        (self.rel_start..self.rel_end).map(|idx| self.rels.as_rel().unwrap().get(idx))
+    }
+
+    pub fn pretty(&self) -> String {
+        let niter = self.node_iter();
+        let riter = self.rel_iter();
+
+        let mut f = String::new();
+
+        format_virtual_path(&mut f, niter, riter).unwrap();
+        f
+    }
+}
+
+impl<'a> PartialEq for VirtualPathRef<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.node_iter().eq(other.node_iter()) && self.rel_iter().eq(other.rel_iter())
+    }
+}
+
+impl<'a> Eq for VirtualPathRef<'a> {}
+
+#[derive(Debug, Clone)]
+pub struct PathValue {
+    pub nodes: Arc<ArrayImpl>, // node array
+    pub rels: Arc<ArrayImpl>,
+}
+
+impl PartialEq for PathValue {
+    fn eq(&self, other: &Self) -> bool {
+        self.node_iter().eq(other.node_iter()) && self.rel_iter().eq(other.rel_iter())
+    }
+}
+
+impl Eq for PathValue {}
+
+impl Hash for PathValue {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.node_iter().for_each(|node| node.hash(state));
+        self.rel_iter().for_each(|rel| rel.hash(state));
+    }
+}
+
+impl PathValue {
+    pub fn as_scalar_ref<'a>(&'a self) -> PathValueRef<'a> {
+        PathValueRef {
+            nodes: &self.nodes,
+            node_start: 0,
+            node_end: self.nodes.len(),
+            rels: &self.rels,
+            rel_start: 0,
+            rel_end: self.rels.len(),
+        }
+    }
+
+    pub fn node_iter(&self) -> impl ExactSizeIterator<Item = Option<NodeValueRef<'_>>> {
+        let node_array = self.nodes.as_node().unwrap();
+        (0..self.nodes.len()).map(move |idx| node_array.get(idx))
+    }
+
+    pub fn rel_iter(&self) -> impl ExactSizeIterator<Item = Option<RelValueRef<'_>>> {
+        let rel_array = self.rels.as_rel().unwrap();
+        (0..self.rels.len()).map(move |idx| rel_array.get(idx))
+    }
+}
+
+impl std::fmt::Display for PathValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        assert_eq!(self.nodes.len(), self.rels.len() + 1);
+        let nodes = self.nodes.as_node().unwrap();
+        let rels = self.rels.as_rel().unwrap();
+
+        // SAFETY
+        //  PATH element must not be null
+        write!(f, "({})", nodes.get(0).expect("path element must not be null").pretty())?;
+        let len = rels.len();
+
+        for i in 1..len {
+            let rhs = nodes.get(i).expect("path element must not be null");
+            let rel = rels.get(i).expect("path rel must not be null");
+            let (ldir, rdir) = match rel.relative_dir(rhs.id) {
+                Some(RelDirection::Out) => ("<-", "-"),
+                Some(RelDirection::In) => ("-", "->"),
+                _ => unreachable!("path element must be connected"),
+            };
+            write!(f, " {ldir}[{}]{rdir}({})", rel.pretty(), rhs.pretty())?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct PathValueRef<'a> {
+    pub nodes: &'a ArrayImpl, // node array
+    pub node_start: usize,
+    pub node_end: usize,
+    pub rels: &'a ArrayImpl, // rel array
+    pub rel_start: usize,
+    pub rel_end: usize,
+}
+
+impl<'a> std::hash::Hash for PathValueRef<'a> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        let node = self.node_iter();
+        let rel = self.rel_iter();
+        for node in node {
+            node.hash(state);
+        }
+        for rel in rel {
+            rel.hash(state);
+        }
+    }
+}
+
+impl<'a> ScalarRefVTable for PathValueRef<'a> {
+    type Owned = PathValue;
+
+    fn to_owned_value(&self) -> Self::Owned {
+        PathValue {
+            nodes: Arc::new(
+                self.nodes
+                    .as_node()
+                    .unwrap()
+                    .slice(self.node_start, self.node_end)
+                    .into(),
+            ),
+            rels: Arc::new(self.rels.as_rel().unwrap().slice(self.rel_start, self.rel_end).into()),
+        }
+    }
+}
+
+impl<'a> PathValueRef<'a> {
+    pub fn node_list_ref(&'a self) -> ListValueRef<'a> {
+        ListValueRef::Index {
+            child: self.nodes,
+            start: self.node_start,
+            end: self.node_end,
+        }
+    }
+
+    pub fn rel_list_ref(&'a self) -> ListValueRef<'a> {
+        ListValueRef::Index {
+            child: self.rels,
+            start: self.rel_start,
+            end: self.rel_end,
+        }
+    }
+
+    pub fn node_iter(&'a self) -> impl ExactSizeIterator<Item = Option<NodeValueRef<'a>>> {
+        // TODO(pgao): avoid downcast in iter
+        (self.node_start..self.node_end).map(|idx| self.nodes.as_node().unwrap().get(idx))
+    }
+
+    pub fn rel_iter(&'a self) -> impl ExactSizeIterator<Item = Option<RelValueRef<'a>>> {
+        // TODO(pgao): avoid downcast in iter
+        (self.rel_start..self.rel_end).map(|idx| self.rels.as_rel().unwrap().get(idx))
+    }
+
+    pub fn pretty(&self) -> String {
+        let niter = self.node_iter();
+        let riter = self.rel_iter();
+
+        let mut f = String::new();
+
+        format_path(&mut f, niter, riter).unwrap();
+        f
+    }
+}
+
+impl<'a> PartialEq for PathValueRef<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.node_iter().eq(other.node_iter()) && self.rel_iter().eq(other.rel_iter())
+    }
+}
+
+impl<'a> Eq for PathValueRef<'a> {}
 
 #[derive(Debug, Clone, Default, Eq, PartialEq, Hash, derive_more::Display)]
 #[display("[{}]", values.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(", "))]
@@ -168,6 +538,22 @@ impl<'a> ListValueRef<'a> {
             }
         }
         Some(vec)
+    }
+}
+
+impl<'a> PartialEq for ListValueRef<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.iter().eq(other.iter())
+    }
+}
+
+impl<'a> Eq for ListValueRef<'a> {}
+
+impl<'a> std::hash::Hash for ListValueRef<'a> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        for item in self.iter() {
+            item.hash(state);
+        }
     }
 }
 
@@ -250,6 +636,23 @@ impl StructValue {
 pub enum StructValueRef<'a> {
     Index { array: &'a StructArray, idx: usize },
     Value { value: &'a StructValue },
+}
+
+impl<'a> PartialEq for StructValueRef<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.iter().eq(other.iter())
+    }
+}
+
+impl<'a> Eq for StructValueRef<'a> {}
+
+impl<'a> std::hash::Hash for StructValueRef<'a> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.iter().for_each(|(k, v)| {
+            k.hash(state);
+            v.hash(state);
+        })
+    }
 }
 
 impl<'a> StructValueRef<'a> {
@@ -337,7 +740,7 @@ impl<'a> ExactSizeIterator for StructValueRefIter<'a> {
     }
 }
 
-#[derive(derive_more::Display, Debug, Hash, Clone, Default, EnumAsInner, Eq, PartialEq)]
+#[derive(derive_more::Display, Debug, Clone, Default, EnumAsInner, Eq, PartialEq, Hash)]
 pub enum ScalarValue {
     // this is the place holder for null values
     #[default]
@@ -353,8 +756,10 @@ pub enum ScalarValue {
     #[display("VirtualNode{{_0}}")]
     VirtualNode(NodeId),
     VirtualRel(VirtualRel),
+    VirtualPath(VirtualPath),
     Node(Box<NodeValue>),
     Rel(Box<RelValue>),
+    Path(Box<PathValue>),
     // nested
     List(Box<ListValue>),
     Struct(Box<StructValue>),
@@ -375,6 +780,7 @@ impl ScalarValue {
                 start_id: vrel.start_id,
                 end_id: vrel.end_id,
             }),
+            ScalarValue::VirtualPath(vpath) => ScalarRef::VirtualPath(vpath.as_scalar_ref()),
             ScalarValue::Node(node) => ScalarRef::Node(NodeValueRef {
                 id: node.id,
                 labels: &node.labels,
@@ -387,13 +793,14 @@ impl ScalarValue {
                 end_id: rel.end_id,
                 props: rel.props.as_scalar_ref(),
             }),
+            ScalarValue::Path(path) => ScalarRef::Path(path.as_scalar_ref()),
             ScalarValue::List(list) => ScalarRef::List(ListValueRef::Slice(&list.values)),
             ScalarValue::Struct(struct_) => ScalarRef::Struct(StructValueRef::Value { value: struct_ }),
         }
     }
 }
 
-#[derive(Debug, EnumAsInner, Clone, Copy)]
+#[derive(Debug, EnumAsInner, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ScalarRef<'a> {
     Null,
     Bool(bool),
@@ -403,12 +810,16 @@ pub enum ScalarRef<'a> {
     // graph
     VirtualNode(NodeId),
     VirtualRel(VirtualRelRef<'a>),
+    VirtualPath(VirtualPathRef<'a>),
     Node(NodeValueRef<'a>),
     Rel(RelValueRef<'a>),
+    Path(PathValueRef<'a>),
     //
     List(ListValueRef<'a>),
     Struct(StructValueRef<'a>),
 }
+
+// TODO(pgao): ScalarVTable to scalar_ref
 
 pub trait ScalarRefVTable {
     type Owned;
@@ -433,8 +844,10 @@ impl<'a> ScalarRef<'a> {
             ScalarRef::String(s) => s.to_string(),
             ScalarRef::VirtualNode(node_id) => format!("virtualnode({})", node_id),
             ScalarRef::VirtualRel(virtual_rel_ref) => format!("virtualrel({})", virtual_rel_ref.id),
+            ScalarRef::VirtualPath(vpath) => vpath.pretty().to_string(),
             ScalarRef::Node(node_value_ref) => node_value_ref.pretty(),
             ScalarRef::Rel(rel_value_ref) => rel_value_ref.pretty(),
+            ScalarRef::Path(path_value_ref) => path_value_ref.pretty(),
             ScalarRef::List(list_value_ref) => list_value_ref.pretty(),
             ScalarRef::Struct(struct_value_ref) => struct_value_ref.pretty(),
         }
@@ -454,6 +867,7 @@ impl<'a> ScalarRef<'a> {
                 start_id: virtual_rel_ref.start_id,
                 end_id: virtual_rel_ref.end_id,
             }),
+            ScalarRef::VirtualPath(vpath) => ScalarValue::VirtualPath(vpath.to_owned_value()),
             ScalarRef::Node(node_value_ref) => ScalarValue::Node(Box::new(NodeValue {
                 id: node_value_ref.id,
                 labels: node_value_ref.labels.to_vec(),
@@ -466,6 +880,7 @@ impl<'a> ScalarRef<'a> {
                 end_id: rel_value_ref.end_id,
                 props: rel_value_ref.props.to_owned_value(),
             })),
+            ScalarRef::Path(path) => ScalarValue::Path(Box::new(path.to_owned_value())),
             ScalarRef::List(list_value_ref) => ScalarValue::List(Box::new(list_value_ref.to_owned_value())),
             ScalarRef::Struct(struct_value_ref) => ScalarValue::Struct(Box::new(struct_value_ref.to_owned_value())),
         }
@@ -501,8 +916,10 @@ impl_into_for_scalar_ref!(
     {NodeId, VirtualNode},
     {VirtualRelRef<'a>, VirtualRel},
     {NodeValueRef<'a>, Node},
+    {VirtualPathRef<'a>, VirtualPath},
     {RelValueRef<'a>, Rel},
     {ListValueRef<'a>, List},
+    {PathValueRef<'a>, Path},
     {StructValueRef<'a>, Struct}
 );
 

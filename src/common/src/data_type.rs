@@ -18,6 +18,7 @@ pub enum DataType {
     // graph
     VirtualNode,
     VirtualRel, // TODO(pgao): should be removed in the future
+    VirtualPath,
     Node,
     Rel,
     Path,
@@ -69,8 +70,10 @@ impl DataType {
             }
             DataType::VirtualNode => PhysicalType::VirtualNode,
             DataType::VirtualRel => PhysicalType::VirtualRel,
+            DataType::VirtualPath => PhysicalType::VirtualPath,
             DataType::Node => PhysicalType::Node,
             DataType::Rel => PhysicalType::Rel,
+            DataType::Path => PhysicalType::Path,
             DataType::List(inner) => PhysicalType::List(Box::new(inner.physical_type())),
             DataType::Struct(fields) => {
                 let fields = fields
@@ -79,7 +82,6 @@ impl DataType {
                     .collect::<Vec<_>>();
                 PhysicalType::Struct(fields.into_boxed_slice())
             }
-            DataType::Path => todo!("not supported"),
         }
     }
 }
