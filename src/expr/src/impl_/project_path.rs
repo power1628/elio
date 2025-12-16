@@ -36,17 +36,33 @@ impl Expression for ProjectPathExpr {
         let mut node_builder = ListArrayBuilder::new(Box::new(VirtualNodeArrayBuilder::with_capacity(len).into()));
         let mut rel_builder = ListArrayBuilder::new(Box::new(RelArrayBuilder::with_capacity(len).into()));
 
-        let nodes = steps
-            .iter()
-            .filter(|step| matches!(&***step, ArrayImpl::VirtualNode(_) | ArrayImpl::Node(_)))
-            .cloned()
-            .collect_vec();
-
-        let rels = steps
-            .iter()
-            .filter(|step| matches!(&***step, ArrayImpl::Rel(_)))
-            .cloned()
-            .collect_vec();
+        let mut nodes = Vec::with_capacity(steps.len() / 2 + 1);
+        let mut rels = Vec::with_capacity(steps.len() / 2);
+        for (i, step) in steps.iter().enumerate() {
+            if i % 2 == 0 {
+                match step.as_ref() {
+                    ArrayImpl::VirtualNode(_) | ArrayImpl::Node(_) => nodes.push(step.clone()),
+                    other => {
+                        return Err(EvalError::TypeError(format!(
+                            "Expected node array at step {}, found {:?}",
+                            i,
+                            other.physical_type()
+                        )));
+                    }
+                }
+            } else {
+                match step.as_ref() {
+                    ArrayImpl::Rel(_) => rels.push(step.clone()),
+                    other => {
+                        return Err(EvalError::TypeError(format!(
+                            "Expected rel array at step {}, found {:?}",
+                            i,
+                            other.physical_type()
+                        )));
+                    }
+                }
+            }
+        }
 
         fn get_nodes(node_steps: &[ArrayRef], rowid: usize) -> impl Iterator<Item = NodeId> + '_ {
             node_steps.iter().filter_map(move |step| {

@@ -71,7 +71,7 @@ impl Executor for ExpandAllExecutor {
                             id: rel_id,
                             reltype: &reltype,
                             start_id,
-                            end_id ,
+                            end_id,
                             props: struct_value.as_scalar_ref(),
                         };
                         row.push(Some(ScalarRef::Rel(rel_ref)));
