@@ -59,6 +59,10 @@ impl Array for PathArray {
 }
 
 impl PathArray {
+    pub fn from_parts(nodes: Arc<ListArray>, rels: Arc<ListArray>, valid: BitVec) -> Self {
+        Self { nodes, rels, valid }
+    }
+
     pub fn valid_map(&self) -> &BitVec {
         &self.valid
     }
@@ -115,9 +119,19 @@ impl PathArrayBuilder {
 
 #[derive(Clone, Debug)]
 pub struct VirtualPathArray {
-    nodes: Arc<ListArray>,
-    rels: Arc<ListArray>,
-    valid: BitVec,
+    pub nodes: Arc<ListArray>,
+    pub rels: Arc<ListArray>,
+    pub valid: BitVec,
+}
+
+impl VirtualPathArray {
+    pub fn from_parts(nodes: Arc<ListArray>, rels: Arc<ListArray>, valid: BitVec) -> Self {
+        Self { nodes, rels, valid }
+    }
+
+    pub fn into_parts(self) -> (Arc<ListArray>, Arc<ListArray>, BitVec) {
+        (self.nodes, self.rels, self.valid)
+    }
 }
 
 impl Array for VirtualPathArray {

@@ -35,8 +35,8 @@
     - bind
     - plan
 - sql: |
-    CREATE (a:Person {name: 'Alice', age: 30}), (b:Person {name: 'Bob', age: 31}), (a)-[r:KNOWS]->(b)
-  desc: create multiple nodes with relationships and return r
+    CREATE (a:Person {name: 'Alice', age: 30}), (b:Person {name: 'Bob', age: 31}), (a)<-[r:KNOWS]-(b)
+  desc: create left direction relationship
   tasks:
     - bind
     - plan

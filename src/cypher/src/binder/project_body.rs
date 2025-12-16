@@ -96,6 +96,7 @@ pub fn bind_return_items(
                 variable: var_name.clone(),
                 expr: HashSet::from_iter(vec![*expr.clone()]),
                 typ: bound_expr.typ(),
+                bound_expr: None,
             };
             out_scope.add_item(item);
             projections.insert(var_name, bound_expr);
@@ -108,6 +109,7 @@ pub fn bind_return_items(
                 variable: var.clone(),
                 expr: Default::default(),
                 typ: expr.typ(),
+                bound_expr: None,
             };
             out_scope.add_item(item);
             projections.insert(var.clone(), expr.clone());
@@ -177,6 +179,7 @@ pub fn bind_return_items(
                 variable: name.clone(),
                 expr: HashSet::from_iter(vec![arg.clone()]),
                 typ: bound_expr.typ(),
+                bound_expr: None,
             }
         } else {
             // create another variable
@@ -186,6 +189,7 @@ pub fn bind_return_items(
                 variable: var_name,
                 expr: HashSet::from_iter(vec![arg.clone()]),
                 typ: bound_expr.typ(),
+                bound_expr: None,
             }
         };
         if agg_in_scope.resolve_variable(&item.variable).is_none() {
@@ -235,6 +239,7 @@ pub fn bind_return_items(
                 variable: var_name,
                 expr: HashSet::from_iter(vec![*item.expr.clone()]),
                 typ,
+                bound_expr: None,
             });
         }
         // add new part

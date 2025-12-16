@@ -1,5 +1,8 @@
+use std::sync::Arc;
+
 use async_stream::try_stream;
 use futures::StreamExt;
+use mojito_common::array::{ListArray, PathArray};
 
 use super::*;
 
@@ -30,6 +33,18 @@ impl Executor for ProduceResultExecutor {
                     if let Some(virtual_col) = col.as_virtual_node(){
                         let node_col= ctx.tx().materialize_node(virtual_col)?;
                         out_cols.push(Arc::new(node_col.into()));
+                    } else if let Some(vpath) = col.as_virtual_path() {
+                        let (path_vnodes, path_rels, valid) = vpath.clone().into_parts();
+                        // matierlize virtual path nodes
+                        let path_nodes = {
+                            let (offsets, child, valid) = path_vnodes.as_ref().clone().into_parts();
+                            let child_nodes = child.as_virtual_node().expect("virtual path nodes should be virtual node");
+                            let mz_nodes = ctx.tx().materialize_node(child_nodes)?;
+                            Arc::new(ListArray::from_parts(offsets, Arc::new(mz_nodes.into()), valid))
+                        };
+
+                        let mz_path = PathArray::from_parts(path_nodes, path_rels, valid);
+                        out_cols.push(Arc::new(mz_path.into()));
                     } else {
                         out_cols.push(col.clone());
                     }

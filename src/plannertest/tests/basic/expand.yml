@@ -4,3 +4,9 @@
   tasks: 
     - bind
     - plan
+- sql: |
+    MATCH (a)<-[r:KNOWS]-(b) RETURN *
+  desc: expand all
+  tasks: 
+    - bind
+    - plan

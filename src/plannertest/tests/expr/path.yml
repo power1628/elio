@@ -4,3 +4,9 @@
   tasks: 
     - bind
     - plan
+- sql: |
+    MATCH p = ()-[]-() RETURN *
+  desc: path with variable
+  tasks: 
+    - bind
+    - plan

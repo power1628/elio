@@ -135,6 +135,7 @@ fn bind_create_part(
                             variable: var_name.clone(),
                             expr: Default::default(),
                             typ: DataType::Node,
+                            bound_expr: None,
                         };
                         create_scope.add_item(item);
                         (false, var_name)
@@ -162,6 +163,7 @@ fn bind_create_part(
                     variable: var_name.clone(),
                     expr: Default::default(),
                     typ: DataType::Node,
+                    bound_expr: None,
                 };
                 create_scope.add_item(item);
                 var_name
@@ -209,6 +211,7 @@ fn bind_create_part(
                     variable: var_name.clone(),
                     expr: Default::default(),
                     typ: DataType::Rel,
+                    bound_expr: None,
                 };
                 create_scope.add_item(item);
                 var_name
@@ -224,6 +227,7 @@ fn bind_create_part(
                     variable: var_name.clone(),
                     expr: Default::default(),
                     typ: DataType::Rel,
+                    bound_expr: None,
                 };
                 create_scope.add_item(item);
                 var_name

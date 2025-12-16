@@ -69,7 +69,7 @@ impl NodeArray {
         for i in start..end + 1 {
             offsets.push(self.label_offsets[i] - self.label_offsets[start]);
         }
-        values.extend_from_slice(&self.label_values[self.label_offsets[start]..self.label_offsets[end + 1]]);
+        values.extend_from_slice(&self.label_values[self.label_offsets[start]..self.label_offsets[end]]);
 
         Self {
             ids: self.ids[start..end].to_vec().into(),

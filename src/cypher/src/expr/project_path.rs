@@ -3,16 +3,26 @@ use mojito_common::SemanticDirection;
 use mojito_common::data_type::DataType;
 use mojito_common::variable::VariableName;
 
-use crate::expr::ExprNode;
+use crate::expr::{Expr, ExprNode, VariableRef};
 
 // output virtual path only
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ProjectPath {
+    // pub name: VariableName,
     pub steps: Vec<PathStep>,
-    // path variable
-    pub variable: VariableName,
 }
 
+impl ProjectPath {
+    pub fn new(steps: Vec<PathStep>) -> Self {
+        Self { steps }
+    }
+
+    pub fn step_variables(&self) -> Vec<VariableRef> {
+        self.steps.iter().flat_map(|step| step.as_variable_ref()).collect()
+    }
+}
+
+// TODO(pgao): seems we do not need path steps here. just use variable name directly should be ok
 #[derive(Debug, Clone, PartialEq, Eq, Hash, derive_more::Display)]
 pub enum PathStep {
     #[display("({})", _0)]
@@ -49,6 +59,24 @@ impl PathStep {
         }
         set
     }
+
+    pub fn as_variable_ref(&self) -> Vec<VariableRef> {
+        match self {
+            PathStep::NodeStep(var) => vec![VariableRef::new_unchecked(var.clone(), DataType::VirtualNode)],
+            PathStep::SingleRelStep { rel, other, .. } => {
+                vec![
+                    VariableRef::new_unchecked(rel.clone(), DataType::VirtualRel),
+                    VariableRef::new_unchecked(other.clone(), DataType::VirtualNode),
+                ]
+            }
+            PathStep::MutliRelStep { rel, other, .. } => {
+                vec![
+                    VariableRef::new_unchecked(rel.clone(), DataType::new_list(DataType::Rel)),
+                    VariableRef::new_unchecked(other.clone(), DataType::VirtualNode),
+                ]
+            }
+        }
+    }
 }
 
 impl ExprNode for ProjectPath {
@@ -67,10 +95,17 @@ impl ProjectPath {
     }
 
     pub fn pretty(&self) -> String {
-        format!(
-            "{} = {}",
-            self.variable,
-            self.steps.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("")
-        )
+        self.steps
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>()
+            .join("")
+            .to_string()
+    }
+}
+
+impl From<ProjectPath> for Expr {
+    fn from(val: ProjectPath) -> Self {
+        Expr::ProjectPath(val)
     }
 }

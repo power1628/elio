@@ -24,7 +24,6 @@ pub struct ExprContext<'a> {
     pub name: &'a str,
     pub sema_flags: ExprSemanticFlag,
 }
-impl<'a> ExprContext<'a> {}
 
 #[derive(Default, Copy, Clone)]
 pub struct ExprSemanticFlag(u64);
