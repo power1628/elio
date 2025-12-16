@@ -88,6 +88,11 @@ impl SemanticError {
         let msg = format!("Filter expression must be a boolean, got {} in {}", typ, ctx);
         Self::new(msg)
     }
+
+    pub fn invalid_path_step_type(name: &str, ctx: &str, expected: &str) -> Self {
+        let msg = format!("Path step {} must be a {} in {}", name, expected, ctx);
+        Self::new(msg)
+    }
 }
 
 // clause semantics

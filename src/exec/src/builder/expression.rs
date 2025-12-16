@@ -1,9 +1,11 @@
 use mojito_common::IrToken;
 use mojito_common::schema::{Name2ColumnMap, Schema};
+use mojito_cypher::expr;
 use mojito_cypher::expr::{Constant, CreateStruct, Expr, ExprNode, PropertyAccess, VariableRef};
 use mojito_expr::impl_::constant::ConstantExpr;
 use mojito_expr::impl_::create_struct::CreateStructExpr;
 use mojito_expr::impl_::field_access::FieldAccessExpr;
+use mojito_expr::impl_::project_path::ProjectPathExpr;
 use mojito_expr::impl_::variable_ref::VariableRefExpr;
 use mojito_expr::impl_::{BoxedExpression, Expression};
 
@@ -32,7 +34,7 @@ pub(crate) fn build_expression(ctx: &BuildExprContext<'_>, expr: &Expr) -> Resul
         Expr::Subquery(_subquery) => todo!(),
         Expr::LabelExpr(_label_expr) => todo!(),
         Expr::CreateStruct(create_map) => build_create_map(ctx, create_map),
-        Expr::ProjectPath(_project_path) => todo!(),
+        Expr::ProjectPath(project_path) => build_project_path(ctx, project_path),
     }
 }
 
@@ -79,6 +81,22 @@ fn build_create_map(ctx: &BuildExprContext<'_>, create_map: &CreateStruct) -> Re
         fields: properties,
         typ: create_map.typ().clone(),
         physical_type: create_map.typ().physical_type(),
+    }
+    .boxed())
+}
+
+fn build_project_path(
+    ctx: &BuildExprContext<'_>,
+    project_path: &expr::ProjectPath,
+) -> Result<BoxedExpression, BuildError> {
+    let inputs = project_path
+        .step_variables()
+        .into_iter()
+        .map(|varref| build_expression(ctx, &varref.into()))
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(ProjectPathExpr {
+        inputs,
+        typ: project_path.typ(),
     }
     .boxed())
 }

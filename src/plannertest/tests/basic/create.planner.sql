@@ -93,18 +93,18 @@ RootPlan { names: [a, b] }
       └─Unit
 */
 
--- create multiple nodes with relationships and return r
-CREATE (a:Person {name: 'Alice', age: 30}), (b:Person {name: 'Bob', age: 31}), (a)-[r:KNOWS]->(b)
+-- create left direction relationship
+CREATE (a:Person {name: 'Alice', age: 30}), (b:Person {name: 'Bob', age: 31}), (a)<-[r:KNOWS]-(b)
 
 /*
 RootIR { names: [a, b, r] }
 └─IrSingleQueryPart
   └─QueryGraph
     └─mutating_pattern
-      └─CreatePattern { nodes: [(a@0):Person create_map{name: Alice, age: 30}, (b@1):Person create_map{name: Bob, age: 31}], rels: [(a@0)-[r@2:KNOWS]->(b@1) create_map{}] }
+      └─CreatePattern { nodes: [(a@0):Person create_map{name: Alice, age: 30}, (b@1):Person create_map{name: Bob, age: 31}], rels: [(a@0)<-[r@2:KNOWS]-(b@1) create_map{}] }
 RootPlan { names: [a, b, r] }
 └─ProduceResult { return_columns: a@0,b@1,r@2 }
-  └─CreateRel { items: [CreateRelItem { variable: r@2, reltype: KNOWS, start_node: a@0, end_node: b@1, properties: create_map{} }] }
+  └─CreateRel { items: [CreateRelItem { variable: r@2, reltype: KNOWS, start_node: b@1, end_node: a@0, properties: create_map{} }] }
     └─CreateNode { items: [CreateNodeItem { variable: a@0, labels: [Person], properties: create_map{name: Alice, age: 30} }, CreateNodeItem { variable: b@1, labels: [Person], properties: create_map{name: Bob, age: 31} }] }
       └─Unit
 */

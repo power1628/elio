@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::ops::Range;
 
 use indexmap::IndexSet;
+use itertools::Itertools;
 use mojito_common::data_type::DataType;
 use mojito_common::schema::Variable;
 use mojito_common::variable::VariableName;
@@ -15,7 +16,7 @@ use crate::binder::query::ClauseKind;
 use crate::binder::scope::{Scope, ScopeItem};
 use crate::error::PlanError;
 use crate::expr::property_access::PropertyAccess;
-use crate::expr::{Expr, ExprNode, FilterExprs};
+use crate::expr::{Expr, ExprNode, FilterExprs, PathStep, ProjectPath};
 use crate::ir::node_connection::{
     ExhaustiveNodeConnection, NodeBinding, PatternLength, QuantifiedPathPattern, RelPattern, Repetition,
     VariableGrouping,
@@ -125,21 +126,36 @@ pub(crate) fn bind_pattern_part(
         bound_quantified.push((bound_qpp, extra));
     }
 
-    let (path, extra) = if bound_quantified.is_empty() {
+    let (path, extra, steps) = if bound_quantified.is_empty() {
         // simple path pattern only, there should be only one simple pattern
         assert!(bound_simple.len() == 1);
         let (nodes, rels, extra) = bound_simple.into_iter().next().unwrap();
+
+        let steps = {
+            let mut steps = vec![];
+            steps.push(PathStep::NodeStep(nodes.first().unwrap().clone()));
+
+            for r in rels.iter() {
+                steps.push(PathStep::SingleRelStep {
+                    rel: r.variable.clone(),
+                    direction: r.dir,
+                    other: r.endpoints.1.clone(),
+                });
+            }
+            steps
+        };
+
         if rels.is_empty() {
             // single node path pattern
             let path = PathPattern::SingleNode(SingleNode {
                 variable: nodes.first().unwrap().clone(),
             });
-            (path, extra)
+            (path, extra, steps)
         } else {
             // connections
             let connections = rels.into_iter().map(ExhaustiveNodeConnection::RelPattern).collect();
             let path = PathPattern::NodeConnections(NodeConnections { connections });
-            (path, extra)
+            (path, extra, steps)
         }
     } else {
         // quantified and simple path patterns mixed
@@ -162,23 +178,33 @@ pub(crate) fn bind_pattern_part(
         (
             PathPattern::NodeConnections(NodeConnections { connections: conns }),
             extra,
+            // TODO(pgao): construct steps
+            vec![],
         )
     };
 
     // named path
     let path_var = if let Some(name) = variable {
-        let (var, is_outer) = bind_variable(pctx, &mut scope, Some(name), &DataType::Path)?;
+        let (var, is_outer) = bind_variable(pctx, &mut scope, Some(name), &DataType::VirtualPath)?;
         if is_outer {
             return Err(PlanError::semantic_err(
                 "Named path pattern cannot reference outer variable".to_string(),
             ));
         }
+        // bind path expression, add project path to scope
+        let project_path = ProjectPath { steps }.into();
+        let item = ScopeItem {
+            symbol: Some(name.to_string()),
+            variable: var.name.clone(),
+            expr: HashSet::from_iter(vec![ast::Expr::new_variable(name.to_string())]),
+            typ: var.typ.clone(),
+            bound_expr: Some(project_path), // path expression
+        };
+        scope.add_item(item);
         Some(var)
     } else {
         None
     };
-
-    // TODO(pgao): bind path expression
 
     let path_extra = PathPatternExtra {
         name: path_var,

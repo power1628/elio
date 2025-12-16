@@ -2,6 +2,7 @@ use async_stream::try_stream;
 use futures::StreamExt;
 use mojito_common::array::chunk::DataChunkBuilder;
 use mojito_common::array::datum::{RelValueRef, ScalarRef, StructValue};
+use mojito_common::store_types::RelDirection;
 use mojito_common::{SemanticDirection, TokenId, TokenKind};
 use mojito_storage::codec::RelFormat;
 
@@ -42,7 +43,7 @@ impl Executor for ExpandAllExecutor {
                     };
                     let rel_iter = ctx.tx().rel_iter_for_node(from_id, self.dir, &self.rtype)?;
                     for rel_kv in rel_iter {
-                        let (from_id, _rel_dir, token_id, to_id, rel_id, value) = rel_kv?;
+                        let (from_id, rel_dir, token_id, to_id, rel_id, value) = rel_kv?;
                         let mut row = row.clone();
                         // add rel to row
                         // SAFETY
@@ -61,11 +62,16 @@ impl Executor for ExpandAllExecutor {
                             StructValue::new(fileds)
                         };
 
+                        let (start_id, end_id) = match rel_dir {
+                            RelDirection::Out => (from_id, to_id),
+                            RelDirection::In => (to_id, from_id),
+                        };
+
                         let rel_ref = RelValueRef{
                             id: rel_id,
                             reltype: &reltype,
-                            start_id: from_id,
-                            end_id: to_id,
+                            start_id,
+                            end_id ,
                             props: struct_value.as_scalar_ref(),
                         };
                         row.push(Some(ScalarRef::Rel(rel_ref)));

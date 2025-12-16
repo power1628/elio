@@ -14,8 +14,15 @@ pub struct ScopeItem {
     pub symbol: Option<String>,
     // variable bound to this symbel
     pub variable: VariableName,
+    // if expr is non empty,means the variable already be bound to some expression
+    // if you want to reference the expression then please set bond_expr to Some
+    // When binding project_body, it will replace the symbol to given bound_expr
+    // If you do not want to reference the bound expression, please set bound_expr to
+    // none, then when binding project_body, it will replace the symbol to VarRef.
     pub expr: HashSet<ast::Expr>,
     pub typ: DataType,
+    // this is only for path expressions
+    pub bound_expr: Option<Expr>,
 }
 
 impl ScopeItem {
@@ -25,6 +32,7 @@ impl ScopeItem {
             variable,
             expr: HashSet::new(),
             typ,
+            bound_expr: None,
         }
     }
 
@@ -33,11 +41,19 @@ impl ScopeItem {
     }
 
     pub fn as_expr(&self) -> Expr {
-        VariableRef::new_unchecked(self.variable.clone(), self.typ.clone()).into()
+        // if bound_expr is Some, which means this is the path expression, then return the bound expr.
+        // TODO(pgao): this is ugly
+        self.bound_expr
+            .clone()
+            .unwrap_or_else(|| VariableRef::new_unchecked(self.variable.clone(), self.typ.clone()).into())
     }
 
     pub fn is_anonymous(&self) -> bool {
         self.symbol.is_none()
+    }
+
+    pub fn bound_expr(&self) -> Option<&Expr> {
+        self.bound_expr.as_ref()
     }
 }
 

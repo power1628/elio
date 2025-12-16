@@ -11,6 +11,7 @@ pub mod func_call;
 // pub mod func_executor;
 pub mod field_access;
 pub mod label;
+pub mod project_path;
 pub mod variable_ref;
 
 pub trait EvalCtx {

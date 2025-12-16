@@ -31,7 +31,7 @@ pub struct NodeValueRef<'a> {
 impl<'a> NodeValueRef<'a> {
     pub fn pretty(&self) -> String {
         format!(
-            "node{{id: {}, labels: [{}], props: {}}}",
+            "{{id: {}, labels: [{}], props: {}}}",
             self.id,
             self.labels.iter().map(|l| l.to_string()).collect::<Vec<_>>().join(", "),
             self.props.pretty()
@@ -68,7 +68,7 @@ pub struct RelValueRef<'a> {
 impl<'a> RelValueRef<'a> {
     pub fn pretty(&self) -> String {
         format!(
-            "rel{{id: {}, rtype: {}, start_id: {}, end_id: {}, props: {}}}",
+            "{{id: {}, rtype: {}, start_id: {}, end_id: {}, props: {}}}",
             self.id,
             self.reltype,
             self.start_id,
@@ -158,15 +158,15 @@ impl std::fmt::Display for VirtualPath {
         write!(f, "({})", nodes.get(0).expect("path element must not be null"))?;
         let len = rels.len();
 
-        for i in 1..len {
-            let rhs = nodes.get(i).expect("path element must not be null");
+        for i in 0..len {
             let rel = rels.get(i).expect("path rel must not be null");
+            let rhs = nodes.get(i + 1).expect("path element must not be null");
             let (ldir, rdir) = match rel.relative_dir(rhs) {
                 Some(RelDirection::Out) => ("<-", "-"),
                 Some(RelDirection::In) => ("-", "->"),
                 _ => unreachable!("path element must be connected"),
             };
-            write!(f, " {ldir}[{}]{rdir}({})", rel.pretty(), rhs)?;
+            write!(f, "{ldir}[{}]{rdir}({})", rel.pretty(), rhs)?;
         }
         Ok(())
     }
@@ -185,15 +185,15 @@ fn format_path<'a>(
     write!(f, "({})", nodes.next().unwrap().unwrap().pretty())?;
     let len = rels.len();
 
-    for _ in 1..len {
-        let rhs = nodes.next().unwrap().unwrap().id;
+    for _ in 0..len {
         let rel = rels.next().unwrap().unwrap();
+        let rhs = nodes.next().unwrap().unwrap().id;
         let (ldir, rdir) = match rel.relative_dir(rhs) {
             Some(RelDirection::Out) => ("<-", "-"),
             Some(RelDirection::In) => ("-", "->"),
             _ => unreachable!("path element must be connected"),
         };
-        write!(f, " {ldir}[{}]{rdir}({})", rel.pretty(), rhs)?;
+        write!(f, "{ldir}[{}]{rdir}({})", rel.pretty(), rhs)?;
     }
     Ok(())
 }
@@ -211,15 +211,15 @@ fn format_virtual_path<'a>(
     write!(f, "({})", nodes.next().unwrap().unwrap())?;
     let len = rels.len();
 
-    for _ in 1..len {
-        let rhs = nodes.next().unwrap().unwrap();
+    for _ in 0..len {
         let rel = rels.next().unwrap().unwrap();
+        let rhs = nodes.next().unwrap().unwrap();
         let (ldir, rdir) = match rel.relative_dir(rhs) {
             Some(RelDirection::Out) => ("<-", "-"),
             Some(RelDirection::In) => ("-", "->"),
             _ => unreachable!("path element must be connected"),
         };
-        write!(f, " {ldir}[{}]{rdir}({})", rel.pretty(), rhs)?;
+        write!(f, "{ldir}[{}]{rdir}({})", rel.pretty(), rhs)?;
     }
     Ok(())
 }
@@ -363,15 +363,15 @@ impl std::fmt::Display for PathValue {
         write!(f, "({})", nodes.get(0).expect("path element must not be null").pretty())?;
         let len = rels.len();
 
-        for i in 1..len {
-            let rhs = nodes.get(i).expect("path element must not be null");
+        for i in 0..len {
             let rel = rels.get(i).expect("path rel must not be null");
+            let rhs = nodes.get(i + 1).expect("path element must not be null");
             let (ldir, rdir) = match rel.relative_dir(rhs.id) {
                 Some(RelDirection::Out) => ("<-", "-"),
                 Some(RelDirection::In) => ("-", "->"),
                 _ => unreachable!("path element must be connected"),
             };
-            write!(f, " {ldir}[{}]{rdir}({})", rel.pretty(), rhs.pretty())?;
+            write!(f, "{ldir}[{}]{rdir}({})", rel.pretty(), rhs.pretty())?;
         }
         Ok(())
     }
