@@ -140,13 +140,20 @@ pub enum Selector {
 pub enum PatternLength {
     #[display("")]
     Simple,
-    #[display("*{}..{}", min, max.unwrap_or(i64::MAX))]
-    Var { min: i64, max: Option<i64> },
+    #[display("*{}..{}", min, max.unwrap_or(usize::MAX))]
+    Var { min: usize, max: Option<usize> },
 }
 
 impl PatternLength {
     pub fn is_simple(&self) -> bool {
         matches!(self, PatternLength::Simple)
+    }
+
+    pub fn as_range(&self) -> Option<(usize, Option<usize>)> {
+        match self {
+            PatternLength::Simple => None,
+            PatternLength::Var { min, max } => Some((*min, *max)),
+        }
     }
 }
 

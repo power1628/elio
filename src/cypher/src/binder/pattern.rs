@@ -363,8 +363,8 @@ fn bind_simple_pattern(
             None => PatternLength::Simple,
             Some(None) => PatternLength::Var { min: 0, max: None },
             Some(Some(Range { start, end })) => PatternLength::Var {
-                min: *start as i64,
-                max: if *end == usize::MAX { None } else { Some(*end as i64) },
+                min: *start,
+                max: if *end == usize::MAX { None } else { Some(*end ) },
             },
         };
 

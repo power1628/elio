@@ -20,7 +20,6 @@ pub struct ExpandAllExecutor {
     pub rtype: Vec<TokenId>,
     pub schema: Arc<Schema>,
 }
-const CHUNK_SIZE: usize = 4096;
 
 /// ExpandState. Two Loops
 ///  for row in OUTER
