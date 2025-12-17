@@ -65,6 +65,7 @@ fn build_node(ctx: &mut ExecutorBuildContext, node: &PlanExpr) -> Result<BoxedEx
         PlanExpr::AllNodeScan(all_node_scan) => build_all_node_scan(ctx, all_node_scan, inputs),
         PlanExpr::GetProperty(_get_property) => todo!(),
         PlanExpr::Expand(expand) => build_expand(ctx, expand, inputs),
+        PlanExpr::VarExpand(_varexpand) => todo!(),
         PlanExpr::Apply(_apply) => todo!(),
         PlanExpr::Argument(_argument) => todo!(),
         PlanExpr::Unit(_unit) => Ok(UnitExecutor::default().boxed()),

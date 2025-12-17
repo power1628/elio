@@ -244,12 +244,16 @@ impl std::fmt::Display for RelationshipPattern {
             "{}",
             self.label_expr.as_ref().map(|x| format!(":{x}")).unwrap_or_default()
         )?;
+        match &self.length {
+            Some(None) => write!(f, "*")?,
+            Some(Some(range)) => write!(f, "*{}..{}", range.start, range.end)?,
+            None => (),
+        };
         write!(
             f,
             "{}",
             self.properties.as_ref().map(|x| x.to_string()).unwrap_or_default()
         )?;
-        // TODO(length)
 
         match self.direction {
             SemanticDirection::Outgoing => write!(f, "]->"),

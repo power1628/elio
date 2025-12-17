@@ -5,7 +5,7 @@ use mojito_common::{IrToken, SemanticDirection};
 
 use crate::expr::FilterExprs;
 
-#[derive(Clone, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct RelPattern {
     pub variable: VariableName,
     pub endpoints: (VariableName, VariableName),
@@ -53,7 +53,7 @@ impl std::fmt::Display for RelPattern {
         let var = &self.variable;
         write!(
             f,
-            "({lnode}){ldir}[{var}{length}]{rdir}({rnode})",
+            "({lnode}){ldir}[{var}:{length}]{rdir}({rnode})",
             lnode = self.left(),
             rnode = self.right(),
             length = self.length
@@ -136,11 +136,11 @@ pub enum Selector {
     ShortestKGroup(i64),
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, derive_more::Display)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, derive_more::Display)]
 pub enum PatternLength {
     #[display("")]
     Simple,
-    #[display("{}..{}", min, max.unwrap_or(i64::MAX))]
+    #[display("*{}..{}", min, max.unwrap_or(i64::MAX))]
     Var { min: i64, max: Option<i64> },
 }
 

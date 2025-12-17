@@ -1,5 +1,5 @@
 use insta::assert_snapshot;
-use mojito_parser::parser::cypher_parser;
+use mojito_parser::parser::cypher_parser::{self};
 
 macro_rules! pattern_part {
     ($query:expr) => {
@@ -58,4 +58,13 @@ fn test_pattern_with_selector() {
     assert_snapshot!(pattern_part!("p = ANY SHORTEST PATHS (a:Person)-[]-(b)"), @"p = ANY SHORTEST PATHS (a:Person)-[]-(b)");
     assert_snapshot!(pattern_part!("p = SHORTEST 42 PATHS (a:Person)-[]-(b)"), @"p = SHORTEST 42 PATHS (a:Person)-[]-(b)");
     assert_snapshot!(pattern_part!("p = SHORTEST 42 PATH GROUPS (a:Person)-[]-(b)"), @"p = SHORTEST 42 PATH GROUPS (a:Person)-[]-(b)");
+}
+
+#[test]
+fn test_varaible_length() {
+    assert_snapshot!(pattern_part!("(a)-[r]-(b)"), @"(a)-[r]-(b)");
+    assert_snapshot!(pattern_part!("(a)-[r*]-(b)"), @"(a)-[r*]-(b)");
+    assert_snapshot!(pattern_part!("(a)-[r*1..]-(b)"), @"(a)-[r*1..18446744073709551615]-(b)");
+    assert_snapshot!(pattern_part!("(a)-[r*..3]-(b)"), @"(a)-[r*0..3]-(b)");
+    assert_snapshot!(pattern_part!("(a)-[r*1..3]-(b)"), @"(a)-[r*1..3]-(b)");
 }
