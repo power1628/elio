@@ -258,7 +258,6 @@ pub struct TrailPathContainer {
 
 impl PathContainer for TrailPathContainer {
     fn can_add_rel(&self, step: &RelValue) -> bool {
-        
         !self.path.contains(step)
     }
 
