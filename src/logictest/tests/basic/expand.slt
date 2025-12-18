@@ -49,8 +49,65 @@ Node{id: 2, labels: [Person], props: {name: 'Alex', age: 30}}	Node{id: 3, labels
 Node{id: 3, labels: [Person], props: {name: 'Bob', age: 20}}	Node{id: 2, labels: [Person], props: {name: 'Alex', age: 30}}	Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}
 
 query A
+MATCH (a)-[r:KNOWS*1..3]->(b) RETURN r
+----
+[Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]
+[Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}, Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]
+[Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]
+[Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}, Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]
+
+query A
+MATCH (a)-[r:KNOWS*..3]->(b) RETURN r
+----
+[Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]
+[Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}, Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]
+[Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]
+[Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}, Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]
+
+
+query A
 MATCH (a)-[r:KNOWS*1..]->(b) RETURN r
 ----
+[Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]
+[Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}, Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]
+[Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]
+[Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}, Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]
+
+
+query A
+MATCH (a)-[r:KNOWS*]->(b) RETURN r
+----
+[Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]
+[Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}, Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]
+[Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]
+[Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}, Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]
+
+
+query A
+MATCH (a)-[r:KNOWS*2]->(b) RETURN r
+----
+[Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}, Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]
+[Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}, Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]
+
+
+# reverse directed all
+query AA
+MATCH (a)<-[r:KNOWS*]-(b) RETURN a, r
+----
+Node{id: 2, labels: [Person], props: {name: 'Alex', age: 30}}	[Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]
+Node{id: 2, labels: [Person], props: {name: 'Alex', age: 30}}	[Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}, Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]
+Node{id: 3, labels: [Person], props: {name: 'Bob', age: 20}}	[Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]
+Node{id: 3, labels: [Person], props: {name: 'Bob', age: 20}}	[Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}, Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]
+
+
+# undirected all
+query A
+MATCH (a)-[r:KNOWS*]-(b) RETURN r
+----
+[Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]
+[Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}, Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]
+[Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]
+[Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}, Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]
 [Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]
 [Rel{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}, Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]
 [Rel{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]

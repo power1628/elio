@@ -351,9 +351,14 @@ peg::parser! {
 
     rule range_literal() -> Option<std::ops::Range<usize>>
         = "*" _? lower:integer_literal()? ".." upper:integer_literal()? {
-            let lower: usize = lower.map(|x| x.parse().unwrap()).unwrap_or(0);
+            // NOTE: if lower is None, then lower is 1
+            let lower: usize = lower.map(|x| x.parse().unwrap()).unwrap_or(1);
             let upper: usize = upper.map(|x| x.parse().unwrap()).unwrap_or(usize::MAX);
             Some(lower..upper)
+        }
+        / "*" _? exact:integer_literal() {
+            let count: usize = exact.parse().unwrap();
+            Some(count..count)
         }
         / "*" _? {
             None

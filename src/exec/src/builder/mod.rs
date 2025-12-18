@@ -15,7 +15,9 @@ use crate::executor::expand::ExpandAllExecutor;
 use crate::executor::produce_result::ProduceResultExecutor;
 use crate::executor::project::ProjectExecutor;
 use crate::executor::unit::UnitExecutor;
-use crate::executor::var_expand::VarExpandExecutor;
+use crate::executor::var_expand::{
+    TRAIL_PATH_MODE_FACTORY, VarExpandAllStrategy, VarExpandExecutor, VarExpandIntoFilter, WALK_PATH_MODE_FACTORY,
+};
 use crate::executor::{BoxedExecutor, Executor};
 use crate::task::TaskExecContext;
 
@@ -146,6 +148,16 @@ fn build_var_expand(
         .copied()
         .ok_or_else(|| BuildError::variable_not_found(expand.inner().from.clone()))?;
 
+    let to = match expand.inner().kind {
+        plan_node::ExpandKind::All => None,
+        plan_node::ExpandKind::Into => Some(
+            name2col
+                .get(&expand.inner().to)
+                .copied()
+                .ok_or_else(|| BuildError::variable_not_found(expand.inner().to.clone()))?,
+        ),
+    };
+
     // assume all rtypes are token ids
     let rtype = expand
         .inner()
@@ -160,21 +172,65 @@ fn build_var_expand(
 
     let (len_min, len_max) = expand.inner().rel_pattern.length.as_range().unwrap();
 
-    Ok(VarExpandExecutor {
-        input,
-        from,
-        to: None,
-        dir: expand.inner().rel_pattern.dir,
-        rel_types: rtype.into_boxed_slice().into(),
-        len_min,
-        len_max: len_max.unwrap_or(usize::MAX),
-        node_filter: None,
-        rel_filter: None,
-        schema: expand.schema().clone(),
-        path_mode: expand.inner().path_mode,
-        expand_kind: expand.inner().kind,
+    match (expand.inner().path_mode, to) {
+        (plan_node::PathMode::Trail, None) => Ok(VarExpandExecutor {
+            input,
+            from,
+            dir: expand.inner().rel_pattern.dir,
+            rel_types: rtype.into_boxed_slice().into(),
+            len_min,
+            len_max: len_max.unwrap_or(usize::MAX),
+            node_filter: None,
+            rel_filter: None,
+            schema: expand.schema().clone(),
+            path_container_factory: &TRAIL_PATH_MODE_FACTORY,
+            expand_kind_filter: VarExpandAllStrategy,
+        }
+        .boxed()),
+        (plan_node::PathMode::Trail, Some(to_idx)) => Ok(VarExpandExecutor {
+            input,
+            from,
+            dir: expand.inner().rel_pattern.dir,
+            rel_types: rtype.into_boxed_slice().into(),
+            len_min,
+            len_max: len_max.unwrap_or(usize::MAX),
+            node_filter: None,
+            rel_filter: None,
+            schema: expand.schema().clone(),
+            path_container_factory: &TRAIL_PATH_MODE_FACTORY,
+            expand_kind_filter: VarExpandIntoFilter { to_idx },
+        }
+        .boxed()),
+        (plan_node::PathMode::Walk, None) => Ok(VarExpandExecutor {
+            input,
+            from,
+            dir: expand.inner().rel_pattern.dir,
+            rel_types: rtype.into_boxed_slice().into(),
+            len_min,
+            len_max: len_max.unwrap_or(usize::MAX),
+            node_filter: None,
+            rel_filter: None,
+            schema: expand.schema().clone(),
+            path_container_factory: &WALK_PATH_MODE_FACTORY,
+            expand_kind_filter: VarExpandAllStrategy,
+        }
+        .boxed()),
+
+        (plan_node::PathMode::Walk, Some(to_idx)) => Ok(VarExpandExecutor {
+            input,
+            from,
+            dir: expand.inner().rel_pattern.dir,
+            rel_types: rtype.into_boxed_slice().into(),
+            len_min,
+            len_max: len_max.unwrap_or(usize::MAX),
+            node_filter: None,
+            rel_filter: None,
+            schema: expand.schema().clone(),
+            path_container_factory: &WALK_PATH_MODE_FACTORY,
+            expand_kind_filter: VarExpandIntoFilter { to_idx },
+        }
+        .boxed()),
     }
-    .boxed())
 }
 
 fn build_produce_result(

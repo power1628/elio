@@ -39,6 +39,8 @@ impl<'a> NodeValueRef<'a> {
     }
 }
 
+// TODO(pgao): we needs to hash and Eq only on id.
+// in varexpand, we needs to test if rel have already visited.
 #[derive(Debug, Clone, Default, Eq, PartialEq, Hash, derive_more::Display)]
 #[display(
     "Rel{{id: {}, rtype: {}, start: {}, end: {}, props: {}}}",

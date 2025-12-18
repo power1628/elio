@@ -1,65 +1,44 @@
-use std::collections::{VecDeque};
+use std::collections::VecDeque;
+use std::sync::LazyLock;
 
 use async_stream::try_stream;
+use educe::Educe;
 use futures::StreamExt;
-use mojito_common::array::{ArrayImpl, DataChunkBuilder, RelArrayBuilder};
+use indexmap::IndexSet;
 use mojito_common::array::datum::{ListValueRef, RelValue, ScalarRef, StructValue};
+use mojito_common::array::{ArrayImpl, DataChunkBuilder, RelArrayBuilder};
 use mojito_common::store_types::RelDirection;
-use mojito_common::{NodeId, RelationshipId, SemanticDirection, TokenId, TokenKind};
-use mojito_cypher::plan_node::{ExpandKind, PathMode};
+use mojito_common::{NodeId, SemanticDirection, TokenId, TokenKind};
 use mojito_expr::impl_::BoxedExpression;
 use mojito_storage::codec::RelFormat;
-use roaring::{RoaringTreemap};
 
 use super::*;
 
 // output direction schema: [input, rel, to]
-// TODO(pgao): this class should be generic over ExpandKind and PathMode
-#[derive(Debug)]
-pub struct VarExpandExecutor {
+#[derive(Educe)]
+#[educe(Debug)]
+pub struct VarExpandExecutor<PATHMODE: PathContainer, EXPANDKIND: ExpandKindStrategy> {
     pub input: BoxedExecutor,
     pub from: usize,
-    pub to: Option<usize>,      // Some for ExpandInto
     pub dir: SemanticDirection, // expansion direction
     pub rel_types: Arc<[TokenId]>,
     pub len_min: usize,
-    pub len_max: usize, 
+    pub len_max: usize,
     pub node_filter: Option<BoxedExpression>,
     pub rel_filter: Option<BoxedExpression>,
-    pub path_mode: PathMode,
-    pub expand_kind : ExpandKind,
+    #[educe(Debug(ignore))]
+    pub path_container_factory: &'static PathContainerFactory<PATHMODE>,
+    #[educe(Debug(ignore))]
+    pub expand_kind_filter: EXPANDKIND,
     pub schema: Arc<Schema>,
 }
 
-impl Executor for VarExpandExecutor {
+impl<PATHMODE: PathContainer, EXPANDKIND: ExpandKindStrategy> Executor for VarExpandExecutor<PATHMODE, EXPANDKIND> {
     fn build_stream(self: Box<Self>, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
         let stream = try_stream! {
 
             let input_stream = self.input.build_stream(ctx.clone())?;
             let mut out_builder = DataChunkBuilder::new(self.schema.columns().iter().map(|col| col.typ.physical_type()), CHUNK_SIZE);
-
-            let path_mode_factory = ||-> Box<dyn PathModeStrategy + Sync + Send> { 
-                match self.path_mode {
-                    PathMode::Trail => Box::new(TrailPathMode::default()),
-                    PathMode::Walk => Box::new(WalkPathMode::default()),
-                }
-            };
-
-
-            let expand_kind_filter : Arc<dyn Fn(&[Option<ScalarRef>], NodeId) -> bool + Sync + Send> = match self.expand_kind{
-                ExpandKind::All => Arc::new(|row: &[Option<ScalarRef>], _actual_to_id: NodeId| true),
-                ExpandKind::Into => {
-                    let to_idx = self.to.unwrap(); 
-                    Arc::new(move |row: &[Option<ScalarRef>], actual_to_id: NodeId| {
-                        let to_node_id = match row[to_idx].and_then(|id| id.get_node_id()){
-                            Some(id) => id,
-                            None => return false, // if to is null, then skip this row
-                        };
-                        to_node_id == actual_to_id
-                    })
-                },
-            };
-
             for await chunk in input_stream{
                 let outer = chunk?;
                 for row in outer.iter() {
@@ -68,22 +47,20 @@ impl Executor for VarExpandExecutor {
                         Some(id) => id,
                         None => continue, // if from is null, then skip this row
                     };
-                    let path_iter = VarExpandIter {
-                        stack: VecDeque::from([(from_id, vec![])]),
+                    let path_iter = VarExpandIter::<PATHMODE> {
+                        stack: VecDeque::from([(from_id, (self.path_container_factory)())]),
                         ctx: ctx.clone(),
                         dir: self.dir,
                         rel_types: self.rel_types.clone(),
                         min_len: self.len_min,
                         max_len: self.len_max,
-                        path_mode: path_mode_factory(),
+                        // path_mode: (self.path_mode_factory)(),
                     };
-                    
 
                     for item in path_iter {
                         let (to_node, path) = item?;
                         let mut row = row.clone();
- 
-                        if path.len() >= self.len_min && expand_kind_filter(&row, to_node) {
+                        if path.len() >= self.len_min && self.expand_kind_filter.call(&row, to_node) {
                             // push path rels list
                             let mut rel_array = RelArrayBuilder::with_capacity(path.len());
                             path.iter().for_each(|rel|
@@ -91,18 +68,12 @@ impl Executor for VarExpandExecutor {
                             );
                             let rel_array: ArrayImpl= rel_array.finish().into();
                             row.push(Some(ScalarRef::List(ListValueRef::from_array(&rel_array, 0, rel_array.len()))));
-
-                            if self.expand_kind == ExpandKind::All{
-                                // push to node
-                                row.push(Some(ScalarRef::VirtualNode(to_node)));
-                            }
-                            
+                            EXPANDKIND::push_to_node(&mut row, to_node);
                             if let Some(chunk) = out_builder.append_row(row) {
                                 yield chunk;
                             }
                         }
                     }
-                    
                 }
 
                 if let Some(chunk) = out_builder.yield_chunk() {
@@ -121,34 +92,21 @@ impl Executor for VarExpandExecutor {
     }
 }
 
-/// for row in INPUT
-///   let from = row[from];
-///   let path_iter = VarExpandIter {
-///       stack: vec_deque![(from, vec![])],
-///       ctx,
-///       dir: self.dir,
-///       rel_types: self.rel_types.clone(),
-///   };
-///   for (node, path) in path_iter {
-///       emit (node, path);
-///   }
-
-pub struct VarExpandIter {
-    pub stack: VecDeque<(NodeId, Vec<RelValue>)>,
+pub struct VarExpandIter<PATHMODE: PathContainer> {
+    pub stack: VecDeque<(NodeId, PATHMODE)>,
     pub ctx: Arc<TaskExecContext>,
     pub dir: SemanticDirection,
     pub rel_types: Arc<[TokenId]>,
     pub min_len: usize,
-    pub max_len: usize, 
-    pub path_mode: Box<dyn PathModeStrategy + Sync + Send>,
+    pub max_len: usize,
 }
 
-impl Iterator for VarExpandIter {
+impl<PATHMODE: PathContainer> Iterator for VarExpandIter<PATHMODE> {
     type Item = Result<(NodeId, Vec<RelValue>), ExecError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         // pop from stack
-        let (node, path) = self.stack.pop_front()?;
+        let (node, path) = self.stack.pop_back()?;
         if path.len() < self.max_len {
             // expand node and path
             let rel_iter = match self.ctx.tx().rel_iter_for_node(node, self.dir, &self.rel_types) {
@@ -200,59 +158,117 @@ impl Iterator for VarExpandIter {
                 };
 
                 // TODO(pgao): expand into and filter etc
-                if self.path_mode.is_valid_step(rel_id) {
-                    self.path_mode.visit(rel_id);
-                    expanded_path.push(RelValue {
-                        id: rel_id,
-                        reltype: rel_type.to_string(),
-                        start_id,
-                        end_id,
-                        props: struct_value,
-                    });
-                    self.stack.push_back((end_id, expanded_path));
+                let rel_value = RelValue {
+                    id: rel_id,
+                    reltype: rel_type.to_string(),
+                    start_id,
+                    end_id,
+                    props: struct_value,
+                };
+
+                if expanded_path.can_add_rel(&rel_value) {
+                    expanded_path.add_rel(rel_value);
+                    self.stack.push_back((to_id, expanded_path));
                 }
             }
         }
         // emit (node, path)
-        Some(Ok((node, path)))
+        Some(Ok((node, path.into_list())))
     }
 }
 
+pub type PathContainerFactory<P> = Box<dyn Fn() -> P + Sync + Send>;
 
-trait PathModeStrategy{
+pub static TRAIL_PATH_MODE_FACTORY: LazyLock<PathContainerFactory<TrailPathContainer>> =
+    LazyLock::new(|| Box::new(TrailPathContainer::default));
+pub static WALK_PATH_MODE_FACTORY: LazyLock<PathContainerFactory<WalkPathContainer>> =
+    LazyLock::new(|| Box::new(WalkPathContainer::default));
+
+#[allow(clippy::len_without_is_empty)]
+pub trait PathContainer: 'static + Sync + Send + Clone {
     // return true on this step is ok to expand
     // NOTE: each relationship have different relationship id
-    fn is_valid_step(&self, step: RelationshipId) -> bool;
-
-    fn visit(&mut self, step: RelationshipId);
+    fn can_add_rel(&self, step: &RelValue) -> bool;
+    fn add_rel(&mut self, step: RelValue);
+    fn into_list(self) -> Vec<RelValue>;
+    fn len(&self) -> usize;
 }
 
-
-#[derive(Default)]
-struct TrailPathMode {
-    visited: RoaringTreemap,
+pub trait ExpandKindStrategy: 'static + Sync + Send {
+    fn call(&self, row: &[Option<ScalarRef>], actual_to_id: NodeId) -> bool;
+    fn push_to_node(row: &mut Vec<Option<ScalarRef>>, node_id: NodeId);
 }
 
-impl PathModeStrategy for TrailPathMode{
-    fn is_valid_step(&self, step: RelationshipId) -> bool {
-        !self.visited.contains(*step)
+pub struct VarExpandIntoFilter {
+    pub(crate) to_idx: usize,
+}
+
+impl ExpandKindStrategy for VarExpandIntoFilter {
+    fn call(&self, row: &[Option<ScalarRef>], actual_to_id: NodeId) -> bool {
+        let to_node_id = match row[self.to_idx].and_then(|id| id.get_node_id()) {
+            Some(id) => id,
+            None => return false, // if to is null, then skip this row
+        };
+        to_node_id == actual_to_id
     }
 
-    fn visit(&mut self, step: RelationshipId) {
-        self.visited.insert(*step);
-    }
+    fn push_to_node(_row: &mut Vec<Option<ScalarRef>>, _node_id: NodeId) {}
 }
 
+pub struct VarExpandAllStrategy;
 
-#[derive(Default)]
-struct WalkPathMode;
-
-impl PathModeStrategy for WalkPathMode{
-    fn is_valid_step(&self, _step: RelationshipId) -> bool {
+impl ExpandKindStrategy for VarExpandAllStrategy {
+    fn call(&self, _row: &[Option<ScalarRef>], _actual_to_id: NodeId) -> bool {
         true
     }
 
-    fn visit(&mut self, _step: RelationshipId) {
+    fn push_to_node(row: &mut Vec<Option<ScalarRef>>, node_id: NodeId) {
+        row.push(Some(ScalarRef::VirtualNode(node_id)));
     }
 }
 
+#[derive(Default, Clone)]
+pub struct WalkPathContainer {
+    pub path: Vec<RelValue>,
+}
+impl PathContainer for WalkPathContainer {
+    fn can_add_rel(&self, _step: &RelValue) -> bool {
+        true
+    }
+
+    fn add_rel(&mut self, step: RelValue) {
+        self.path.push(step);
+    }
+
+    fn into_list(self) -> Vec<RelValue> {
+        self.path
+    }
+
+    fn len(&self) -> usize {
+        self.path.len()
+    }
+}
+
+#[derive(Default, Clone)]
+pub struct TrailPathContainer {
+    pub(crate) path: IndexSet<RelValue>,
+}
+
+impl PathContainer for TrailPathContainer {
+    fn can_add_rel(&self, step: &RelValue) -> bool {
+        let ret = !self.path.contains(step);
+        ret
+    }
+
+    fn add_rel(&mut self, step: RelValue) {
+        self.path.insert(step);
+    }
+
+    fn into_list(self) -> Vec<RelValue> {
+        self.path.into_iter().collect()
+    }
+
+    fn len(&self) -> usize {
+        self.path.len()
+    }
+}
