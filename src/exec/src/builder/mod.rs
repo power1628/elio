@@ -171,6 +171,8 @@ fn build_var_expand(
         node_filter: None,
         rel_filter: None,
         schema: expand.schema().clone(),
+        path_mode: expand.inner().path_mode,
+        expand_kind: expand.inner().kind,
     }
     .boxed())
 }

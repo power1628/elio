@@ -5,13 +5,16 @@ use futures::StreamExt;
 use mojito_common::array::{ArrayImpl, DataChunkBuilder, RelArrayBuilder};
 use mojito_common::array::datum::{ListValueRef, RelValue, ScalarRef, StructValue};
 use mojito_common::store_types::RelDirection;
-use mojito_common::{NodeId, SemanticDirection, TokenId, TokenKind};
+use mojito_common::{NodeId, RelationshipId, SemanticDirection, TokenId, TokenKind};
+use mojito_cypher::plan_node::{ExpandKind, PathMode};
 use mojito_expr::impl_::BoxedExpression;
 use mojito_storage::codec::RelFormat;
+use roaring::{RoaringTreemap};
 
 use super::*;
 
-// output direction schema:
+// output direction schema: [input, rel, to]
+// TODO(pgao): this class should be generic over ExpandKind and PathMode
 #[derive(Debug)]
 pub struct VarExpandExecutor {
     pub input: BoxedExecutor,
@@ -23,6 +26,8 @@ pub struct VarExpandExecutor {
     pub len_max: usize, 
     pub node_filter: Option<BoxedExpression>,
     pub rel_filter: Option<BoxedExpression>,
+    pub path_mode: PathMode,
+    pub expand_kind : ExpandKind,
     pub schema: Arc<Schema>,
 }
 
@@ -32,7 +37,29 @@ impl Executor for VarExpandExecutor {
 
             let input_stream = self.input.build_stream(ctx.clone())?;
             let mut out_builder = DataChunkBuilder::new(self.schema.columns().iter().map(|col| col.typ.physical_type()), CHUNK_SIZE);
- 
+
+            let path_mode_factory = ||-> Box<dyn PathModeStrategy + Sync + Send> { 
+                match self.path_mode {
+                    PathMode::Trail => Box::new(TrailPathMode::default()),
+                    PathMode::Walk => Box::new(WalkPathMode::default()),
+                }
+            };
+
+
+            let expand_kind_filter : Arc<dyn Fn(&[Option<ScalarRef>], NodeId) -> bool + Sync + Send> = match self.expand_kind{
+                ExpandKind::All => Arc::new(|row: &[Option<ScalarRef>], _actual_to_id: NodeId| true),
+                ExpandKind::Into => {
+                    let to_idx = self.to.unwrap(); 
+                    Arc::new(move |row: &[Option<ScalarRef>], actual_to_id: NodeId| {
+                        let to_node_id = match row[to_idx].and_then(|id| id.get_node_id()){
+                            Some(id) => id,
+                            None => return false, // if to is null, then skip this row
+                        };
+                        to_node_id == actual_to_id
+                    })
+                },
+            };
+
             for await chunk in input_stream{
                 let outer = chunk?;
                 for row in outer.iter() {
@@ -48,30 +75,34 @@ impl Executor for VarExpandExecutor {
                         rel_types: self.rel_types.clone(),
                         min_len: self.len_min,
                         max_len: self.len_max,
+                        path_mode: path_mode_factory(),
                     };
+                    
 
                     for item in path_iter {
-                        let (_node, path) = item?;
-                        // add node, path to output
-                        // if output is full, emit the chunk
+                        let (to_node, path) = item?;
                         let mut row = row.clone();
-                        // TODO(pgao): expand into
-                        // push path rels list
-                        let mut rel_array = RelArrayBuilder::with_capacity(path.len());
-                        path.iter().for_each(|rel|
-                            rel_array.push(Some(rel.as_scalar_ref()))
-                        );
-                        let rel_array: ArrayImpl= rel_array.finish().into();
-                        row.push(Some(ScalarRef::List(ListValueRef::from_array(&rel_array, 0, rel_array.len()))));
+ 
+                        if path.len() >= self.len_min && expand_kind_filter(&row, to_node) {
+                            // push path rels list
+                            let mut rel_array = RelArrayBuilder::with_capacity(path.len());
+                            path.iter().for_each(|rel|
+                                rel_array.push(Some(rel.as_scalar_ref()))
+                            );
+                            let rel_array: ArrayImpl= rel_array.finish().into();
+                            row.push(Some(ScalarRef::List(ListValueRef::from_array(&rel_array, 0, rel_array.len()))));
 
-                        // push last node
-                        let to_node= path.last().map(|rel| ScalarRef::VirtualNode(rel.end_id));
-                        row.push(to_node);
-
-                        if let Some(chunk) = out_builder.append_row(row) {
-                            yield chunk;
+                            if self.expand_kind == ExpandKind::All{
+                                // push to node
+                                row.push(Some(ScalarRef::VirtualNode(to_node)));
+                            }
+                            
+                            if let Some(chunk) = out_builder.append_row(row) {
+                                yield chunk;
+                            }
                         }
                     }
+                    
                 }
 
                 if let Some(chunk) = out_builder.yield_chunk() {
@@ -109,6 +140,7 @@ pub struct VarExpandIter {
     pub rel_types: Arc<[TokenId]>,
     pub min_len: usize,
     pub max_len: usize, 
+    pub path_mode: Box<dyn PathModeStrategy + Sync + Send>,
 }
 
 impl Iterator for VarExpandIter {
@@ -168,19 +200,59 @@ impl Iterator for VarExpandIter {
                 };
 
                 // TODO(pgao): expand into and filter etc
-
-
-                expanded_path.push(RelValue {
-                    id: rel_id,
-                    reltype: rel_type.to_string(),
-                    start_id,
-                    end_id,
-                    props: struct_value,
-                });
-                self.stack.push_back((end_id, expanded_path));
+                if self.path_mode.is_valid_step(rel_id) {
+                    self.path_mode.visit(rel_id);
+                    expanded_path.push(RelValue {
+                        id: rel_id,
+                        reltype: rel_type.to_string(),
+                        start_id,
+                        end_id,
+                        props: struct_value,
+                    });
+                    self.stack.push_back((end_id, expanded_path));
+                }
             }
         }
         // emit (node, path)
         Some(Ok((node, path)))
     }
 }
+
+
+trait PathModeStrategy{
+    // return true on this step is ok to expand
+    // NOTE: each relationship have different relationship id
+    fn is_valid_step(&self, step: RelationshipId) -> bool;
+
+    fn visit(&mut self, step: RelationshipId);
+}
+
+
+#[derive(Default)]
+struct TrailPathMode {
+    visited: RoaringTreemap,
+}
+
+impl PathModeStrategy for TrailPathMode{
+    fn is_valid_step(&self, step: RelationshipId) -> bool {
+        !self.visited.contains(*step)
+    }
+
+    fn visit(&mut self, step: RelationshipId) {
+        self.visited.insert(*step);
+    }
+}
+
+
+#[derive(Default)]
+struct WalkPathMode;
+
+impl PathModeStrategy for WalkPathMode{
+    fn is_valid_step(&self, _step: RelationshipId) -> bool {
+        true
+    }
+
+    fn visit(&mut self, _step: RelationshipId) {
+    }
+}
+
