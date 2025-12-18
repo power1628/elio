@@ -60,7 +60,7 @@ impl<PATHMODE: PathContainer, EXPANDKIND: ExpandKindStrategy> Executor for VarEx
                     for item in path_iter {
                         let (to_node, path) = item?;
                         let mut row = row.clone();
-                        if path.len() >= self.len_min && self.expand_kind_filter.call(&row, to_node) {
+                        if path.len() >= self.len_min && self.expand_kind_filter.is_valid(&row, to_node) {
                             // push path rels list
                             let mut rel_array = RelArrayBuilder::with_capacity(path.len());
                             path.iter().for_each(|rel|
@@ -68,7 +68,7 @@ impl<PATHMODE: PathContainer, EXPANDKIND: ExpandKindStrategy> Executor for VarEx
                             );
                             let rel_array: ArrayImpl= rel_array.finish().into();
                             row.push(Some(ScalarRef::List(ListValueRef::from_array(&rel_array, 0, rel_array.len()))));
-                            EXPANDKIND::push_to_node(&mut row, to_node);
+                            EXPANDKIND::append_other_node(&mut row, to_node);
                             if let Some(chunk) = out_builder.append_row(row) {
                                 yield chunk;
                             }
@@ -195,16 +195,18 @@ pub trait PathContainer: 'static + Sync + Send + Clone {
 }
 
 pub trait ExpandKindStrategy: 'static + Sync + Send {
-    fn call(&self, row: &[Option<ScalarRef>], actual_to_id: NodeId) -> bool;
-    fn push_to_node(row: &mut Vec<Option<ScalarRef>>, node_id: NodeId);
+    // True on the step is valid to expand
+    fn is_valid(&self, row: &[Option<ScalarRef>], actual_to_id: NodeId) -> bool;
+    // append to node id to the row
+    fn append_other_node(row: &mut Vec<Option<ScalarRef>>, node_id: NodeId);
 }
 
-pub struct VarExpandIntoFilter {
+pub struct ExpandIntoImpl {
     pub(crate) to_idx: usize,
 }
 
-impl ExpandKindStrategy for VarExpandIntoFilter {
-    fn call(&self, row: &[Option<ScalarRef>], actual_to_id: NodeId) -> bool {
+impl ExpandKindStrategy for ExpandIntoImpl {
+    fn is_valid(&self, row: &[Option<ScalarRef>], actual_to_id: NodeId) -> bool {
         let to_node_id = match row[self.to_idx].and_then(|id| id.get_node_id()) {
             Some(id) => id,
             None => return false, // if to is null, then skip this row
@@ -212,17 +214,17 @@ impl ExpandKindStrategy for VarExpandIntoFilter {
         to_node_id == actual_to_id
     }
 
-    fn push_to_node(_row: &mut Vec<Option<ScalarRef>>, _node_id: NodeId) {}
+    fn append_other_node(_row: &mut Vec<Option<ScalarRef>>, _node_id: NodeId) {}
 }
 
-pub struct VarExpandAllStrategy;
+pub struct ExpandAllImpl;
 
-impl ExpandKindStrategy for VarExpandAllStrategy {
-    fn call(&self, _row: &[Option<ScalarRef>], _actual_to_id: NodeId) -> bool {
+impl ExpandKindStrategy for ExpandAllImpl {
+    fn is_valid(&self, _row: &[Option<ScalarRef>], _actual_to_id: NodeId) -> bool {
         true
     }
 
-    fn push_to_node(row: &mut Vec<Option<ScalarRef>>, node_id: NodeId) {
+    fn append_other_node(row: &mut Vec<Option<ScalarRef>>, node_id: NodeId) {
         row.push(Some(ScalarRef::VirtualNode(node_id)));
     }
 }
@@ -256,8 +258,8 @@ pub struct TrailPathContainer {
 
 impl PathContainer for TrailPathContainer {
     fn can_add_rel(&self, step: &RelValue) -> bool {
-        let ret = !self.path.contains(step);
-        ret
+        
+        !self.path.contains(step)
     }
 
     fn add_rel(&mut self, step: RelValue) {

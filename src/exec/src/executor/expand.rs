@@ -1,4 +1,5 @@
 use async_stream::try_stream;
+use educe::Educe;
 use futures::StreamExt;
 use mojito_common::array::chunk::DataChunkBuilder;
 use mojito_common::array::datum::{RelValueRef, ScalarRef, StructValue};
@@ -7,18 +8,22 @@ use mojito_common::{SemanticDirection, TokenId, TokenKind};
 use mojito_storage::codec::RelFormat;
 
 use super::*;
+use crate::executor::var_expand::ExpandKindStrategy;
 
 // Given from which column to expand
 // generate rel and to columns at the end of input schema
 // direct_output = input + rel + to
-#[derive(Debug)]
-pub struct ExpandAllExecutor {
+#[derive(Educe)]
+#[educe(Debug)]
+pub struct ExpandExecutor<EXPANDKIND: ExpandKindStrategy> {
     pub input: BoxedExecutor,
     pub from: usize,
     pub dir: SemanticDirection,
     // optimizer will remove invalid tokens and empty tokens
     pub rtype: Vec<TokenId>,
     pub schema: Arc<Schema>,
+    #[educe(Debug(ignore))]
+    pub expand_kind_filter: EXPANDKIND,
 }
 
 /// ExpandState. Two Loops
@@ -27,7 +32,7 @@ pub struct ExpandAllExecutor {
 ///        construct row = input_row + rel + to
 ///        append row to output chunk
 ///        if output chunk full, then yield output chunk
-impl Executor for ExpandAllExecutor {
+impl<EXPANDKIND: ExpandKindStrategy> Executor for ExpandExecutor<EXPANDKIND> {
     fn build_stream(self: Box<Self>, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
         let stream = try_stream! {
             let input_stream = self.input.build_stream(ctx.clone())?;
@@ -73,14 +78,14 @@ impl Executor for ExpandAllExecutor {
                             end_id,
                             props: struct_value.as_scalar_ref(),
                         };
-                        row.push(Some(ScalarRef::Rel(rel_ref)));
-
-                        // add to node to row
-                        row.push(Some(ScalarRef::VirtualNode(to_id)));
-
-                        // add to output
-                        if let Some(chunk) = out_builder.append_row(row) {
-                            yield chunk;
+                        if self.expand_kind_filter.is_valid(&row, to_id) {
+                            row.push(Some(ScalarRef::Rel(rel_ref)));
+                            // add to node to row
+                            EXPANDKIND::append_other_node(&mut row, to_id);
+                            // add to output
+                            if let Some(chunk) = out_builder.append_row(row) {
+                                yield chunk;
+                            }
                         }
                     }
                 }
@@ -98,23 +103,5 @@ impl Executor for ExpandAllExecutor {
 
     fn schema(&self) -> &Schema {
         &self.schema
-    }
-}
-
-#[derive(Debug)]
-
-pub struct ExpandIntoExecutor {
-    input: BoxedExecutor,
-
-    schema: Arc<Schema>,
-}
-
-impl Executor for ExpandIntoExecutor {
-    fn build_stream(self: Box<Self>, _ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
-        todo!()
-    }
-
-    fn schema(&self) -> &Schema {
-        todo!()
     }
 }
