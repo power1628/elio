@@ -160,7 +160,7 @@ impl<PATHMODE: PathContainer> Iterator for VarExpandIter<PATHMODE> {
                 // TODO(pgao): expand into and filter etc
                 let rel_value = RelValue {
                     id: rel_id,
-                    reltype: rel_type.to_string(),
+                    reltype: rel_type,
                     start_id,
                     end_id,
                     props: struct_value,

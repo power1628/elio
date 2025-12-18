@@ -39,7 +39,7 @@ impl CreateNodeExectuor {
             let eval_ctx = ctx.derive_eval_ctx();
             let mut input_stream = self.input.build_stream(ctx.clone())?;
 
-            let label_vec: Vec<Vec<String>> = self.items.iter().map(|item| item.labels.iter().map(|label| label.name().to_string()).collect()).collect();
+            let label_vec: Vec<Vec<Arc<str>>> = self.items.iter().map(|item| item.labels.iter().map(|label| label.name().clone()).collect()).collect();
 
             // execute the stream
             while let Some(chunk) = input_stream.next().await{

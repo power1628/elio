@@ -68,6 +68,7 @@ impl BoolArrayBuilder {
         self.push_n(value, 1);
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.valid.len()
     }

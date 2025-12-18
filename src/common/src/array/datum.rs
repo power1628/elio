@@ -1,3 +1,5 @@
+#![allow(clippy::double_parens)] // since EnumAsInner generate double () codes, we ignore the clippy warning here
+
 use std::hash::Hash;
 use std::sync::Arc;
 
@@ -13,8 +15,7 @@ use crate::{NodeId, RelationshipId};
 #[display("Node{{id: {}, labels: [{}], props: {}}}", id, labels.iter().map(|l| l.to_string()).collect::<Vec<_>>().join(", "), props)]
 pub struct NodeValue {
     pub id: NodeId,
-    // TODO(pgao): Vec<Arc<str>>
-    pub labels: Vec<String>,
+    pub labels: Vec<Arc<str>>,
     // TODO(pgao): PropertyMap
     // NodeValue properties have constraint on property types.
     // not general structure value
@@ -24,7 +25,7 @@ pub struct NodeValue {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct NodeValueRef<'a> {
     pub id: NodeId,
-    pub labels: &'a [String],
+    pub labels: &'a [Arc<str>],
     pub props: StructValueRef<'a>,
 }
 
@@ -52,8 +53,7 @@ impl<'a> NodeValueRef<'a> {
 )]
 pub struct RelValue {
     pub id: RelationshipId,
-    // TODO(pgao): Arc<str>
-    pub reltype: String,
+    pub reltype: Arc<str>,
     pub start_id: NodeId,
     pub end_id: NodeId,
     pub props: StructValue,
@@ -63,7 +63,7 @@ impl RelValue {
     pub fn as_scalar_ref(&self) -> RelValueRef<'_> {
         RelValueRef {
             id: self.id,
-            reltype: self.reltype.as_str(),
+            reltype: &self.reltype,
             start_id: self.start_id,
             end_id: self.end_id,
             props: self.props.as_scalar_ref(),
@@ -74,7 +74,7 @@ impl RelValue {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct RelValueRef<'a> {
     pub id: RelationshipId,
-    pub reltype: &'a str,
+    pub reltype: &'a Arc<str>,
     pub start_id: NodeId,
     pub end_id: NodeId,
     pub props: StructValueRef<'a>,
@@ -515,6 +515,7 @@ impl<'a> ListValueRef<'a> {
         )
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         match self {
             ListValueRef::Index { child: _, start, end } => end - start,
@@ -695,6 +696,7 @@ impl<'a> StructValueRef<'a> {
         }
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         match self {
             StructValueRef::Index { array, .. } => array.fields().len(),

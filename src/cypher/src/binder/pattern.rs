@@ -71,17 +71,16 @@ pub struct PathPatternWithExtra {
     pub extra: PathPatternExtra,
 }
 
-/// - SimplePattern: bind and pull the filter into WHERE clause Return (Vec<NodeVar>, Vec<RelPattern>, Filter)
-/// - QuantifiedPathPattern: generate selective path pattern SemanticCheck: RejectNestedSelector Return
-///   SelectivePathPattern
-/// - Path variable, generate path expression
-///
-/// After binding, return
-///   - PathPattern
-///   - Filter(post filter)
-///   - path variable
-
-/// return (PathPattern, PathName)
+// - SimplePattern: bind and pull the filter into WHERE clause Return (Vec<NodeVar>, Vec<RelPattern>, Filter)
+// - QuantifiedPathPattern: generate selective path pattern SemanticCheck: RejectNestedSelector Return
+//   SelectivePathPattern
+// - Path variable, generate path expression
+//
+// After binding, return
+//   - PathPattern
+//   - Filter(post filter)
+//   - path variable
+// return (PathPattern, PathName)
 pub(crate) fn bind_pattern_part(
     pctx: &PatternContext,
     mut scope: Scope,

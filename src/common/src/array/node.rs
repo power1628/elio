@@ -11,7 +11,7 @@ use crate::array::{Array, PhysicalType};
 pub struct NodeArray {
     ids: Arc<[NodeId]>,
     label_offsets: Arc<[usize]>,
-    label_values: Arc<[String]>,
+    label_values: Arc<[Arc<str>]>,
     // TODO(pgao): this is actually not struct value
     // the properties can be stored in node and rel have some constraint.
     // only supported type can be stored in it
@@ -84,7 +84,7 @@ impl NodeArray {
 #[derive(Debug)]
 pub struct NodeArrayBuilder {
     ids: Vec<NodeId>,
-    labels: Vec<Vec<String>>,
+    labels: Vec<Vec<Arc<str>>>,
     props: Vec<StructValue>,
     valid: BitVec,
 }
@@ -118,6 +118,7 @@ impl NodeArrayBuilder {
         self.push_n(value, 1);
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.valid.len()
     }
@@ -214,6 +215,7 @@ impl VirtualNodeArrayBuilder {
         self.push_n(value, 1);
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.valid.len()
     }

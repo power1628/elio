@@ -71,6 +71,7 @@ impl AnyArrayBuilder {
         self.push_n(item, 1);
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.valid.len()
     }

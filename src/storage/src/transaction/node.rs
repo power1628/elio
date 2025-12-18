@@ -14,7 +14,7 @@ use crate::transaction::{DataChunkIterator, NodeScanOptions, TransactionImpl};
 // - StructArray
 pub(crate) fn batch_node_create(
     tx: &TransactionImpl,
-    labels: &[String],
+    labels: &[Arc<str>],
     props: &ArrayImpl,
 ) -> Result<NodeArray, GraphStoreError> {
     let len = props.len();
@@ -130,7 +130,7 @@ pub(crate) fn batch_materialize_node(
 
             let label_strs = label_ids
                 .iter()
-                .map(|id| tx.token.get_token_val(id, TokenKind::Label).map(|x| x.to_string()))
+                .map(|id| tx.token.get_token_val(id, TokenKind::Label))
                 .collect::<Result<Vec<_>, _>>()?;
 
             let struct_value = {

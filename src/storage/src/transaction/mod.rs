@@ -67,13 +67,13 @@ impl TransactionImpl {
         batch_materialize_node(self, node_ids)
     }
 
-    pub fn node_create(&self, label: &[String], prop: &ArrayImpl) -> Result<NodeArray, GraphStoreError> {
+    pub fn node_create(&self, label: &[Arc<str>], prop: &ArrayImpl) -> Result<NodeArray, GraphStoreError> {
         batch_node_create(self, label, prop)
     }
 
     pub fn relationship_create<A, B>(
         &self,
-        rtype: &str,
+        rtype: &Arc<str>,
         start: &A,          // VirtualNode/Node
         end: &B,            // VirtualNode/Node
         prop: &StructArray, // Struct or Any

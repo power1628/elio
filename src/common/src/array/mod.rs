@@ -1,3 +1,4 @@
+#![allow(clippy::double_parens)]
 // Copyright 2022 Alex Chi. Licensed under Apache-2.0.
 
 //! Contains array types for the system
@@ -41,12 +42,11 @@ pub trait Array: Send + Sync + Sized + 'static + Into<ArrayImpl> + std::fmt::Deb
 // where
 // for<'a> Self::OwnedItem: Scalar<RefType<'a> = Self::RefItem<'a>>,
 {
-    /// The corresponding [`ArrayBuilder`] of this [`Array`].
-    ///
-    /// We constriant the associated type so that `Self::Builder::Array = Self`.
+    // The corresponding [`ArrayBuilder`] of this [`Array`].
+    //
+    // We constriant the associated type so that `Self::Builder::Array = Self`.
     // type Builder: ArrayBuilder<Array = Self>;
-
-    /// The owned item of this array.
+    // The owned item of this array.
     // type OwnedItem: Scalar<ArrayType = Self>;
 
     /// Type of the item that can be retrieved from the [`Array`]. For example, we can get a `i32`
@@ -147,6 +147,7 @@ macro_rules! impl_array_dispatch {
                 }
             }
 
+            #[allow(clippy::len_without_is_empty)]
             pub fn len(&self) -> usize {
                 match self {
                     $(ArrayImpl::$variant(a) => a.len(),)*

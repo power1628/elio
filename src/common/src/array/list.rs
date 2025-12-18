@@ -59,6 +59,7 @@ impl ListArray {
         self.valid = valid;
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.valid.len()
     }
@@ -107,6 +108,7 @@ impl ListArrayBuilder {
         self.push_n(item, 1);
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.valid.len()
     }
