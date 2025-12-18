@@ -11,12 +11,12 @@ use crate::builder::expression::{BuildExprContext, build_expression};
 use crate::executor::all_node_scan::AllNodeScanExectuor;
 use crate::executor::create_node::{CreateNodeExectuor, CreateNodeItem};
 use crate::executor::create_rel::{CreateRelExectuor, CreateRelItem};
-use crate::executor::expand::ExpandAllExecutor;
+use crate::executor::expand::ExpandExecutor;
 use crate::executor::produce_result::ProduceResultExecutor;
 use crate::executor::project::ProjectExecutor;
 use crate::executor::unit::UnitExecutor;
 use crate::executor::var_expand::{
-    TRAIL_PATH_MODE_FACTORY, VarExpandAllStrategy, VarExpandExecutor, VarExpandIntoFilter, WALK_PATH_MODE_FACTORY,
+    ExpandAllImpl, ExpandIntoImpl, TRAIL_PATH_MODE_FACTORY, VarExpandExecutor, WALK_PATH_MODE_FACTORY,
 };
 use crate::executor::{BoxedExecutor, Executor};
 use crate::task::TaskExecContext;
@@ -109,6 +109,16 @@ fn build_expand(
         .copied()
         .ok_or_else(|| BuildError::variable_not_found(expand.inner().from.clone()))?;
 
+    let to = match expand.inner().kind {
+        plan_node::ExpandKind::All => None,
+        plan_node::ExpandKind::Into => Some(
+            name2col
+                .get(&expand.inner().to)
+                .copied()
+                .ok_or_else(|| BuildError::variable_not_found(expand.inner().to.clone()))?,
+        ),
+    };
+
     // assume all rtypes are token ids
     let rtype = expand
         .inner()
@@ -120,17 +130,26 @@ fn build_expand(
         })
         .collect::<Result<Vec<_>, _>>()?;
 
-    if expand.inner().kind == plan_node::ExpandKind::All {
-        return Ok(ExpandAllExecutor {
+    match to {
+        Some(to_idx) => Ok(ExpandExecutor {
             input,
             from,
             dir: expand.inner().direction,
             rtype,
             schema: expand.schema().clone(),
+            expand_kind_filter: ExpandIntoImpl { to_idx },
         }
-        .boxed());
+        .boxed()),
+        None => Ok(ExpandExecutor {
+            input,
+            from,
+            dir: expand.inner().direction,
+            rtype,
+            schema: expand.schema().clone(),
+            expand_kind_filter: ExpandAllImpl,
+        }
+        .boxed()),
     }
-    todo!("expand kind {:?}", expand.inner().kind);
 }
 
 fn build_var_expand(
@@ -184,7 +203,7 @@ fn build_var_expand(
             rel_filter: None,
             schema: expand.schema().clone(),
             path_container_factory: &TRAIL_PATH_MODE_FACTORY,
-            expand_kind_filter: VarExpandAllStrategy,
+            expand_kind_filter: ExpandAllImpl,
         }
         .boxed()),
         (plan_node::PathMode::Trail, Some(to_idx)) => Ok(VarExpandExecutor {
@@ -198,7 +217,7 @@ fn build_var_expand(
             rel_filter: None,
             schema: expand.schema().clone(),
             path_container_factory: &TRAIL_PATH_MODE_FACTORY,
-            expand_kind_filter: VarExpandIntoFilter { to_idx },
+            expand_kind_filter: ExpandIntoImpl { to_idx },
         }
         .boxed()),
         (plan_node::PathMode::Walk, None) => Ok(VarExpandExecutor {
@@ -212,7 +231,7 @@ fn build_var_expand(
             rel_filter: None,
             schema: expand.schema().clone(),
             path_container_factory: &WALK_PATH_MODE_FACTORY,
-            expand_kind_filter: VarExpandAllStrategy,
+            expand_kind_filter: ExpandAllImpl,
         }
         .boxed()),
 
@@ -227,7 +246,7 @@ fn build_var_expand(
             rel_filter: None,
             schema: expand.schema().clone(),
             path_container_factory: &WALK_PATH_MODE_FACTORY,
-            expand_kind_filter: VarExpandIntoFilter { to_idx },
+            expand_kind_filter: ExpandIntoImpl { to_idx },
         }
         .boxed()),
     }
