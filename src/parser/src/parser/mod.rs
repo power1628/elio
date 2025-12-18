@@ -338,13 +338,30 @@ peg::parser! {
         }
 
     rule relationship_detail() -> RelationshipPattern
-        = "[" _? variable:ident()? _? label_expr:label_expr()? _? properties:map_expr()? _? "]" {
+        = "[" _? variable:ident()? _? label_expr:label_expr()? _? length:range_literal()? _? properties:map_expr()? _? "]" {
             RelationshipPattern{
                 variable: variable.map(|v| v.to_string()),
                 label_expr,
                 properties,
+                length,
                 ..Default::default()
             }
+        }
+
+
+    rule range_literal() -> Option<std::ops::Range<usize>>
+        = "*" _? lower:integer_literal()? ".." upper:integer_literal()? {
+            // NOTE: if lower is None, then lower is 1
+            let lower: usize = lower.map(|x| x.parse().unwrap()).unwrap_or(1);
+            let upper: usize = upper.map(|x| x.parse().unwrap()).unwrap_or(usize::MAX);
+            Some(lower..upper)
+        }
+        / "*" _? exact:integer_literal() {
+            let count: usize = exact.parse().unwrap();
+            Some(count..count)
+        }
+        / "*" _? {
+            None
         }
 
     rule quantifier() -> PatternQuantifier

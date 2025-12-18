@@ -52,10 +52,13 @@ impl PlanNode for Expand {
                         .collect_vec(),
                 ),
             ),
-            ("kind", Pretty::from(self.inner.kind.to_string())),
         ];
         let children = vec![Pretty::Record(self.inner.input.xmlnode())];
-        XmlNode::simple_record("Expand", fields, children)
+        let name = match self.inner.kind {
+            ExpandKind::All => "ExpandAll",
+            ExpandKind::Into => "ExpandInto",
+        };
+        XmlNode::simple_record(name, fields, children)
     }
 }
 

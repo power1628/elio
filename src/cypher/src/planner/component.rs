@@ -8,10 +8,12 @@ use mojito_common::schema::Schema;
 use mojito_common::variable::VariableName;
 
 use super::*;
+use crate::expr::FilterExprs;
 use crate::ir::node_connection::RelPattern;
 use crate::ir::query_graph::QueryGraph;
 use crate::plan_node::{
     AllNodeScan, AllNodeScanInner, Argument, ArgumentInner, Expand, ExpandInner, ExpandKind, Filter, FilterInner,
+    PathMode, VarExpand, VarExpandInner,
 };
 
 // This is an simple implementation of planning an query graph.
@@ -130,20 +132,19 @@ impl<'a> TraversalSolver<'a> {
 
     fn solve_node_connection_by_expand(
         &mut self,
-        _rel @ RelPattern {
+        rel @ RelPattern {
             variable,
             endpoints: (left, right),
             dir,
             types,
-            // TODO(pgao): supoort variable length
             length,
         }: &'a RelPattern,
     ) -> Result<(), PlanError> {
-        if !length.is_simple() {
-            return Err(PlanError::not_supported(
-                "variable length relationship is not supported yet".to_string(),
-            ));
-        }
+        // if !length.is_simple() {
+        //     return Err(PlanError::not_supported(
+        //         "variable length relationship is not supported yet".to_string(),
+        //     ));
+        // }
         let (kind, from, to, direction, expanded_node) = {
             match (self.solved.contains(left), self.solved.contains(right)) {
                 (true, true) => (ExpandKind::Into, left, right, *dir, None),
@@ -154,16 +155,34 @@ impl<'a> TraversalSolver<'a> {
         };
 
         let empty = PlanExpr::empty(Schema::empty(), self.root.ctx()).boxed();
-        let inner = ExpandInner {
-            input: std::mem::replace(&mut self.root, empty),
-            from: from.clone(),
-            to: to.clone(),
-            rel: variable.clone(),
-            direction,
-            types: types.clone(),
-            kind,
-        };
-        self.root = Expand::new(inner).into();
+        if length.is_simple() {
+            // expand
+            let inner = ExpandInner {
+                input: std::mem::replace(&mut self.root, empty),
+                from: from.clone(),
+                to: to.clone(),
+                rel: variable.clone(),
+                direction,
+                types: types.clone(),
+                kind,
+            };
+            self.root = Expand::new(inner).into();
+        } else {
+            // variable length expand
+            let inner = VarExpandInner {
+                input: std::mem::replace(&mut self.root, empty),
+                from: from.clone(),
+                to: to.clone(),
+                rel_pattern: rel.clone(),
+                // TODO(pgao): support filter
+                node_filter: FilterExprs::default(),
+                rel_filter: FilterExprs::default(),
+                kind,
+                // TODO(pgao): path mode support
+                path_mode: PathMode::default(),
+            };
+            self.root = VarExpand::new(inner).into();
+        }
 
         self.solved.insert(variable.clone());
 

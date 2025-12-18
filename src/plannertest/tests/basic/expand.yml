@@ -10,3 +10,39 @@
   tasks: 
     - bind
     - plan
+- sql: |
+    MATCH (a)<-[r:KNOWS*1..3]-(b) RETURN *
+  desc: variable expand 1..3
+  tasks: 
+    - bind
+    - plan
+- sql: |
+    MATCH (a)<-[r:KNOWS*..3]-(b) RETURN *
+  desc: variable expand 1..3
+  tasks: 
+    - bind
+    - plan
+- sql: |
+    MATCH (a)<-[r:KNOWS*1..]-(b) RETURN *
+  desc: variable expand 1..INF
+  tasks: 
+    - bind
+    - plan
+- sql: |
+    MATCH (a)<-[r:KNOWS*]-(b) RETURN *
+  desc: variable expand 1..INF
+  tasks: 
+    - bind
+    - plan
+- sql: |
+    MATCH (a)<-[r:KNOWS*2]-(b) RETURN *
+  desc: variable expand 2..2
+  tasks: 
+    - bind
+    - plan
+- sql: |
+    MATCH (a)-[r:KNOWS*]-(b) RETURN *
+  desc: variable expand undirected
+  tasks: 
+    - bind
+    - plan

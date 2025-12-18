@@ -25,6 +25,7 @@ pub mod produce_result;
 pub mod project;
 pub mod sort;
 pub mod unit;
+pub mod var_expand;
 pub use all_node_scan::*;
 pub use apply::*;
 pub use argument::*;
@@ -39,6 +40,14 @@ pub use produce_result::*;
 pub use project::*;
 pub use sort::*;
 pub use unit::*;
+pub use var_expand::*;
+
+#[derive(Default, Debug, Clone, Copy, derive_more::Display)]
+pub enum PathMode {
+    Walk, // repeated node, repeated rel
+    #[default]
+    Trail, // repeated node, non-repeated rel
+}
 
 #[derive(Clone, Debug)]
 pub enum PlanExpr {
@@ -46,6 +55,7 @@ pub enum PlanExpr {
     AllNodeScan(AllNodeScan),
     GetProperty(GetProperty),
     Expand(Expand),
+    VarExpand(VarExpand),
     Apply(Apply),
     Argument(Argument),
     Unit(Unit),
@@ -126,6 +136,7 @@ macro_rules! impl_plan_node_common {
 impl_plan_node_common!(AllNodeScan, AllNodeScanInner);
 impl_plan_node_common!(GetProperty, GetPropertyInner);
 impl_plan_node_common!(Expand, ExpandInner);
+impl_plan_node_common!(VarExpand, VarExpandInner);
 impl_plan_node_common!(Apply, ApplyInner);
 impl_plan_node_common!(Argument, ArgumentInner);
 impl_plan_node_common!(Unit, UnitInner);
@@ -178,6 +189,7 @@ impl_plan_expr_dispatch!(
     AllNodeScan,
     GetProperty,
     Expand,
+    VarExpand,
     Apply,
     Argument,
     Unit,

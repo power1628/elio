@@ -361,10 +361,11 @@ fn bind_simple_pattern(
         // bind length
         let length = match length {
             None => PatternLength::Simple,
-            Some(None) => PatternLength::Var { min: 0, max: None },
+            // if length is None, then it is *1..
+            Some(None) => PatternLength::Var { min: 1, max: None },
             Some(Some(Range { start, end })) => PatternLength::Var {
-                min: *start as i64,
-                max: if *end == usize::MAX { None } else { Some(*end as i64) },
+                min: *start,
+                max: if *end == usize::MAX { None } else { Some(*end) },
             },
         };
 

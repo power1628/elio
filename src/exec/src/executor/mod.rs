@@ -19,8 +19,12 @@ pub mod produce_result;
 pub mod project;
 pub mod relscan;
 pub mod unit;
+pub mod var_expand;
 
 pub type DataChunkStream = Pin<Box<dyn Stream<Item = Result<DataChunk, ExecError>> + Send>>;
+
+// maybe chunk size should be put to exec ctx as an configuration
+pub const CHUNK_SIZE: usize = 4096;
 
 pub trait Executor: Send + Sync + std::fmt::Debug {
     /// Build the output data chunk stream

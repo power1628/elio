@@ -15,6 +15,7 @@ mojito_common = { workspace = true }
 mojito_cypher = { workspace = true }
 mojito_expr = { workspace = true }
 mojito_storage = { workspace = true }
+roaring = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }

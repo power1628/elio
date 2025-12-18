@@ -39,6 +39,8 @@ impl<'a> NodeValueRef<'a> {
     }
 }
 
+// TODO(pgao): we needs to hash and Eq only on id.
+// in varexpand, we needs to test if rel have already visited.
 #[derive(Debug, Clone, Default, Eq, PartialEq, Hash, derive_more::Display)]
 #[display(
     "Rel{{id: {}, rtype: {}, start: {}, end: {}, props: {}}}",
@@ -50,11 +52,23 @@ impl<'a> NodeValueRef<'a> {
 )]
 pub struct RelValue {
     pub id: RelationshipId,
-    // Arc<str>
+    // TODO(pgao): Arc<str>
     pub reltype: String,
     pub start_id: NodeId,
     pub end_id: NodeId,
     pub props: StructValue,
+}
+
+impl RelValue {
+    pub fn as_scalar_ref(&self) -> RelValueRef<'_> {
+        RelValueRef {
+            id: self.id,
+            reltype: self.reltype.as_str(),
+            start_id: self.start_id,
+            end_id: self.end_id,
+            props: self.props.as_scalar_ref(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -486,6 +500,14 @@ pub enum ListValueRef<'a> {
 }
 
 impl<'a> ListValueRef<'a> {
+    pub fn from_array(array: &'a ArrayImpl, start: usize, end: usize) -> Self {
+        Self::Index {
+            child: array,
+            start,
+            end,
+        }
+    }
+
     pub fn pretty(&self) -> String {
         format!(
             "[{}]",
