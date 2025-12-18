@@ -61,11 +61,11 @@ fn test_pattern_with_selector() {
 }
 
 #[test]
-fn test_varaible_length() {
+fn test_variable_length() {
     assert_snapshot!(pattern_part!("(a)-[r]-(b)"), @"(a)-[r]-(b)");
     assert_snapshot!(pattern_part!("(a)-[r*2]-(b)"), @"(a)-[r*2..2]-(b)");
     assert_snapshot!(pattern_part!("(a)-[r*]-(b)"), @"(a)-[r*]-(b)");
     assert_snapshot!(pattern_part!("(a)-[r*1..]-(b)"), @"(a)-[r*1..18446744073709551615]-(b)");
-    assert_snapshot!(pattern_part!("(a)-[r*..3]-(b)"), @"(a)-[r*0..3]-(b)");
+    assert_snapshot!(pattern_part!("(a)-[r*..3]-(b)"), @"(a)-[r*1..3]-(b)");
     assert_snapshot!(pattern_part!("(a)-[r*1..3]-(b)"), @"(a)-[r*1..3]-(b)");
 }
