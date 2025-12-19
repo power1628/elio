@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use mojito_common::TokenKind;
 use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::datum::{NodeValueRef, StructValue};
 use mojito_common::array::{Array, ArrayImpl, NodeArray, NodeArrayBuilder, VirtualNodeArray, VirtualNodeArrayBuilder};
+use mojito_common::scalar::{NodeValueRef, StructValue};
 
 use crate::cf_property;
 use crate::codec::NodeFormat;

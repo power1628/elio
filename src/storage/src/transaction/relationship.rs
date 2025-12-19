@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use bitvec::vec::BitVec;
-use mojito_common::array::datum::{RelValueRef, StructValue};
 use mojito_common::array::{Array, NodeArray, RelArray, RelArrayBuilder, StructArray, VirtualNodeArray};
+use mojito_common::scalar::{RelValueRef, StructValue};
 use mojito_common::store_types::RelDirection;
 use mojito_common::{NodeId, RelationshipId, SemanticDirection, TokenId, TokenKind};
 

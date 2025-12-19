@@ -3,9 +3,7 @@ use std::sync::Arc;
 
 use bitvec::prelude::*;
 
-use crate::NodeId;
-use crate::array::datum::{NodeValueRef, ScalarRefVTable, StructValue, StructValueRef};
-use crate::array::{Array, PhysicalType};
+use super::*;
 
 #[derive(Debug, Clone)]
 pub struct NodeArray {
@@ -104,7 +102,7 @@ impl NodeArrayBuilder {
             self.ids.extend(std::iter::repeat_n(value.id, repeat));
             self.labels.extend(std::iter::repeat_n(value.labels.to_vec(), repeat));
             self.props
-                .extend(std::iter::repeat_n(value.props.to_owned_value(), repeat));
+                .extend(std::iter::repeat_n(value.props.to_owned_scalar(), repeat));
             self.valid.extend(std::iter::repeat_n(true, repeat));
         } else {
             self.ids.extend(std::iter::repeat_n(NodeId::default(), repeat));

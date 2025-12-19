@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use indexmap::IndexMap;
 use itertools::Itertools;
 use mojito_catalog::FunctionCatalog;
-use mojito_common::array::datum::ScalarValue;
+use mojito_common::scalar::ScalarValue;
 use mojito_common::schema::Variable;
 use mojito_parser::ast::{self, ReturnItem};
 

@@ -1,5 +1,5 @@
-use mojito_common::array::datum::ScalarValue;
 use mojito_common::data_type::{DataType, F64};
+use mojito_common::scalar::ScalarValue;
 
 use crate::expr::{Expr, ExprNode};
 
@@ -45,7 +45,7 @@ impl Constant {
     pub fn pretty(&self) -> String {
         self.data
             .as_ref()
-            .map_or("null".to_string(), |d| d.as_scalar_ref().pretty())
+            .map_or("null".to_string(), |d| d.as_scalar_ref().to_string())
     }
 }
 

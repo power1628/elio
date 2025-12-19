@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use async_trait::async_trait;
 use futures::stream::StreamExt;
-use mojito_common::array::datum::Row;
+use mojito_common::scalar::Row;
 use mojito_core::db_env::{DbConfig, DbEnv};
 use mojito_core::error::Error as GraphDBError;
 use mojito_core::session::Session;

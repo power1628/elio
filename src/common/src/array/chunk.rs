@@ -3,7 +3,7 @@ use std::sync::Arc;
 use bitvec::vec::BitVec;
 use itertools::Itertools;
 
-use crate::array::datum::ScalarRef;
+use super::*;
 use crate::array::{ArrayBuilderImpl, ArrayImpl, ArrayRef, PhysicalType};
 
 pub struct DataChunk {

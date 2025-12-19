@@ -2,7 +2,7 @@ use async_stream::try_stream;
 use educe::Educe;
 use futures::StreamExt;
 use mojito_common::array::chunk::DataChunkBuilder;
-use mojito_common::array::datum::{RelValueRef, ScalarRef, StructValue};
+use mojito_common::scalar::{RelValueRef, ScalarRef, StructValue};
 use mojito_common::store_types::RelDirection;
 use mojito_common::{SemanticDirection, TokenId, TokenKind};
 use mojito_storage::codec::RelFormat;

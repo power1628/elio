@@ -6,8 +6,8 @@
 //! RelationshipValue ::= <PropertyBlock>
 
 use bytes::{BufMut, Bytes, BytesMut};
-use mojito_common::array::datum::StructValueRef;
 use mojito_common::mapb::{PropertyMapMut, PropertyMapRef};
+use mojito_common::scalar::StructValueRef;
 use mojito_common::store_types::RelDirection;
 use mojito_common::{NodeId, RelationshipId, SemanticDirection, TokenId};
 

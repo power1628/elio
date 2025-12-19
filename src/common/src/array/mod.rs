@@ -12,7 +12,7 @@
 pub mod any;
 pub mod bool;
 pub mod chunk;
-pub mod datum;
+// pub mod datum;
 pub mod list;
 pub mod node;
 pub mod path;
@@ -26,7 +26,6 @@ use std::sync::Arc;
 pub use any::*;
 use bitvec::prelude::*;
 pub use chunk::*;
-use datum::ScalarRef;
 use enum_as_inner::EnumAsInner;
 pub use list::*;
 pub use node::*;
@@ -34,8 +33,11 @@ pub use path::*;
 pub use rel::*;
 pub use struct_::*;
 
+use super::scalar::*;
 use crate::array::bool::{BoolArray, BoolArrayBuilder};
 use crate::array::iter::ArrayIterator;
+use crate::scalar::{ScalarRefVTable, ScalarVTable};
+use crate::{NodeId, RelationshipId};
 
 /// [`Array`] is a collection of data of the same type.
 pub trait Array: Send + Sync + Sized + 'static + Into<ArrayImpl> + std::fmt::Debug + Clone

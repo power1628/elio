@@ -4,12 +4,12 @@ use std::marker::PhantomData;
 use bytes::{Buf, BufMut, BytesMut};
 use itertools::Itertools;
 
-use crate::array::datum::{ListValue, ScalarValue};
 use crate::data_type::F64;
 use crate::mapb::meta::{
     BOOL_TAG, EntryMeta, FLOAT_TAG, INTEGER_TAG, LIST_BOOL_TAG, LIST_FLOAT_TAG, LIST_INTEGER_TAG, LIST_STRING_TAG,
     NULL_TAG, STRING_TAG,
 };
+use crate::scalar::*;
 
 pub struct EntryRef<'a> {
     // # layout

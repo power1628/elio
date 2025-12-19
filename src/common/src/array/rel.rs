@@ -3,9 +3,7 @@ use std::sync::Arc;
 
 use bitvec::prelude::*;
 
-use crate::array::datum::{RelValueRef, ScalarRefVTable, StructValue, VirtualRelRef};
-use crate::array::{Array, PhysicalType};
-use crate::{NodeId, RelationshipId};
+use super::*;
 
 #[derive(Debug, Clone)]
 pub struct RelArray {
@@ -107,7 +105,7 @@ impl RelArrayBuilder {
                     .extend(std::iter::repeat_n(item.reltype.to_owned(), repeat));
                 self.start_ids.extend(std::iter::repeat_n(item.start_id, repeat));
                 self.end_ids.extend(std::iter::repeat_n(item.end_id, repeat));
-                self.props.extend(iter::repeat_n(item.props.to_owned_value(), repeat));
+                self.props.extend(iter::repeat_n(item.props.to_owned_scalar(), repeat));
                 self.valid.extend(std::iter::repeat_n(true, repeat));
             }
             None => {
