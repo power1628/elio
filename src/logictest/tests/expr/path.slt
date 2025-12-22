@@ -18,20 +18,20 @@ MATCH (a) RETURN a.name
 query A
 MATCH p = (a)-[r]->(b) RETURN p
 ----
-({id: 2, labels: [Person], props: {name: Alex, age: 30}})-[{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]->(3)
-({id: 3, labels: [Person], props: {name: Bob, age: 20}})-[{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]->(2)
+({id: 2, labels: [Person], props: {name: 'Alex', age: 30}})-[{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]->(3)
+({id: 3, labels: [Person], props: {name: 'Bob', age: 20}})-[{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]->(2)
 
 
 query A
 MATCH p = ()-[]-() RETURN p
 ----
-({id: 2, labels: [Person], props: {name: Alex, age: 30}})-[{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]->(3)
-({id: 2, labels: [Person], props: {name: Alex, age: 30}})<-[{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]-(3)
-({id: 3, labels: [Person], props: {name: Bob, age: 20}})-[{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]->(2)
-({id: 3, labels: [Person], props: {name: Bob, age: 20}})<-[{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]-(2)
+({id: 2, labels: [Person], props: {name: 'Alex', age: 30}})-[{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]->(3)
+({id: 2, labels: [Person], props: {name: 'Alex', age: 30}})<-[{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]-(3)
+({id: 3, labels: [Person], props: {name: 'Bob', age: 20}})-[{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]->(2)
+({id: 3, labels: [Person], props: {name: 'Bob', age: 20}})<-[{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]-(2)
 
 query AA
 MATCH p = (a)<-[]-() RETURN a, p
 ----
-{id: 2, labels: [Person], props: {name: 'Alex', age: 30}}	({id: 2, labels: [Person], props: {name: Alex, age: 30}})<-[{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]-(3)
-{id: 3, labels: [Person], props: {name: 'Bob', age: 20}}	({id: 3, labels: [Person], props: {name: Bob, age: 20}})<-[{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]-(2)
+{id: 2, labels: [Person], props: {name: 'Alex', age: 30}}	({id: 2, labels: [Person], props: {name: 'Alex', age: 30}})<-[{id: 2, rtype: KNOWS, start: 3, end: 2, props: {}}]-(3)
+{id: 3, labels: [Person], props: {name: 'Bob', age: 20}}	({id: 3, labels: [Person], props: {name: 'Bob', age: 20}})<-[{id: 1, rtype: KNOWS, start: 2, end: 3, props: {}}]-(2)
