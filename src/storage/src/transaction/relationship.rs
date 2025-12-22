@@ -1,6 +1,8 @@
+use std::sync::Arc;
+
 use bitvec::vec::BitVec;
-use mojito_common::array::datum::{RelValueRef, StructValue};
 use mojito_common::array::{Array, NodeArray, RelArray, RelArrayBuilder, StructArray, VirtualNodeArray};
+use mojito_common::scalar::{RelValueRef, StructValue};
 use mojito_common::store_types::RelDirection;
 use mojito_common::{NodeId, RelationshipId, SemanticDirection, TokenId, TokenKind};
 
@@ -12,6 +14,7 @@ use crate::transaction::TransactionImpl;
 /// start/end are expected to be :
 ///   - VirtualNodeArray
 ///   - NodeArray
+///
 /// prop expected to be:
 ///   - StructArray
 ///
@@ -22,7 +25,7 @@ use crate::transaction::TransactionImpl;
 /// 4. batch write
 pub(crate) fn batch_rel_create<A, B>(
     tx: &TransactionImpl,
-    rtype: &str,
+    rtype: &Arc<str>,
     start: &A,
     end: &B,
     prop: &StructArray,

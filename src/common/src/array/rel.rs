@@ -3,14 +3,12 @@ use std::sync::Arc;
 
 use bitvec::prelude::*;
 
-use crate::array::datum::{RelValueRef, ScalarRefVTable, StructValue, VirtualRelRef};
-use crate::array::{Array, PhysicalType};
-use crate::{NodeId, RelationshipId};
+use super::*;
 
 #[derive(Debug, Clone)]
 pub struct RelArray {
     ids: Arc<[RelationshipId]>,
-    reltypes: Arc<[String]>,
+    reltypes: Arc<[Arc<str>]>,
     start_ids: Arc<[NodeId]>,
     end_ids: Arc<[NodeId]>,
     props: Arc<[StructValue]>,
@@ -76,7 +74,7 @@ impl RelArray {
 #[derive(Debug)]
 pub struct RelArrayBuilder {
     ids: Vec<RelationshipId>,
-    reltypes: Vec<String>,
+    reltypes: Vec<Arc<str>>,
     start_ids: Vec<NodeId>,
     end_ids: Vec<NodeId>,
     props: Vec<StructValue>,
@@ -107,12 +105,12 @@ impl RelArrayBuilder {
                     .extend(std::iter::repeat_n(item.reltype.to_owned(), repeat));
                 self.start_ids.extend(std::iter::repeat_n(item.start_id, repeat));
                 self.end_ids.extend(std::iter::repeat_n(item.end_id, repeat));
-                self.props.extend(iter::repeat_n(item.props.to_owned_value(), repeat));
+                self.props.extend(iter::repeat_n(item.props.to_owned_scalar(), repeat));
                 self.valid.extend(std::iter::repeat_n(true, repeat));
             }
             None => {
                 self.ids.extend(std::iter::repeat_n(RelationshipId::default(), repeat));
-                self.reltypes.extend(std::iter::repeat_n(String::default(), repeat));
+                self.reltypes.extend(std::iter::repeat_n(Arc::default(), repeat));
                 self.start_ids.extend(std::iter::repeat_n(NodeId::default(), repeat));
                 self.end_ids.extend(std::iter::repeat_n(NodeId::default(), repeat));
                 self.props.extend(iter::repeat_n(StructValue::default(), repeat));
@@ -121,6 +119,7 @@ impl RelArrayBuilder {
         }
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.valid.len()
     }
@@ -192,6 +191,7 @@ impl VirtualRelArray {
         self.valid = valid;
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.valid.len()
     }
@@ -241,6 +241,7 @@ impl VirtualRelArrayBuilder {
         self.push_n(item, 1);
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.valid.len()
     }

@@ -4,8 +4,7 @@ use std::sync::Arc;
 use bitvec::prelude::*;
 use itertools::Itertools;
 
-use crate::array::datum::StructValueRef;
-use crate::array::{Array, ArrayBuilderImpl, ArrayRef, PhysicalType};
+use super::*;
 
 #[derive(Debug, Clone)]
 pub struct StructArray {
@@ -111,6 +110,7 @@ impl StructArrayBuilder {
         self.push_n(item, 1);
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.valid.len()
     }

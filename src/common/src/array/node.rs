@@ -3,15 +3,13 @@ use std::sync::Arc;
 
 use bitvec::prelude::*;
 
-use crate::NodeId;
-use crate::array::datum::{NodeValueRef, ScalarRefVTable, StructValue, StructValueRef};
-use crate::array::{Array, PhysicalType};
+use super::*;
 
 #[derive(Debug, Clone)]
 pub struct NodeArray {
     ids: Arc<[NodeId]>,
     label_offsets: Arc<[usize]>,
-    label_values: Arc<[String]>,
+    label_values: Arc<[Arc<str>]>,
     // TODO(pgao): this is actually not struct value
     // the properties can be stored in node and rel have some constraint.
     // only supported type can be stored in it
@@ -84,7 +82,7 @@ impl NodeArray {
 #[derive(Debug)]
 pub struct NodeArrayBuilder {
     ids: Vec<NodeId>,
-    labels: Vec<Vec<String>>,
+    labels: Vec<Vec<Arc<str>>>,
     props: Vec<StructValue>,
     valid: BitVec,
 }
@@ -104,7 +102,7 @@ impl NodeArrayBuilder {
             self.ids.extend(std::iter::repeat_n(value.id, repeat));
             self.labels.extend(std::iter::repeat_n(value.labels.to_vec(), repeat));
             self.props
-                .extend(std::iter::repeat_n(value.props.to_owned_value(), repeat));
+                .extend(std::iter::repeat_n(value.props.to_owned_scalar(), repeat));
             self.valid.extend(std::iter::repeat_n(true, repeat));
         } else {
             self.ids.extend(std::iter::repeat_n(NodeId::default(), repeat));
@@ -118,6 +116,7 @@ impl NodeArrayBuilder {
         self.push_n(value, 1);
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.valid.len()
     }
@@ -214,6 +213,7 @@ impl VirtualNodeArrayBuilder {
         self.push_n(value, 1);
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.valid.len()
     }

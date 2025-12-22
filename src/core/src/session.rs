@@ -8,7 +8,7 @@ use futures::stream::BoxStream;
 use mojito_catalog::Catalog;
 use mojito_catalog::error::CatalogError;
 use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::datum::{Row, ScalarValue};
+use mojito_common::scalar::{Row, ScalarValue};
 use mojito_common::{TokenId, TokenKind};
 use mojito_cypher::plan_context::PlanContext;
 use mojito_cypher::session::{PlannerSession, parse_statement, plan_query};
@@ -90,7 +90,7 @@ impl TaskHandleBridge {
                     Ok(chunk) => {
                         for row_ref in chunk.iter() {
                             let row =
-                            row_ref.into_iter().map(|x| x.map(|y| y.to_owned_value())).collect::<Row>();
+                            row_ref.into_iter().map(|x| x.map(|y| y.to_owned_scalar())).collect::<Row>();
                             yield Ok(row)
                         }
                     }

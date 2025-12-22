@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use bitvec::prelude::*;
 
-use crate::array::datum::{ScalarRef, ScalarValue};
+use super::*;
 use crate::array::{Array, PhysicalType};
 
 #[derive(Debug, Clone)]
@@ -59,7 +59,7 @@ impl AnyArrayBuilder {
 
     pub fn push_n(&mut self, item: Option<ScalarRef<'_>>, repeat: usize) {
         if let Some(item) = item {
-            self.data.extend(std::iter::repeat_n(item.to_owned_value(), repeat));
+            self.data.extend(std::iter::repeat_n(item.to_owned_scalar(), repeat));
             self.valid.extend(std::iter::repeat_n(true, repeat));
         } else {
             self.data.extend(std::iter::repeat_n(ScalarValue::default(), repeat));
@@ -71,6 +71,7 @@ impl AnyArrayBuilder {
         self.push_n(item, 1);
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.valid.len()
     }

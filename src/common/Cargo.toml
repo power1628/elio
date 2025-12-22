@@ -7,6 +7,7 @@ edition.workspace = true
 # arrow = { workspace = true }
 bitvec = { workspace = true }
 bytes = { workspace = true }
+chrono = { workspace = true }
 derive_more = { workspace = true, features = ["full"] }
 enum-as-inner = { workspace = true }
 itertools = { workspace = true }

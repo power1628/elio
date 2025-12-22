@@ -1,3 +1,4 @@
+#![allow(clippy::double_parens)]
 // Copyright 2022 Alex Chi. Licensed under Apache-2.0.
 
 //! Contains array types for the system
@@ -11,7 +12,7 @@
 pub mod any;
 pub mod bool;
 pub mod chunk;
-pub mod datum;
+// pub mod datum;
 pub mod list;
 pub mod node;
 pub mod path;
@@ -25,7 +26,6 @@ use std::sync::Arc;
 pub use any::*;
 use bitvec::prelude::*;
 pub use chunk::*;
-use datum::ScalarRef;
 use enum_as_inner::EnumAsInner;
 pub use list::*;
 pub use node::*;
@@ -33,20 +33,22 @@ pub use path::*;
 pub use rel::*;
 pub use struct_::*;
 
+use super::scalar::*;
 use crate::array::bool::{BoolArray, BoolArrayBuilder};
 use crate::array::iter::ArrayIterator;
+use crate::scalar::{ScalarRefVTable, ScalarVTable};
+use crate::{NodeId, RelationshipId};
 
 /// [`Array`] is a collection of data of the same type.
 pub trait Array: Send + Sync + Sized + 'static + Into<ArrayImpl> + std::fmt::Debug + Clone
 // where
 // for<'a> Self::OwnedItem: Scalar<RefType<'a> = Self::RefItem<'a>>,
 {
-    /// The corresponding [`ArrayBuilder`] of this [`Array`].
-    ///
-    /// We constriant the associated type so that `Self::Builder::Array = Self`.
+    // The corresponding [`ArrayBuilder`] of this [`Array`].
+    //
+    // We constriant the associated type so that `Self::Builder::Array = Self`.
     // type Builder: ArrayBuilder<Array = Self>;
-
-    /// The owned item of this array.
+    // The owned item of this array.
     // type OwnedItem: Scalar<ArrayType = Self>;
 
     /// Type of the item that can be retrieved from the [`Array`]. For example, we can get a `i32`
@@ -147,6 +149,7 @@ macro_rules! impl_array_dispatch {
                 }
             }
 
+            #[allow(clippy::len_without_is_empty)]
             pub fn len(&self) -> usize {
                 match self {
                     $(ArrayImpl::$variant(a) => a.len(),)*

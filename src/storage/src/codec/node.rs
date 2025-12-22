@@ -7,8 +7,8 @@
 //! LabelBlock ::= <LabelId>{NumLabels}
 
 use bytes::{BufMut, Bytes, BytesMut};
-use mojito_common::array::datum::StructValueRef;
 use mojito_common::mapb::{PropertyMapMut, PropertyMapRef};
+use mojito_common::scalar::StructValueRef;
 use mojito_common::{LabelId, NodeId, TokenId};
 
 pub struct NodeFormat;
@@ -99,6 +99,7 @@ pub struct LabelIdListRef<'a> {
 }
 
 impl<'a> LabelIdListRef<'a> {
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.len
     }

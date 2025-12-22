@@ -3,7 +3,7 @@ use std::sync::Arc;
 use bitvec::vec::BitVec;
 use itertools::Itertools;
 
-use crate::array::datum::ScalarRef;
+use super::*;
 use crate::array::{ArrayBuilderImpl, ArrayImpl, ArrayRef, PhysicalType};
 
 pub struct DataChunk {
@@ -58,6 +58,7 @@ impl DataChunk {
         &self.visibility
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.visibility.len()
     }

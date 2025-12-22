@@ -5,8 +5,8 @@ use async_stream::try_stream;
 use educe::Educe;
 use futures::StreamExt;
 use indexmap::IndexSet;
-use mojito_common::array::datum::{ListValueRef, RelValue, ScalarRef, StructValue};
 use mojito_common::array::{ArrayImpl, DataChunkBuilder, RelArrayBuilder};
+use mojito_common::scalar::{ListValueRef, RelValue, ScalarRef, ScalarVTable, StructValue};
 use mojito_common::store_types::RelDirection;
 use mojito_common::{NodeId, SemanticDirection, TokenId, TokenKind};
 use mojito_expr::impl_::BoxedExpression;
@@ -160,7 +160,7 @@ impl<PATHMODE: PathContainer> Iterator for VarExpandIter<PATHMODE> {
                 // TODO(pgao): expand into and filter etc
                 let rel_value = RelValue {
                     id: rel_id,
-                    reltype: rel_type.to_string(),
+                    reltype: rel_type,
                     start_id,
                     end_id,
                     props: struct_value,

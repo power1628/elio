@@ -3,10 +3,7 @@ use std::sync::Arc;
 use bitvec::vec::BitVec;
 use derive_more::Debug;
 
-use crate::array::datum::{ListValueRef, PathValueRef, VirtualPathRef};
-use crate::array::{
-    Array, ListArray, ListArrayBuilder, NodeArrayBuilder, PhysicalType, RelArrayBuilder, VirtualNodeArrayBuilder,
-};
+use super::*;
 
 #[derive(Debug, Clone)]
 pub struct PathArray {
@@ -104,6 +101,7 @@ impl PathArrayBuilder {
         self.push_n(value, 1);
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.valid.len()
     }
@@ -218,6 +216,7 @@ impl VirtualPathArrayBuilder {
         self.push_n(value, 1);
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.valid.len()
     }

@@ -1,8 +1,8 @@
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
-use crate::array::datum::ScalarRef;
 use crate::mapb::entry::{EntryMut, EntryRef, EntryValueRef};
 use crate::mapb::meta::EntryMeta;
+use crate::scalar::*;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub struct PropertyMap {

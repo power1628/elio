@@ -2,9 +2,7 @@ use std::sync::Arc;
 
 use bitvec::prelude::*;
 
-use crate::NodeId;
-use crate::array::datum::{ListValueRef, RelValueRef};
-use crate::array::{Array, ArrayBuilderImpl, ArrayImpl, ArrayRef, PhysicalType};
+use super::*;
 
 #[derive(Debug, Clone)]
 pub struct ListArray {
@@ -59,6 +57,7 @@ impl ListArray {
         self.valid = valid;
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.valid.len()
     }
@@ -107,6 +106,7 @@ impl ListArrayBuilder {
         self.push_n(item, 1);
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.valid.len()
     }
