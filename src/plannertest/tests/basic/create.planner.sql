@@ -6,10 +6,10 @@ RootIR { names: [n] }
 └─IrSingleQueryPart
   └─QueryGraph
     └─mutating_pattern
-      └─CreatePattern { nodes: [(n@0):Person create_map{name: Alice, age: 30}], rels: [] }
+      └─CreatePattern { nodes: [(n@0):Person create_map{name: 'Alice', age: 30}], rels: [] }
 RootPlan { names: [n] }
 └─ProduceResult { return_columns: n@0 }
-  └─CreateNode { items: [CreateNodeItem { variable: n@0, labels: [Person], properties: create_map{name: Alice, age: 30} }] }
+  └─CreateNode { items: [CreateNodeItem { variable: n@0, labels: [Person], properties: create_map{name: 'Alice', age: 30} }] }
     └─Unit
 */
 
@@ -21,12 +21,12 @@ RootIR { names: [n] }
 └─IrSingleQueryPart
   ├─QueryGraph
   │ └─mutating_pattern
-  │   └─CreatePattern { nodes: [(n@0):Person create_map{name: Alice, age: 30}], rels: [] }
+  │   └─CreatePattern { nodes: [(n@0):Person create_map{name: 'Alice', age: 30}], rels: [] }
   └─Project { items: [n@0 AS n@0] }
 RootPlan { names: [n] }
 └─ProduceResult { return_columns: n@0 }
   └─Project { exprs: [n@0 AS n@0] }
-    └─CreateNode { items: [CreateNodeItem { variable: n@0, labels: [Person], properties: create_map{name: Alice, age: 30} }] }
+    └─CreateNode { items: [CreateNodeItem { variable: n@0, labels: [Person], properties: create_map{name: 'Alice', age: 30} }] }
       └─Unit
 */
 
@@ -38,12 +38,12 @@ RootIR { names: [n] }
 └─IrSingleQueryPart
   ├─QueryGraph
   │ └─mutating_pattern
-  │   └─CreatePattern { nodes: [(n@0):Person create_map{name: Alice, age: 30}], rels: [] }
+  │   └─CreatePattern { nodes: [(n@0):Person create_map{name: 'Alice', age: 30}], rels: [] }
   └─Project { items: [n@1 AS n@0] }
 RootPlan { names: [n] }
 └─ProduceResult { return_columns: n@1 }
   └─Project { exprs: [n@1 AS n@0] }
-    └─CreateNode { items: [CreateNodeItem { variable: n@0, labels: [Person], properties: create_map{name: Alice, age: 30} }] }
+    └─CreateNode { items: [CreateNodeItem { variable: n@0, labels: [Person], properties: create_map{name: 'Alice', age: 30} }] }
       └─Unit
 */
 
@@ -55,10 +55,10 @@ RootIR { names: [n, m] }
 └─IrSingleQueryPart
   └─QueryGraph
     └─mutating_pattern
-      └─CreatePattern { nodes: [(n@0):Person create_map{name: Alice, age: 30}, (m@1):Person create_map{name: Bob, age: 31}], rels: [] }
+      └─CreatePattern { nodes: [(n@0):Person create_map{name: 'Alice', age: 30}, (m@1):Person create_map{name: 'Bob', age: 31}], rels: [] }
 RootPlan { names: [n, m] }
 └─ProduceResult { return_columns: n@0,m@1 }
-  └─CreateNode { items: [CreateNodeItem { variable: n@0, labels: [Person], properties: create_map{name: Alice, age: 30} }, CreateNodeItem { variable: m@1, labels: [Person], properties: create_map{name: Bob, age: 31} }] }
+  └─CreateNode { items: [CreateNodeItem { variable: n@0, labels: [Person], properties: create_map{name: 'Alice', age: 30} }, CreateNodeItem { variable: m@1, labels: [Person], properties: create_map{name: 'Bob', age: 31} }] }
     └─Unit
 */
 
@@ -70,10 +70,10 @@ RootIR { names: [] }
 └─IrSingleQueryPart
   └─QueryGraph
     └─mutating_pattern
-      └─CreatePattern { nodes: [(anon@0):Person create_map{name: Alice, age: 30}, (anon@1):Person create_map{name: Bob, age: 31}], rels: [] }
+      └─CreatePattern { nodes: [(anon@0):Person create_map{name: 'Alice', age: 30}, (anon@1):Person create_map{name: 'Bob', age: 31}], rels: [] }
 RootPlan { names: [] }
 └─ProduceResult { return_columns:  }
-  └─CreateNode { items: [CreateNodeItem { variable: anon@0, labels: [Person], properties: create_map{name: Alice, age: 30} }, CreateNodeItem { variable: anon@1, labels: [Person], properties: create_map{name: Bob, age: 31} }] }
+  └─CreateNode { items: [CreateNodeItem { variable: anon@0, labels: [Person], properties: create_map{name: 'Alice', age: 30} }, CreateNodeItem { variable: anon@1, labels: [Person], properties: create_map{name: 'Bob', age: 31} }] }
     └─Unit
 */
 
@@ -85,11 +85,11 @@ RootIR { names: [a, b] }
 └─IrSingleQueryPart
   └─QueryGraph
     └─mutating_pattern
-      └─CreatePattern { nodes: [(a@0):Person create_map{name: Alice, age: 30}, (b@1):Person create_map{name: Bob, age: 31}], rels: [(a@0)-[anon@2:KNOWS]->(b@1) create_map{}] }
+      └─CreatePattern { nodes: [(a@0):Person create_map{name: 'Alice', age: 30}, (b@1):Person create_map{name: 'Bob', age: 31}], rels: [(a@0)-[anon@2:KNOWS]->(b@1) create_map{}] }
 RootPlan { names: [a, b] }
 └─ProduceResult { return_columns: a@0,b@1 }
   └─CreateRel { items: [CreateRelItem { variable: anon@2, reltype: KNOWS, start_node: a@0, end_node: b@1, properties: create_map{} }] }
-    └─CreateNode { items: [CreateNodeItem { variable: a@0, labels: [Person], properties: create_map{name: Alice, age: 30} }, CreateNodeItem { variable: b@1, labels: [Person], properties: create_map{name: Bob, age: 31} }] }
+    └─CreateNode { items: [CreateNodeItem { variable: a@0, labels: [Person], properties: create_map{name: 'Alice', age: 30} }, CreateNodeItem { variable: b@1, labels: [Person], properties: create_map{name: 'Bob', age: 31} }] }
       └─Unit
 */
 
@@ -101,11 +101,11 @@ RootIR { names: [a, b, r] }
 └─IrSingleQueryPart
   └─QueryGraph
     └─mutating_pattern
-      └─CreatePattern { nodes: [(a@0):Person create_map{name: Alice, age: 30}, (b@1):Person create_map{name: Bob, age: 31}], rels: [(a@0)<-[r@2:KNOWS]-(b@1) create_map{}] }
+      └─CreatePattern { nodes: [(a@0):Person create_map{name: 'Alice', age: 30}, (b@1):Person create_map{name: 'Bob', age: 31}], rels: [(a@0)<-[r@2:KNOWS]-(b@1) create_map{}] }
 RootPlan { names: [a, b, r] }
 └─ProduceResult { return_columns: a@0,b@1,r@2 }
   └─CreateRel { items: [CreateRelItem { variable: r@2, reltype: KNOWS, start_node: b@1, end_node: a@0, properties: create_map{} }] }
-    └─CreateNode { items: [CreateNodeItem { variable: a@0, labels: [Person], properties: create_map{name: Alice, age: 30} }, CreateNodeItem { variable: b@1, labels: [Person], properties: create_map{name: Bob, age: 31} }] }
+    └─CreateNode { items: [CreateNodeItem { variable: a@0, labels: [Person], properties: create_map{name: 'Alice', age: 30} }, CreateNodeItem { variable: b@1, labels: [Person], properties: create_map{name: 'Bob', age: 31} }] }
       └─Unit
 */
 
