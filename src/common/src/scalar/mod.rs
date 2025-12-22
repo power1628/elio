@@ -31,6 +31,8 @@ pub mod path;
 pub use path::*;
 pub mod list;
 pub use list::*;
+pub mod temporal;
+pub use temporal::*;
 
 pub trait ScalarVTable:
     std::fmt::Debug + std::fmt::Display + Clone + Send + Sync + 'static + Into<ScalarValue>
@@ -65,6 +67,13 @@ pub enum ScalarValue {
     Bool(bool),
     Integer(i64),
     Float(F64),
+    // temporal
+    Date(Date),
+    LocalTime(LocalTime),
+    LocalDateTime(LocalDateTime),
+    ZonedTime(ZonedTime),
+    ZonedDateTime(ZonedDateTime),
+    Duration(Duration),
     #[display("'{}'", _0)]
     String(String),
     // graph
@@ -101,6 +110,12 @@ macro_rules! impl_scalar_value_convert {
 impl_scalar_value_convert!(bool, Bool);
 impl_scalar_value_convert!(i64, Integer);
 impl_scalar_value_convert!(F64, Float);
+impl_scalar_value_convert!(Date, Date);
+impl_scalar_value_convert!(LocalTime, LocalTime);
+impl_scalar_value_convert!(LocalDateTime, LocalDateTime);
+impl_scalar_value_convert!(ZonedTime, ZonedTime);
+impl_scalar_value_convert!(ZonedDateTime, ZonedDateTime);
+impl_scalar_value_convert!(Duration, Duration);
 impl_scalar_value_convert!(String, String);
 impl_scalar_value_convert!(NodeId, VirtualNode);
 impl_scalar_value_convert!(VirtualRel, VirtualRel);
@@ -128,6 +143,12 @@ impl_scalar_dispatch!(
     {Bool, bool},
     {Integer, i64},
     {Float, F64},
+    {Date, Date},
+    {LocalTime, LocalTime},
+    {LocalDateTime, LocalDateTime},
+    {ZonedTime, ZonedTime},
+    {ZonedDateTime, ZonedDateTime},
+    {Duration, Duration},
     {String, &'a str},
     // graph
     {VirtualNode, NodeId},
@@ -147,6 +168,14 @@ pub enum ScalarRef<'a> {
     Bool(bool),
     Integer(i64),
     Float(F64),
+    // temporal
+    Date(Date),
+    LocalTime(LocalTime),
+    LocalDateTime(LocalDateTime),
+    ZonedTime(ZonedTime),
+    ZonedDateTime(ZonedDateTime),
+    Duration(Duration),
+    #[display("'{}'", _0)]
     String(&'a str),
     // graph
     VirtualNode(NodeId),
@@ -194,6 +223,12 @@ impl_into_for_scalar_ref!(
     {bool, Bool},
     {i64, Integer},
     {F64, Float},
+    {Date, Date},
+    {LocalTime, LocalTime},
+    {LocalDateTime, LocalDateTime},
+    {ZonedTime, ZonedTime},
+    {ZonedDateTime, ZonedDateTime},
+    {Duration, Duration},
     {&'a str, String},
     {NodeId, VirtualNode},
     {VirtualRelRef<'a>, VirtualRel},
@@ -222,6 +257,12 @@ impl_scalar_ref_dispatch!(
     { Bool },
     { Integer },
     { Float },
+    { Date },
+    { LocalTime },
+    { LocalDateTime },
+    { ZonedTime },
+    { ZonedDateTime },
+    { Duration },
     { String },
     { VirtualNode },
     { VirtualRel },
@@ -259,6 +300,12 @@ impl_scalar_for_primitive!(
     {bool,bool},
     {i64,i64},
     {F64,F64},
+    {Date, Date},
+    {LocalTime, LocalTime},
+    {LocalDateTime, LocalDateTime},
+    {ZonedTime, ZonedTime},
+    {ZonedDateTime, ZonedDateTime},
+    {Duration, Duration},
     {NodeId, NodeId}
 );
 
