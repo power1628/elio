@@ -245,7 +245,7 @@ macro_rules! impl_scalar_ref_dispatch {
             impl<'a> ScalarRef<'a>{
                 pub fn to_owned_scalar(&self) -> ScalarValue{
                     match self{
-                        $(Self::$Abc(x) => ScalarValue::$Abc(x.to_owned_scalar().into()),)*
+                        $(Self::$Abc(x) => x.to_owned_scalar().into(),)*
                         Self::Null => ScalarValue::Unknown,
                     }
                 }
