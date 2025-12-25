@@ -1,0 +1,244 @@
+//! Expression macros
+//!
+//! input:
+//!
+//! #[cypher_func(sig="(any) -> any")]
+//! fn date_any(arg: &DatumRef) -> DatumValue {
+//!      // impl
+//! }
+//!
+//! output:
+//! fn date_any_batch(args: &[ArrayRef], vis: &BitVec, len: usize) -> AnyArray {
+//!   // prepare inputs
+//!    
+//!   // prepare output builder
+//!   
+//! }
+//!
+//! what we know: signature input is any, output is any
+//! we should have an table describe the type -> Array -> ArrayBuilder mapping
+//!
+//! | physical type | Array              | ArrayBuilder             |
+//! | --- | --- | --- |
+//! | any         | AnyArray             | AnyArrayBuilder          |
+//! | bool        | BoolArray            | BoolArrayBuilder         |
+//! | noderef     | VirtualNodeArray     | VirtualNodeArrayBuilder  |
+//! | relref      | VirtualRelArray      | VirtualRelArrayBuilder   |
+//! | pathref     | VirtualPathArray     | VirtualPathArrayBuilder  |
+//! | node        | NodeArray            | NodeArrayBuilder         |
+//! | rel         | RelArray             | RelArrayBuilder          |
+//! | path        | PathArray            | PathArrayBuilder         |
+
+use itertools::Itertools;
+use proc_macro::TokenStream;
+use quote::{format_ident, quote};
+use regex::Regex;
+use syn::parse::Parse;
+use syn::{Ident, ItemFn, LitStr, parse_macro_input};
+
+#[proc_macro_attribute]
+pub fn cypher_func(attr: TokenStream, item: TokenStream) -> TokenStream {
+    let input_fn = parse_macro_input!(item as ItemFn);
+    let fn_name = &input_fn.sig.ident;
+    // let fn_body = &input_fn.block;
+
+    let func_attr = parse_macro_input!(attr as CypherFuncAttr);
+
+    let batch_fn_name = format_ident!("{}", func_attr.batch_name);
+
+    // cast input array
+    // generate code like
+    // let arg_0 = args[0].as_any_array();
+    // let arg_1 = args[1].as_any_array();
+    let mut array_cols = vec![];
+    for (idx, arg_type) in func_attr.sig.inputs.iter().enumerate() {
+        // convert arrayref to xxxArray by given arg type
+        let arg_col = format_ident!("arg_{}", idx);
+        let array_cast = gen_array_cast(arg_type, idx, &arg_col);
+        array_cols.push(array_cast);
+    }
+
+    // generate code like:
+    // arg_0
+    // arg_1
+    let arg_array_i = func_attr
+        .sig
+        .inputs
+        .iter()
+        .enumerate()
+        .map(|(idx, _)| format_ident!("arg_{}", idx))
+        .collect_vec();
+
+    // prepare output builder
+    let output_builder = format_ident!("output_builder");
+    let def_output_builder = gen_array_builder(&func_attr.sig.output, &output_builder);
+
+    let func_args = quote! {
+        #(#arg_array_i.get(i).unwrap()),*
+    };
+
+    let expanded = quote! {
+        #input_fn
+        pub fn #batch_fn_name(args: &[ArrayRef], vis: &BitVec, len: usize) -> Result<ArrayImpl, EvalError> {
+
+            #(#array_cols)*
+
+            #def_output_builder
+
+            let valid_rows = vis.clone() & #(#arg_array_i.valid_map().clone())&*;
+
+            for i in 0..len {
+                if valid_rows[i] {
+                    let ret = #fn_name(#func_args)?;
+                    output_builder.push(Some(ret.as_scalar_ref()));
+                } else {
+                    output_builder.push(None);
+                }
+            }
+
+            Ok(#output_builder.finish().into())
+        }
+    };
+
+    TokenStream::from(expanded)
+}
+
+struct CypherFuncAttr {
+    sig: CypherFuncSig,
+    batch_name: String,
+}
+
+struct CypherFuncSig {
+    inputs: Vec<String>,
+    output: String,
+}
+
+impl Parse for CypherFuncAttr {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let mut sig = None;
+        let mut batch_name = None;
+
+        //#[cypher_func(key=value, key=value,...)]
+        while !input.is_empty() {
+            let key: Ident = input.parse()?;
+            input.parse::<syn::Token![=]>()?;
+            let value: LitStr = input.parse()?;
+            match key.to_string().as_str() {
+                "sig" => {
+                    // parse sig value
+                    sig = Some(extract_sig(value.value().as_str()));
+                }
+                "batch_name" => {
+                    // batch function name
+                    batch_name = Some(value.value().as_str().to_lowercase().to_string());
+                }
+                _ => {
+                    return Err(input.error(format!("unknown argument: {}", key)));
+                }
+            }
+            if input.peek(syn::Token![,]) {
+                input.parse::<syn::Token![,]>()?;
+            }
+        }
+
+        Ok(CypherFuncAttr {
+            sig: sig.ok_or_else(|| input.error("missing sig"))?,
+            batch_name: batch_name.ok_or_else(|| input.error("missing batch_name"))?,
+        })
+    }
+}
+
+// extract (input1, input2) -> output
+fn extract_sig(sig: &str) -> CypherFuncSig {
+    let re = Regex::new(r"^\s*\((.*?)\)\s*->\s*(.*)\s*$").unwrap();
+
+    // TODO(pgao): handle error
+    let caps = re.captures(sig).unwrap();
+    let inputs_str = caps.get(1).unwrap().as_str().trim();
+    let output_str = caps.get(2).unwrap().as_str().trim();
+
+    let inputs = if inputs_str.is_empty() {
+        Vec::new()
+    } else {
+        inputs_str.split(',').map(|s| s.trim().to_string()).collect()
+    };
+
+    CypherFuncSig {
+        inputs,
+        output: output_str.to_string(),
+    }
+}
+
+fn gen_array_cast(arg_type: &str, idx: usize, output: &syn::Ident) -> proc_macro2::TokenStream {
+    match arg_type {
+        "any" => quote! {
+            let #output = args[#idx].as_any().unwrap();
+        },
+        "bool" => quote! {
+            let #output = args[#idx].as_bool().unwrap();
+        },
+        "noderef" => quote! {
+            let #output= args[#idx].as_virtual_node().unwrap();
+        },
+        "relref" => quote! {
+            let #output = args[#idx].as_virtual_rel().unwrap();
+        },
+        "pathref" => quote! {
+            let #output = args[#idx].as_virtual_path().unwrap();
+        },
+        "node" => quote! {
+            let #output = args[#idx].as_node().unwrap();
+        },
+        "rel" => quote! {
+            let #output = args[#idx].as_rel().unwrap();
+        },
+        "path" => quote! {
+            let #output = args[#idx].as_path().unwrap();
+        },
+        _ => quote! {compile_error!("invalid signature type")},
+    }
+    // TokenStream::from(expanded)
+}
+
+fn gen_array_builder(ret_type: &str, output: &syn::Ident) -> proc_macro2::TokenStream {
+    match ret_type {
+        "any" => quote! {
+            let mut #output = AnyArrayBuilder::with_capacity(len);
+        },
+        "bool" => quote! {
+            let mut #output = BoolArrayBuilder::with_capacity(len);
+        },
+        "noderef" => quote! {
+            let mut #output = VirtualNodeArrayBuilder::with_capacity(len);
+        },
+        "relref" => quote! {
+            let mut #output = VirtualRelArrayBuilder::with_capacity(len);
+        },
+        "pathref" => quote! {
+            let mut #output = VirtualPathArrayBuilder::with_capacity(len);
+        },
+        "node" => quote! {
+            let mut #output = NodeArrayBuilder::with_capacity(len);
+        },
+        "rel" => quote! {
+            let mut #output = RelArrayBuilder::with_capacity(len);
+        },
+        "path" => quote! {
+            let mut #output = PathArrayBuilder::with_capacity(len);
+        },
+        _ => quote! {compile_error!("invalid signature type")},
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    #[test]
+    fn test_parse() {
+        let sig = "(any, bool) -> any";
+        let sig = extract_sig(sig);
+        assert_eq!(sig.inputs, vec!["any", "bool"]);
+        assert_eq!(sig.output, "any");
+    }
+}

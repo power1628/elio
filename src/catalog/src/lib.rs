@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::sync::Arc;
 
+use mojito_expr::func::FUNCTION_REGISTRY;
 use mojito_storage::token::TokenStore;
 
 pub mod error;
@@ -30,8 +31,14 @@ impl Catalog {
     pub fn new(token: Arc<TokenStore>) -> Self {
         Self {
             token,
-            // TODO(pgao): register builtin functions here
-            functions: HashMap::new(),
+            functions: {
+                let mut map = HashMap::new();
+                for (name, def) in FUNCTION_REGISTRY.deref().name2def.iter() {
+                    let func = FunctionCatalog::new(name.to_string(), def.clone());
+                    map.insert(name.to_string(), func);
+                }
+                map
+            },
         }
     }
 

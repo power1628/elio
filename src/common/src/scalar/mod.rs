@@ -326,3 +326,6 @@ impl<'a> ScalarRefVTable<'a> for &'a str {
 }
 
 pub type Row = Vec<Option<ScalarValue>>;
+
+pub type Datum = Option<ScalarValue>;
+pub type DatumRef<'a> = Option<&'a ScalarValue>;

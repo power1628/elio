@@ -12,6 +12,12 @@ pub enum EvalError {
     FieldNotFound(String),
     #[error("materialize node failed {0}")]
     MaterializeNodeError(String),
+    #[error("invalid argument in {context}, expected {expected}, actual {actual}")]
+    InvalidArgument {
+        context: String,
+        expected: String,
+        actual: String,
+    },
 }
 
 impl EvalError {
@@ -33,5 +39,13 @@ impl EvalError {
 
     pub fn materialize_node_error<T: Display>(msg: T) -> Self {
         Self::MaterializeNodeError(msg.to_string())
+    }
+
+    pub fn invalid_argument<T1: Display, T2: Display, T3: Display>(context: T1, expected: T2, actual: T3) -> Self {
+        Self::InvalidArgument {
+            context: context.to_string(),
+            expected: expected.to_string(),
+            actual: actual.to_string(),
+        }
     }
 }

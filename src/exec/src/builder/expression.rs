@@ -2,9 +2,11 @@ use mojito_common::IrToken;
 use mojito_common::schema::{Name2ColumnMap, Schema};
 use mojito_cypher::expr;
 use mojito_cypher::expr::{Constant, CreateStruct, Expr, ExprNode, PropertyAccess, VariableRef};
+use mojito_expr::func::FUNCTION_REGISTRY;
 use mojito_expr::impl_::constant::ConstantExpr;
 use mojito_expr::impl_::create_struct::CreateStructExpr;
 use mojito_expr::impl_::field_access::FieldAccessExpr;
+use mojito_expr::impl_::func_call::FuncCallExpr;
 use mojito_expr::impl_::project_path::ProjectPathExpr;
 use mojito_expr::impl_::variable_ref::VariableRefExpr;
 use mojito_expr::impl_::{BoxedExpression, Expression};
@@ -29,7 +31,7 @@ pub(crate) fn build_expression(ctx: &BuildExprContext<'_>, expr: &Expr) -> Resul
         Expr::VariableRef(variable_ref) => build_variable(ctx, variable_ref),
         Expr::PropertyAccess(property_access) => build_property_access(ctx, property_access),
         Expr::Constant(constant) => build_constant(ctx, constant),
-        Expr::FuncCall(_func_call) => todo!(),
+        Expr::FuncCall(func_call) => build_func_call(ctx, func_call),
         Expr::AggCall(_agg_call) => todo!(),
         Expr::Subquery(_subquery) => todo!(),
         Expr::LabelExpr(_label_expr) => todo!(),
@@ -66,6 +68,23 @@ fn build_constant(_ctx: &BuildExprContext<'_>, constant: &Constant) -> Result<Bo
     Ok(ConstantExpr {
         value: constant.data.clone(),
         typ: constant.typ.clone(),
+    }
+    .boxed())
+}
+
+fn build_func_call(ctx: &BuildExprContext<'_>, func_call: &expr::FuncCall) -> Result<BoxedExpression, BuildError> {
+    let args = func_call
+        .args
+        .iter()
+        .map(|expr| build_expression(ctx, expr))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let func_impl = FUNCTION_REGISTRY.get_func_impl(&func_call.func_id);
+
+    Ok(FuncCallExpr {
+        inputs: args,
+        func: func_impl.func,
+        typ: func_call.typ(),
     }
     .boxed())
 }

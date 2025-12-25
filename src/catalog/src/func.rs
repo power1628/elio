@@ -6,3 +6,9 @@ pub struct FunctionCatalog {
     pub func: FuncDef,
     // TODO(pgao): other fields here
 }
+
+impl FunctionCatalog {
+    pub fn new(name: String, func: FuncDef) -> Self {
+        Self { name, func }
+    }
+}

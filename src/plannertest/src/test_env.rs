@@ -28,6 +28,7 @@ pub struct MockCatalog {
 impl Default for MockCatalog {
     fn default() -> Self {
         let functions = FUNCTION_REGISTRY
+            .name2def
             .iter()
             .map(|(k, v)| {
                 (
