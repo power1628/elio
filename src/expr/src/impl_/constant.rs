@@ -20,14 +20,11 @@ impl Expression for ConstantExpr {
     }
 
     fn eval_batch(&self, chunk: &DataChunk, _ctx: &dyn EvalCtx) -> Result<ArrayRef, EvalError> {
-        let mut builder = self
-            .typ
-            .physical_type()
-            .array_builder(chunk.visible_row_len())
-            .into_any()
-            .map_err(|_| EvalError::type_error(format!("consant only allow basic types, got {}", self.typ)))?;
+        let mut builder = self.typ.physical_type().array_builder(chunk.len());
+        // .into_any()
+        // .map_err(|_| EvalError::type_error(format!("consant only allow basic types, got {}", self.typ)))?;
 
-        builder.push_n(self.value.as_ref().map(|x| x.as_scalar_ref()), chunk.visible_row_len());
+        builder.push_n(self.value.as_ref().map(|x| x.as_scalar_ref()), chunk.len());
 
         Ok(Arc::new(builder.finish().into()))
     }

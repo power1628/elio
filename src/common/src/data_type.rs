@@ -103,10 +103,11 @@ impl DataType {
 }
 
 impl DataType {
+    // decides which physical array holds this data type
     pub fn physical_type(&self) -> PhysicalType {
         match self {
-            DataType::Bool
-            | DataType::Integer
+            DataType::Bool => PhysicalType::Bool,
+            DataType::Integer
             | DataType::Float
             | DataType::Date
             | DataType::LocalTime

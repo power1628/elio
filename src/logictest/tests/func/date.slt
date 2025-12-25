@@ -2,3 +2,18 @@ query A
 RETURN date('2000-01-01')
 ----
 2000-01-01
+
+query A
+RETURN 1 = 1
+----
+true
+
+query A
+RETURN 'hello' = 1
+----
+false
+
+query AA
+RETURN true OR false, false AND true
+----
+true	false

@@ -37,7 +37,7 @@ impl FunctionRegistry {
     pub fn get_equal_func_impl(&self) -> &FuncImpl {
         // SAFETY:
         //    there's only 1 equal impl
-        self.name2def.get("equal").unwrap().impls.first().unwrap()
+        self.name2def.get("eq").unwrap().impls.first().unwrap()
     }
 
     pub fn get_func_impl(&self, func_id: &str) -> &FuncImpl {
