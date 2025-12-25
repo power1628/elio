@@ -28,7 +28,6 @@ use crate::func::FunctionRegistry;
 
 #[cypher_func(batch_name = "bool_and_batch", sig = "(bool, bool) -> bool")]
 fn bool_and(arg0: bool, arg1: bool) -> Result<bool, EvalError> {
-    println!("bool_and: {:?}, {:?}", arg0, arg1);
     Ok(arg0 && arg1)
 }
 
