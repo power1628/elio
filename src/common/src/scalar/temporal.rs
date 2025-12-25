@@ -16,6 +16,16 @@ use chrono::{FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
 #[repr(transparent)]
 pub struct Date(pub i64);
 
+impl TryFrom<&str> for Date {
+    type Error = String;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        NaiveDate::parse_from_str(value, "%Y-%m-%d")
+            .map_err(|_| format!("date format error, expected yyyy-MM-dd, actual {}", value))
+            .map(Into::into)
+    }
+}
+
 impl From<NaiveDate> for Date {
     fn from(value: NaiveDate) -> Self {
         let epoch = NaiveDate::from_ymd_opt(1970, 1, 1).unwrap();
@@ -80,6 +90,13 @@ pub struct LocalDateTime {
     pub nanoseconds: u32,
 }
 
+impl LocalDateTime {
+    pub fn to_date(&self) -> Date {
+        let days = self.seconds / 86_400;
+        Date(days)
+    }
+}
+
 impl From<NaiveDateTime> for LocalDateTime {
     fn from(value: NaiveDateTime) -> Self {
         Self {
@@ -127,6 +144,13 @@ pub struct ZonedDateTime {
     pub nanoseconds: u32,
     // offset in seconds from UTC
     pub tz_offset_seconds: i32,
+}
+
+impl ZonedDateTime {
+    pub fn to_date(&self) -> Date {
+        let days = self.seconds / 86_400;
+        Date(days)
+    }
 }
 
 impl From<chrono::DateTime<FixedOffset>> for ZonedDateTime {

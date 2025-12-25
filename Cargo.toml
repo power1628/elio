@@ -6,6 +6,7 @@ members = [
     "src/core",
     "src/cypher",
     "src/exec",
+    "src/expr/macros",
     "src/expr",
     "src/logictest",
     "src/parser",
@@ -48,8 +49,11 @@ jiff = "0.2.16"                                      # for temporal data repr
 ordered-float = "5.1.0"                              # float scalar type repr
 paste = "1.0"
 pretty-xmlish = "0.1.13"                             # plan node explain
+proc-macro2 = "1.0"                                  # expr proc macros
+quote = "1.0"                                        # expr proc macros
 roaring = "0.11.3"                                   # for path storage(not used by now)
 sqlplannertest = "0.4.1"
+syn = { version = "2.0", features = ["full"] }       # expr proc macros
 thiserror = "2.0.12"
 tokio = { version = "1.48.0", features = ["full"] }
 tracing = "0.1.43"

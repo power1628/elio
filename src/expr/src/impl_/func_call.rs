@@ -1,3 +1,4 @@
+use bitvec::vec::BitVec;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::array::{ArrayImpl, ArrayRef};
 use mojito_common::data_type::DataType;
@@ -6,7 +7,7 @@ use crate::error::EvalError;
 use crate::impl_::{EvalCtx, Expression};
 
 // used to invoke the function call
-pub type FunctionImpl = fn(&DataChunk, &dyn EvalCtx) -> Result<ArrayImpl, EvalError>;
+pub type FunctionImpl = fn(&[ArrayRef], vis: &BitVec, len: usize) -> Result<ArrayImpl, EvalError>;
 
 #[derive(Debug)]
 pub struct FuncCallExpr {
