@@ -12,6 +12,14 @@ pub enum DataType {
     Bool,
     Integer,
     Float,
+    // temporal
+    Date,
+    LocalTime,
+    LocalDateTime,
+    ZonedTime,
+    ZonedDateTime,
+    Duration,
+    //
     String,
     U16,
     Any,
@@ -60,14 +68,55 @@ impl DataType {
             _ => self.clone(),
         }
     }
+
+    pub fn signature(&self) -> String {
+        match self {
+            DataType::Bool => "b".to_string(),
+            DataType::Integer => "i".to_string(),
+            DataType::Float => "f".to_string(),
+            DataType::Date => "d".to_string(),
+            DataType::LocalTime => "t".to_string(),
+            DataType::LocalDateTime => "dt".to_string(),
+            DataType::ZonedTime => "zt".to_string(),
+            DataType::ZonedDateTime => "zdt".to_string(),
+            DataType::Duration => "dur".to_string(),
+            DataType::String => "s".to_string(),
+            DataType::U16 => "u16".to_string(),
+            DataType::Any => "any".to_string(),
+            DataType::VirtualNode => "vnode".to_string(),
+            DataType::VirtualRel => "vrel".to_string(),
+            DataType::VirtualPath => "vpath".to_string(),
+            DataType::Node => "node".to_string(),
+            DataType::Rel => "rel".to_string(),
+            DataType::Path => "path".to_string(),
+            DataType::List(data_type) => format!("list({})", data_type.signature()),
+            DataType::Struct(items) => format!(
+                "struct({})",
+                items
+                    .iter()
+                    .map(|(k, v)| format!("{}: {}", k, v.signature()))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
+        }
+    }
 }
 
 impl DataType {
     pub fn physical_type(&self) -> PhysicalType {
         match self {
-            DataType::Bool | DataType::Integer | DataType::Float | DataType::String | DataType::U16 | DataType::Any => {
-                PhysicalType::Any
-            }
+            DataType::Bool
+            | DataType::Integer
+            | DataType::Float
+            | DataType::Date
+            | DataType::LocalTime
+            | DataType::LocalDateTime
+            | DataType::ZonedTime
+            | DataType::ZonedDateTime
+            | DataType::Duration
+            | DataType::String
+            | DataType::U16
+            | DataType::Any => PhysicalType::Any,
             DataType::VirtualNode => PhysicalType::VirtualNode,
             DataType::VirtualRel => PhysicalType::VirtualRel,
             DataType::VirtualPath => PhysicalType::VirtualPath,

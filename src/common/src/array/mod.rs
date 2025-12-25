@@ -25,6 +25,7 @@ use std::sync::Arc;
 
 pub use any::*;
 use bitvec::prelude::*;
+pub use bool::*;
 pub use chunk::*;
 use enum_as_inner::EnumAsInner;
 pub use list::*;
@@ -34,7 +35,6 @@ pub use rel::*;
 pub use struct_::*;
 
 use super::scalar::*;
-use crate::array::bool::{BoolArray, BoolArrayBuilder};
 use crate::array::iter::ArrayIterator;
 use crate::scalar::{ScalarRefVTable, ScalarVTable};
 use crate::{NodeId, RelationshipId};

@@ -17,18 +17,16 @@
 //!
 //! Duration Functions:
 
-use std::collections::HashMap;
-
 use bitvec::prelude::*;
 use expr_macros::cypher_func;
-use mojito_common::array::{AnyArrayBuilder, Array, ArrayImpl, ArrayRef};
-use mojito_common::scalar::{Date, ScalarRef, ScalarValue};
+use mojito_common::array::*;
+use mojito_common::scalar::*;
 
 use crate::define_function;
 use crate::error::EvalError;
-use crate::func::sig::FuncDef;
+use crate::func::FunctionRegistry;
 
-#[cypher_func(batch_name = "date_batch", sig = "any -> any")]
+#[cypher_func(batch_name = "date_batch", sig = "(any) -> any")]
 fn date(arg: ScalarRef<'_>) -> Result<ScalarValue, EvalError> {
     match arg {
         ScalarRef::Date(date) => Ok(ScalarValue::Date(date)),
@@ -45,24 +43,8 @@ fn date(arg: ScalarRef<'_>) -> Result<ScalarValue, EvalError> {
     }
 }
 
-// pub fn date_test_batch(
-//     args: &[ArrayRef],
-//     vis: &BitVec,
-//     len: usize,
-// ) -> Result<ArrayImpl, EvalError> {
+pub(crate) fn register(registry: &mut FunctionRegistry) {
+    let date = define_function!( name: "date", impls: [{ args: [{anyof String | Date | LocalDateTime | ZonedDateTime}], ret: Any, func: date_batch}],is_agg: false);
 
-pub(crate) fn register(registry: &mut HashMap<String, FuncDef>) {
-    let date = define_function!(
-        name: "date",
-        impls: [
-            {
-                args: [Any],
-                ret: Any,
-                func: date_batch,
-            }
-        ],
-        is_agg: false
-    );
-
-    registry.insert(date.name.clone(), date);
+    registry.insert(date);
 }

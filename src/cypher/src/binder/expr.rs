@@ -133,8 +133,8 @@ fn bind_unary(
 
     // SAFETY: builtin operator are always ok
     let func_name = op.as_func_name();
-    let (_func_impl, _is_agg, typ) = resolve_func(ectx, func_name, &args)?;
-    let func_call = FuncCall::new_unchecked(func_name.to_string(), args, typ);
+    let (func_impl, _is_agg, typ) = resolve_func(ectx, func_name, &args)?;
+    let func_call = FuncCall::new_unchecked(func_name.to_string(), func_impl.func_id, args, typ);
     Ok(func_call.into())
 }
 
@@ -151,8 +151,8 @@ fn bind_binary(
 
     // SAFETY: builtin operator are always ok
     let func_name = op.as_func_name();
-    let (_func_impl, _is_agg, typ) = resolve_func(ectx, func_name, &args)?;
-    let func_call = FuncCall::new_unchecked(func_name.to_string(), args, typ);
+    let (func_impl, _is_agg, typ) = resolve_func(ectx, func_name, &args)?;
+    let func_call = FuncCall::new_unchecked(func_name.to_string(), func_impl.func_id, args, typ);
     Ok(func_call.into())
 }
 
@@ -187,7 +187,7 @@ fn bind_func_call(
         .map(|x| bind_expr(&inner_ectx, outer_scope, x))
         .collect::<Result<Vec<_>, _>>()?;
 
-    let (_func_impl, is_agg, typ) = resolve_func(ectx, name, &args)?;
+    let (func_impl, is_agg, typ) = resolve_func(ectx, name, &args)?;
     if is_agg {
         let agg = AggCall::new_unchecked(name.to_string(), args, distinct, typ);
         Ok(agg.into())
@@ -195,7 +195,7 @@ fn bind_func_call(
         if distinct {
             return Err(SemanticError::distinct_not_allowed(name).into());
         }
-        let func_call = FuncCall::new_unchecked(name.to_string(), args, typ);
+        let func_call = FuncCall::new_unchecked(name.to_string(), func_impl.func_id, args, typ);
         Ok(func_call.into())
     }
 }
@@ -239,11 +239,6 @@ pub fn bind_map_expr_to_property_map(
     values: &[ast::Expr],
 ) -> Result<Vec<(Arc<str>, Expr)>, PlanError> {
     assert_eq!(keys.len(), values.len());
-
-    // let tokens: Vec<IrToken> = keys
-    //     .iter()
-    //     .map(|x| ectx.bctx.resolve_token(x, TokenKind::PropertyKey))
-    //     .collect_vec();
 
     let exprs = values
         .iter()

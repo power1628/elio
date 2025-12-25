@@ -2,7 +2,7 @@
 //!
 //! input:
 //!
-//! #[cypher_func(sig="any -> any")]
+//! #[cypher_func(sig="(any) -> any")]
 //! fn date_any(arg: &DatumRef) -> DatumValue {
 //!      // impl
 //! }
@@ -32,6 +32,7 @@
 use itertools::Itertools;
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
+use regex::Regex;
 use syn::parse::Parse;
 use syn::{Ident, ItemFn, LitStr, parse_macro_input};
 
@@ -72,10 +73,12 @@ pub fn cypher_func(attr: TokenStream, item: TokenStream) -> TokenStream {
     let output_builder = format_ident!("output_builder");
     let def_output_builder = gen_array_builder(&func_attr.sig.output, &output_builder);
 
+    let func_args = quote! {
+        #(#arg_array_i.get(i).unwrap()),*
+    };
+
     let expanded = quote! {
-
         #input_fn
-
         pub fn #batch_fn_name(args: &[ArrayRef], vis: &BitVec, len: usize) -> Result<ArrayImpl, EvalError> {
 
             #(#array_cols)*
@@ -86,7 +89,8 @@ pub fn cypher_func(attr: TokenStream, item: TokenStream) -> TokenStream {
 
             for i in 0..len {
                 if valid_rows[i] {
-                    output_builder.push(Some(#fn_name(#(#arg_array_i.get(i).unwrap())*)?.as_scalar_ref()));
+                    let ret = #fn_name(#func_args)?;
+                    output_builder.push(Some(ret.as_scalar_ref()));
                 } else {
                     output_builder.push(None);
                 }
@@ -115,7 +119,6 @@ impl Parse for CypherFuncAttr {
         let mut batch_name = None;
 
         //#[cypher_func(key=value, key=value,...)]
-
         while !input.is_empty() {
             let key: Ident = input.parse()?;
             input.parse::<syn::Token![=]>()?;
@@ -145,11 +148,25 @@ impl Parse for CypherFuncAttr {
     }
 }
 
+// extract (input1, input2) -> output
 fn extract_sig(sig: &str) -> CypherFuncSig {
-    let mut parts = sig.split(" -> ");
-    let inputs = parts.next().unwrap().split(',').map(|s| s.trim().to_string()).collect();
-    let output = parts.next().unwrap().trim().to_string();
-    CypherFuncSig { inputs, output }
+    let re = Regex::new(r"^\s*\((.*?)\)\s*->\s*(.*)\s*$").unwrap();
+
+    // TODO(pgao): handle error
+    let caps = re.captures(sig).unwrap();
+    let inputs_str = caps.get(1).unwrap().as_str().trim();
+    let output_str = caps.get(2).unwrap().as_str().trim();
+
+    let inputs = if inputs_str.is_empty() {
+        Vec::new()
+    } else {
+        inputs_str.split(',').map(|s| s.trim().to_string()).collect()
+    };
+
+    CypherFuncSig {
+        inputs,
+        output: output_str.to_string(),
+    }
 }
 
 fn gen_array_cast(arg_type: &str, idx: usize, output: &syn::Ident) -> proc_macro2::TokenStream {
@@ -210,5 +227,18 @@ fn gen_array_builder(ret_type: &str, output: &syn::Ident) -> proc_macro2::TokenS
             let mut #output = PathArrayBuilder::with_capacity(len);
         },
         _ => quote! {compile_error!("invalid signature type")},
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    #[test]
+    fn test_parse() {
+        let sig = "(any, bool) -> any";
+        let sig = extract_sig(sig);
+        assert_eq!(sig.inputs, vec!["any", "bool"]);
+        assert_eq!(sig.output, "any");
     }
 }

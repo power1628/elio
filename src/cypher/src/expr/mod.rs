@@ -100,28 +100,18 @@ impl Expr {
         Expr::Constant(Constant::boolean(b))
     }
 
+    // SAFETY:
+    //   caller should guarantee inputs are bool
     pub fn and(self, rhs: Self) -> Self {
-        Expr::FuncCall(FuncCall::new_unchecked(
-            "AND".to_string(),
-            vec![self, rhs],
-            DataType::Bool,
-        ))
+        Expr::FuncCall(FuncCall::and_unchecked(vec![self, rhs]))
     }
 
     pub fn or(self, rhs: Self) -> Self {
-        Expr::FuncCall(FuncCall::new_unchecked(
-            "OR".to_string(),
-            vec![self, rhs],
-            DataType::Bool,
-        ))
+        Expr::FuncCall(FuncCall::or_unchecked(vec![self, rhs]))
     }
 
     pub fn equal(self, rhs: Self) -> Self {
-        Expr::FuncCall(FuncCall::new_unchecked(
-            "EQ".to_string(),
-            vec![self, rhs],
-            DataType::Bool,
-        ))
+        Expr::FuncCall(FuncCall::equal_unchecked(vec![self, rhs]))
     }
 
     pub fn property(self, prop: &IrToken, typ: &DataType) -> Self {

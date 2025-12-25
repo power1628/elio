@@ -42,7 +42,7 @@ impl BuildError {
 }
 
 pub struct ExecutorBuildContext {
-    ctx: Arc<TaskExecContext>,
+    pub ctx: Arc<TaskExecContext>,
 }
 
 impl ExecutorBuildContext {

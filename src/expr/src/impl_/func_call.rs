@@ -13,7 +13,7 @@ pub type FunctionImpl = fn(&[ArrayRef], vis: &BitVec, len: usize) -> Result<Arra
 pub struct FuncCallExpr {
     pub inputs: Vec<Box<dyn Expression>>,
     pub func: FunctionImpl,
-    typ: DataType,
+    pub typ: DataType,
 }
 
 impl Expression for FuncCallExpr {
@@ -22,12 +22,14 @@ impl Expression for FuncCallExpr {
     }
 
     fn eval_batch(&self, chunk: &DataChunk, ctx: &dyn EvalCtx) -> Result<ArrayRef, EvalError> {
-        let _args = self
+        let args = self
             .inputs
             .iter()
             .map(|e| e.eval_batch(chunk, ctx))
             .collect::<Result<Vec<_>, _>>()?;
-        todo!()
-        // let chunk = DataChunk::new(args);
+        let vis = chunk.visibility();
+        let len = chunk.len();
+        let res = (self.func)(&args, vis, len)?;
+        Ok(res.into())
     }
 }

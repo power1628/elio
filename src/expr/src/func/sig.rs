@@ -14,10 +14,33 @@ pub struct FuncDef {
 /// Function implementation
 #[derive(Clone, Debug)]
 pub struct FuncImpl {
+    // signature id, used to identify the function implementation
+    // is the hash of args type.
+    pub func_id: String,
     pub args: Vec<FuncImplArg>,
     pub ret: FuncImplReturn,
     // function pointer which is invoked when the function is called
     pub func: FunctionImpl,
+}
+
+impl FuncImpl {
+    pub fn new(name: &str, args: Vec<FuncImplArg>, ret: FuncImplReturn, func: FunctionImpl) -> Self {
+        let signature_id = Self::compute_signature(name, &args);
+        Self {
+            func_id: signature_id,
+            args,
+            ret,
+            func,
+        }
+    }
+
+    fn compute_signature(name: &str, args: &[FuncImplArg]) -> String {
+        format!(
+            "{}({})",
+            name,
+            args.iter().map(|arg| arg.signature()).collect::<Vec<_>>().join(", ")
+        )
+    }
 }
 
 impl FuncImpl {
@@ -28,6 +51,11 @@ impl FuncImpl {
         }
         for (i, arg) in self.args.iter().enumerate() {
             match arg {
+                FuncImplArg::Union(types) => {
+                    if !types.contains(&args[i]) {
+                        return None;
+                    }
+                }
                 FuncImplArg::Exact(dt) => {
                     if dt != &args[i] {
                         return None;
@@ -43,12 +71,31 @@ impl FuncImpl {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash)]
 pub enum FuncImplArg {
+    // UNION type will be mapped into Any data type when execution
+    // here we use union type here only for semantic checking
+    // the actual function implementation siguare will be Any
+    Union(Vec<DataType>),
     /// Exact argument type, e.g. `Int` in `map(Int, [1, 2, 3])`
     Exact(DataType),
     /// Templated argument type, e.g. `add<T>(T, T)`
     Templated(String),
+}
+
+impl FuncImplArg {
+    pub fn signature(&self) -> String {
+        match self {
+            FuncImplArg::Union(types) => {
+                format!(
+                    "anyof {}",
+                    types.iter().map(|dt| dt.signature()).collect::<Vec<_>>().join(" | ")
+                )
+            }
+            FuncImplArg::Exact(dt) => dt.signature(),
+            FuncImplArg::Templated(t) => format!("{}<T>", t),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -72,7 +119,16 @@ impl FuncImplReturn {
     }
 }
 
-// pub type FunctionRegistry = HashMap<String, FuncDef>;
+#[macro_export]
+macro_rules! func_impl_arg {
+            ({ exact $dt:ident }) => {
+                FuncImplArg::Exact(DataType::$dt)
+            };
+
+            ({ anyof $($dt:ident)|+ }) => {
+                FuncImplArg::Union(vec![$(DataType::$dt),+])
+            };
+        }
 
 // generate function implementation
 #[macro_export]
@@ -80,10 +136,10 @@ macro_rules! define_function {
     (name: $name:expr,
      impls: [
         $({
-            args: [$($arg_type:ident),*],
+            args: [$($arg_type:tt),*],
             ret: $ret_type:ident,
-            func: $func_impl:ident,
-        }),+ $(,)?
+            func: $func_impl:ident
+        }),+
      ],
      is_agg: $is_agg:expr
     ) => {{
@@ -93,12 +149,14 @@ macro_rules! define_function {
                 $({
                     use $crate::func::sig::{FuncImplArg, FuncImplReturn};
                     use mojito_common::data_type::DataType;
+                    use $crate::func_impl_arg;
 
-                    $crate::func::sig::FuncImpl{
-                        args: vec![$(FuncImplArg::Exact(DataType::$arg_type)),*],
-                        ret: FuncImplReturn::Exact(DataType::$ret_type),
-                        func: $func_impl,
-                    }
+                    $crate::func::sig::FuncImpl::new(
+                        $name,
+                        vec![$(func_impl_arg!($arg_type)),*],
+                        FuncImplReturn::Exact(DataType::$ret_type),
+                        $func_impl,
+                    )
                 },)+
             ],
             is_agg: $is_agg,
