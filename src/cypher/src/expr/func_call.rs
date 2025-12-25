@@ -36,7 +36,7 @@ impl FuncCall {
 
     pub fn equal_unchecked(args: Vec<Expr>) -> Self {
         let equal_impl = FUNCTION_REGISTRY.get_equal_func_impl();
-        Self::new_unchecked("equal".to_string(), equal_impl.func_id.clone(), args, DataType::Bool)
+        Self::new_unchecked("eq".to_string(), equal_impl.func_id.clone(), args, DataType::Bool)
     }
 }
 

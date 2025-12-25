@@ -1,4 +1,5 @@
-//! register operators
+//! register operatorsA
+//! NOTE: the operator name should be sync with the parser/src/ast/expr.rs
 //! including:
 //! - AND
 //! - OR
@@ -27,6 +28,7 @@ use crate::func::FunctionRegistry;
 
 #[cypher_func(batch_name = "bool_and_batch", sig = "(bool, bool) -> bool")]
 fn bool_and(arg0: bool, arg1: bool) -> Result<bool, EvalError> {
+    println!("bool_and: {:?}, {:?}", arg0, arg1);
     Ok(arg0 && arg1)
 }
 
@@ -43,7 +45,7 @@ fn any_eq(arg0: ScalarRef<'_>, arg1: ScalarRef<'_>) -> Result<bool, EvalError> {
 pub(crate) fn register(registry: &mut FunctionRegistry) {
     let and = define_function!( name: "and", impls: [ {args: [{exact Bool}, {exact Bool}], ret: Bool, func: bool_and_batch}],is_agg: false);
     let or = define_function!( name: "or", impls: [ {args: [{exact Bool}, {exact Bool}], ret: Bool, func: bool_or_batch}],is_agg: false);
-    let equal = define_function!( name: "equal", impls: [ {args: [{exact Any}, {exact Any}], ret: Bool, func: any_eq_batch}],is_agg: false);
+    let equal = define_function!( name: "eq", impls: [ {args: [{exact Any}, {exact Any}], ret: Bool, func: any_eq_batch}],is_agg: false);
 
     registry.insert(and);
     registry.insert(or);

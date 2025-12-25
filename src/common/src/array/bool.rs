@@ -79,3 +79,87 @@ impl BoolArrayBuilder {
         BoolArray { data, valid }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use bitvec::prelude::*;
+
+    use super::*;
+
+    #[test]
+    fn test_bool_array_builder() {
+        let mut builder = BoolArrayBuilder::with_capacity(5);
+        builder.push(Some(true));
+        builder.push(Some(false));
+        builder.push(None);
+        builder.push_n(Some(true), 2);
+        let arr = builder.finish();
+
+        assert_eq!(arr.len(), 5);
+        assert_eq!(arr.get(0), Some(true));
+        assert_eq!(arr.get(1), Some(false));
+        assert_eq!(arr.get(2), None);
+        assert_eq!(arr.get(3), Some(true));
+        assert_eq!(arr.get(4), Some(true));
+    }
+
+    #[test]
+    fn test_bool_array_len() {
+        let mut builder = BoolArrayBuilder::with_capacity(0);
+        builder.push(Some(true));
+        builder.push(None);
+        let arr = builder.finish();
+        assert_eq!(arr.len(), 2);
+    }
+
+    #[test]
+    fn test_bool_array_physical_type() {
+        let mut builder = BoolArrayBuilder::with_capacity(0);
+        builder.push(Some(true));
+        let arr = builder.finish();
+        assert_eq!(arr.physical_type(), PhysicalType::Bool);
+    }
+
+    #[test]
+    fn test_bool_array_valid_map() {
+        let mut builder = BoolArrayBuilder::with_capacity(3);
+        builder.push(Some(true));
+        builder.push(None);
+        builder.push(Some(false));
+        let arr = builder.finish();
+
+        let expected_valid_map = bitvec![1, 0, 1];
+        assert_eq!(arr.valid_map(), &expected_valid_map);
+    }
+
+    #[test]
+    fn test_bool_array_set_valid_map() {
+        let mut builder = BoolArrayBuilder::with_capacity(2);
+        builder.push(Some(true));
+        builder.push(Some(false));
+        let mut arr = builder.finish();
+
+        let new_valid_map = bitvec![0, 1];
+        arr.set_valid_map(new_valid_map.clone());
+
+        assert_eq!(arr.valid_map(), &new_valid_map);
+        assert_eq!(arr.get(0), None);
+        assert_eq!(arr.get(1), Some(false));
+    }
+
+    #[test]
+    fn test_bool_array_to_filter_mask() {
+        let mut builder = BoolArrayBuilder::with_capacity(5);
+        builder.push(Some(true));
+        builder.push(Some(false));
+        builder.push(None);
+        builder.push_n(Some(true), 2);
+        let arr = builder.finish();
+
+        // data: 1 0 0 1 1
+        // valid: 1 1 0 1 1
+        // filter_mask: 1 0 0 1 1
+        let expected_filter_mask = bitvec![1, 0, 0, 1, 1];
+        assert_eq!(arr.to_filter_mask(), expected_filter_mask);
+    }
+}

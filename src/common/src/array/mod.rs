@@ -314,7 +314,7 @@ impl_array_builder_convert!(
 {Struct, StructArrayBuilder});
 
 // physical array type
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum PhysicalType {
     // basic
     Any,

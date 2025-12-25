@@ -77,6 +77,12 @@ pub fn cypher_func(attr: TokenStream, item: TokenStream) -> TokenStream {
         #(#arg_array_i.get(i).unwrap()),*
     };
 
+    let debug_func_args = quote! {
+        #(
+            println!("{:?}", #arg_array_i.get(i));
+        )*
+    };
+
     let expanded = quote! {
         #input_fn
         pub fn #batch_fn_name(args: &[ArrayRef], vis: &BitVec, len: usize) -> Result<ArrayImpl, EvalError> {
@@ -86,9 +92,11 @@ pub fn cypher_func(attr: TokenStream, item: TokenStream) -> TokenStream {
             #def_output_builder
 
             let valid_rows = vis.clone() & #(#arg_array_i.valid_map().clone())&*;
+            // println!("valid_rows: {:?}", valid_rows);
 
             for i in 0..len {
                 if valid_rows[i] {
+                    // #debug_func_args
                     let ret = #fn_name(#func_args)?;
                     output_builder.push(Some(ret.as_scalar_ref()));
                 } else {
@@ -172,28 +180,28 @@ fn extract_sig(sig: &str) -> CypherFuncSig {
 fn gen_array_cast(arg_type: &str, idx: usize, output: &syn::Ident) -> proc_macro2::TokenStream {
     match arg_type {
         "any" => quote! {
-            let #output = args[#idx].as_any().unwrap();
+            let #output = args[#idx].as_any().expect(&format!("expected any array, got {:?}", args[#idx].physical_type()));
         },
         "bool" => quote! {
-            let #output = args[#idx].as_bool().unwrap();
+            let #output = args[#idx].as_bool().expect(&format!("expected bool array, got {:?}", args[#idx].physical_type()));
         },
         "noderef" => quote! {
-            let #output= args[#idx].as_virtual_node().unwrap();
+            let #output= args[#idx].as_virtual_node().expect(&format!("expected noderef array, got {:?}", args[#idx].physical_type()));
         },
         "relref" => quote! {
-            let #output = args[#idx].as_virtual_rel().unwrap();
+            let #output = args[#idx].as_virtual_rel().expect(&format!("expected relref array, got {:?}", args[#idx].physical_type()));
         },
         "pathref" => quote! {
-            let #output = args[#idx].as_virtual_path().unwrap();
+            let #output = args[#idx].as_virtual_path().expect(&format!("expected pathref array, got {:?}", args[#idx].physical_type()));
         },
         "node" => quote! {
-            let #output = args[#idx].as_node().unwrap();
+            let #output = args[#idx].as_node().expect(&format!("expected node array, got {:?}", args[#idx].physical_type()));
         },
         "rel" => quote! {
-            let #output = args[#idx].as_rel().unwrap();
+            let #output = args[#idx].as_rel().expect(&format!("expected rel array, got {:?}", args[#idx].physical_type()));
         },
         "path" => quote! {
-            let #output = args[#idx].as_path().unwrap();
+            let #output = args[#idx].as_path().expect(&format!("expected path array, got {:?}", args[#idx].physical_type()));
         },
         _ => quote! {compile_error!("invalid signature type")},
     }

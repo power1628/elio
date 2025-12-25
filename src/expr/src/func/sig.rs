@@ -57,7 +57,8 @@ impl FuncImpl {
                     }
                 }
                 FuncImplArg::Exact(dt) => {
-                    if dt != &args[i] {
+                    // special handle for any, we think any type is equal to any other type
+                    if dt != &args[i] && *dt != DataType::Any {
                         return None;
                     }
                 }
