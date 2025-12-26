@@ -443,7 +443,7 @@ mod tests {
     fn test_localdatetime_str_try_from() {
         let dt_str = "2023-10-27 10:30:00.123456789";
         let dt = LocalDateTime::try_from(dt_str).unwrap();
-        assert_eq!(dt.seconds, 1698393000);
+        assert_eq!(dt.seconds, 1698402600);
         assert_eq!(dt.nanoseconds, 123_456_789);
 
         let dt_iso_str = "2023-10-27T10:30:00.123456789";
@@ -452,7 +452,7 @@ mod tests {
 
         let dt_no_nano_str = "2023-10-27 10:30:00";
         let dt_no_nano = LocalDateTime::try_from(dt_no_nano_str).unwrap();
-        assert_eq!(dt_no_nano.seconds, 1698393000);
+        assert_eq!(dt_no_nano.seconds, 1698402600);
         assert_eq!(dt_no_nano.nanoseconds, 0);
 
         assert!(LocalDateTime::try_from("invalid-datetime").is_err());
@@ -492,7 +492,7 @@ mod tests {
     fn test_zoneddatetime_str_try_from() {
         let dt_str = "2023-10-27 10:30:00.123456789 +0100";
         let dt = ZonedDateTime::try_from(dt_str).unwrap();
-        assert_eq!(dt.seconds, 1698399000 - 3600); // UTC timestamp
+        assert_eq!(dt.seconds, 1698399000); // UTC timestamp
         assert_eq!(dt.nanoseconds, 123_456_789);
         assert_eq!(dt.tz_offset_seconds, 3600);
 
@@ -502,7 +502,7 @@ mod tests {
 
         let dt_no_nano_str = "2023-10-27 10:30:00 +0100";
         let dt_no_nano = ZonedDateTime::try_from(dt_no_nano_str).unwrap();
-        assert_eq!(dt_no_nano.seconds, 1698399000 - 3600);
+        assert_eq!(dt_no_nano.seconds, 1698399000);
         assert_eq!(dt_no_nano.nanoseconds, 0);
         assert_eq!(dt_no_nano.tz_offset_seconds, 3600);
 
