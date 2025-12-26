@@ -3,6 +3,7 @@ use itertools::Itertools;
 use crate::SemanticDirection;
 use crate::data_type::F64;
 use crate::mapb::entry::EntryValueRef;
+use crate::scalar::temporal::*;
 
 // TODO(pgao): binary representation
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -12,6 +13,10 @@ pub enum PropertyValue {
     Boolean(bool),
     Integer(i64),
     Float(F64),
+    Date(Date),
+    LocalTime(LocalTime),
+    LocalDateTime(LocalDateTime),
+    ZonedDateTime(ZonedDateTime),
     String(String),
     // list
     ListBool(Vec<bool>),
@@ -27,6 +32,10 @@ impl PropertyValue {
             PropertyValue::Boolean(b) => b.to_string(),
             PropertyValue::Integer(i) => i.to_string(),
             PropertyValue::Float(f) => f.to_string(),
+            PropertyValue::Date(d) => d.to_string(),
+            PropertyValue::LocalTime(t) => t.to_string(),
+            PropertyValue::LocalDateTime(dt) => dt.to_string(),
+            PropertyValue::ZonedDateTime(dt) => dt.to_string(),
             PropertyValue::String(s) => format!("\"{}\"", s),
             PropertyValue::ListBool(b) => format!("[{}]", b.iter().map(|b| b.to_string()).join(", ")),
             PropertyValue::ListInteger(i) => format!("[{}]", i.iter().map(|i| i.to_string()).join(", ")),
@@ -41,6 +50,11 @@ pub enum StoreDataType {
     Boolean,
     Integer,
     Float,
+    Date,
+    LocalTime,
+    LocalDateTime,
+    ZonedTime,
+    ZonedDateTime,
     String,
     List(Box<StoreDataType>),
 }
@@ -52,6 +66,10 @@ impl PropertyValue {
             PropertyValue::Boolean(_) => StoreDataType::Boolean,
             PropertyValue::Integer(_) => StoreDataType::Integer,
             PropertyValue::Float(_) => StoreDataType::Float,
+            PropertyValue::Date(_) => StoreDataType::Date,
+            PropertyValue::LocalTime(_) => StoreDataType::LocalTime,
+            PropertyValue::LocalDateTime(_) => StoreDataType::LocalDateTime,
+            PropertyValue::ZonedDateTime(_) => StoreDataType::ZonedDateTime,
             PropertyValue::String(_) => StoreDataType::String,
             PropertyValue::ListBool(_) => StoreDataType::List(Box::new(StoreDataType::Boolean)),
             PropertyValue::ListInteger(_) => StoreDataType::List(Box::new(StoreDataType::Integer)),
@@ -68,6 +86,10 @@ impl PropertyValue {
             EntryValueRef::Bool(b) => PropertyValue::Boolean(b),
             EntryValueRef::Integer(i) => PropertyValue::Integer(i),
             EntryValueRef::Float(f) => PropertyValue::Float(F64::from(f)),
+            EntryValueRef::Date(d) => PropertyValue::Date(d.to_owned()),
+            EntryValueRef::LocalTime(t) => PropertyValue::LocalTime(t.to_owned()),
+            EntryValueRef::LocalDateTime(dt) => PropertyValue::LocalDateTime(dt.to_owned()),
+            EntryValueRef::ZonedDateTime(dt) => PropertyValue::ZonedDateTime(dt.to_owned()),
             EntryValueRef::String(s) => PropertyValue::String(s.to_string()),
             EntryValueRef::ListBool(b) => PropertyValue::ListBool(b.to_vec()),
             EntryValueRef::ListInteger(i) => PropertyValue::ListInteger(i.iter().collect_vec()),

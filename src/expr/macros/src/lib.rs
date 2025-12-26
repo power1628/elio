@@ -83,6 +83,13 @@ pub fn cypher_func(attr: TokenStream, item: TokenStream) -> TokenStream {
         )*
     };
 
+    let valid_rows = quote! {
+        let valid_rows = vis.clone();
+        #(
+            let valid_rows = valid_rows & #arg_array_i.valid_map().clone();
+        )*
+    };
+
     let expanded = quote! {
         #input_fn
         pub fn #batch_fn_name(args: &[ArrayRef], vis: &BitVec, len: usize) -> Result<ArrayImpl, EvalError> {
@@ -91,7 +98,7 @@ pub fn cypher_func(attr: TokenStream, item: TokenStream) -> TokenStream {
 
             #def_output_builder
 
-            let valid_rows = vis.clone() & #(#arg_array_i.valid_map().clone())&*;
+            #valid_rows
             // println!("valid_rows: {:?}", valid_rows);
 
             for i in 0..len {

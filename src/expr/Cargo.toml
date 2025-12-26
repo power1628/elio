@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 bitvec = { workspace = true }
+chrono = { workspace = true }
 expr_macros = { path = "./macros" }
 itertools = { workspace = true }
 mojito_common = { workspace = true }

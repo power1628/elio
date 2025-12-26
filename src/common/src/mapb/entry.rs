@@ -5,10 +5,8 @@ use bytes::{Buf, BufMut, BytesMut};
 use itertools::Itertools;
 
 use crate::data_type::F64;
-use crate::mapb::meta::{
-    BOOL_TAG, EntryMeta, FLOAT_TAG, INTEGER_TAG, LIST_BOOL_TAG, LIST_FLOAT_TAG, LIST_INTEGER_TAG, LIST_STRING_TAG,
-    NULL_TAG, STRING_TAG,
-};
+use crate::mapb::meta::*;
+use crate::mapb::{DATE_TAG, LOCAL_DATE_TIME_TAG};
 use crate::scalar::*;
 
 pub struct EntryRef<'a> {
@@ -34,6 +32,20 @@ impl<'a> EntryRef<'a> {
             BOOL_TAG => EntryValueRef::Bool(self.meta.as_bool()),
             INTEGER_TAG => EntryValueRef::Integer(self.meta.as_integer()),
             FLOAT_TAG => EntryValueRef::Float(self.meta.as_float()),
+            DATE_TAG => EntryValueRef::Date(self.meta.as_date()),
+            LOCAL_TIME_TAG => EntryValueRef::LocalTime(self.meta.as_local_time()),
+            LOCAL_DATE_TIME_TAG => {
+                let data_slice = &self.data[self.meta.offset()..];
+                EntryValueRef::LocalDateTime(LocalDateTime::from_le_bytes(
+                    data_slice[..LocalDateTime::STORAGE_BYTES].try_into().unwrap(),
+                ))
+            }
+            ZONED_DATE_TIME_TAG => {
+                let data_slice = &self.data[self.meta.offset()..];
+                EntryValueRef::ZonedDateTime(ZonedDateTime::from_le_bytes(
+                    data_slice[..ZonedDateTime::STORAGE_BYTES].try_into().unwrap(),
+                ))
+            }
             STRING_TAG => EntryValueRef::String(unsafe {
                 let data_slice = &self.data[self.meta.offset()..];
                 let len = (&data_slice[..4]).get_u32_le() as usize;
@@ -61,6 +73,10 @@ pub enum EntryValueRef<'a> {
     Bool(bool),
     Integer(i64),
     Float(f64),
+    Date(Date),
+    LocalTime(LocalTime),
+    LocalDateTime(LocalDateTime),
+    ZonedDateTime(ZonedDateTime),
     String(&'a str),
     ListBool(&'a [bool]),
     ListInteger(PrimitiveListRef<'a, i64>),
@@ -75,6 +91,10 @@ impl<'a> EntryValueRef<'a> {
             EntryValueRef::Bool(b) => ScalarValue::Bool(*b),
             EntryValueRef::Integer(i) => ScalarValue::Integer(*i),
             EntryValueRef::Float(f) => ScalarValue::Float(F64::from(*f)),
+            EntryValueRef::Date(d) => ScalarValue::Date(*d),
+            EntryValueRef::LocalTime(t) => ScalarValue::LocalTime(*t),
+            EntryValueRef::LocalDateTime(dt) => ScalarValue::LocalDateTime(*dt),
+            EntryValueRef::ZonedDateTime(dt) => ScalarValue::ZonedDateTime(*dt),
             EntryValueRef::String(s) => ScalarValue::String(s.to_string()),
             EntryValueRef::ListBool(list) => ScalarValue::List(Box::new(ListValue::new(
                 list.iter().map(|x| ScalarValue::Bool(*x)).collect_vec(),
@@ -99,6 +119,10 @@ impl<'a> EntryValueRef<'a> {
             EntryValueRef::Bool(b) => b.to_string(),
             EntryValueRef::Integer(i) => i.to_string(),
             EntryValueRef::Float(f) => f.to_string(),
+            EntryValueRef::Date(d) => d.to_string(),
+            EntryValueRef::LocalTime(t) => t.to_string(),
+            EntryValueRef::LocalDateTime(dt) => dt.to_string(),
+            EntryValueRef::ZonedDateTime(dt) => dt.to_string(),
             EntryValueRef::String(s) => s.to_string(),
             EntryValueRef::ListBool(items) => format!(
                 "[{}]",
@@ -338,6 +362,34 @@ impl EntryMut {
         let mut key = EntryMeta::default().with_key_id(key_id);
         key = key.with_float(value);
         Self { key, val: None }
+    }
+
+    pub fn date(key_id: u16, value: Date) -> Self {
+        let mut key = EntryMeta::default().with_key_id(key_id);
+        key = key.with_date(value);
+        Self { key, val: None }
+    }
+
+    pub fn local_time(key_id: u16, value: LocalTime) -> Self {
+        let mut key = EntryMeta::default().with_key_id(key_id);
+        key = key.with_local_time(value);
+        Self { key, val: None }
+    }
+
+    pub fn local_date_time(key_id: u16, value: LocalDateTime) -> Self {
+        let mut key = EntryMeta::default().with_key_id(key_id);
+        key = key.with_local_date_time();
+        let mut val = EntryValueMut::with_capacity(LocalDateTime::STORAGE_BYTES);
+        val.buffer.put_slice(&value.to_le_bytes());
+        Self { key, val: Some(val) }
+    }
+
+    pub fn zoned_date_time(key_id: u16, value: ZonedDateTime) -> Self {
+        let mut key = EntryMeta::default().with_key_id(key_id);
+        key = key.with_zoned_date_time();
+        let mut val = EntryValueMut::with_capacity(ZonedDateTime::STORAGE_BYTES);
+        val.buffer.put_slice(&value.to_le_bytes());
+        Self { key, val: Some(val) }
     }
 
     pub fn string(key_id: u16, value: &str) -> Self {

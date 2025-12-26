@@ -16,6 +16,8 @@
 //                         | Float(f64)
 
 use bytes::Buf;
+
+use crate::scalar::{Date, LocalTime};
 // #layout
 // | key_id (u16) | type_tag (u8) | padding (u8) | value_offset_or_value (u64) |
 // |      2       |        1      |       1      |           8               |
@@ -27,11 +29,16 @@ pub const NULL_TAG: u8 = 0x00;
 pub const BOOL_TAG: u8 = 0x01;
 pub const INTEGER_TAG: u8 = 0x02;
 pub const FLOAT_TAG: u8 = 0x03;
-pub const STRING_TAG: u8 = 0x04;
-pub const LIST_BOOL_TAG: u8 = 0x05;
-pub const LIST_INTEGER_TAG: u8 = 0x06;
-pub const LIST_FLOAT_TAG: u8 = 0x07;
-pub const LIST_STRING_TAG: u8 = 0x08;
+pub const DATE_TAG: u8 = 0x04;
+pub const LOCAL_TIME_TAG: u8 = 0x05;
+pub const LOCAL_DATE_TIME_TAG: u8 = 0x06;
+pub const ZONED_TIME_TAG: u8 = 0x07;
+pub const ZONED_DATE_TIME_TAG: u8 = 0x08;
+pub const STRING_TAG: u8 = 0x09;
+pub const LIST_BOOL_TAG: u8 = 0x10;
+pub const LIST_INTEGER_TAG: u8 = 0x12;
+pub const LIST_FLOAT_TAG: u8 = 0x13;
+pub const LIST_STRING_TAG: u8 = 0x14;
 
 impl EntryMeta {
     pub fn with_key_id(mut self, key_id: u16) -> Self {
@@ -65,6 +72,33 @@ impl EntryMeta {
     pub fn with_float(mut self, value: f64) -> Self {
         self.0[2] = FLOAT_TAG;
         self.0[4..12].copy_from_slice(&value.to_le_bytes());
+        self
+    }
+
+    pub fn with_date(mut self, value: Date) -> Self {
+        self.0[2] = DATE_TAG;
+        self.0[4..12].copy_from_slice(&value.to_le_bytes());
+        self
+    }
+
+    pub fn with_local_time(mut self, value: LocalTime) -> Self {
+        self.0[2] = LOCAL_TIME_TAG;
+        self.0[4..12].copy_from_slice(&value.to_le_bytes());
+        self
+    }
+
+    pub fn with_local_date_time(mut self) -> Self {
+        self.0[2] = LOCAL_DATE_TIME_TAG;
+        self
+    }
+
+    pub fn with_zoned_time(mut self) -> Self {
+        self.0[2] = ZONED_TIME_TAG;
+        self
+    }
+
+    pub fn with_zoned_date_time(mut self) -> Self {
+        self.0[2] = ZONED_DATE_TIME_TAG;
         self
     }
 
@@ -119,11 +153,22 @@ impl EntryMeta {
         (&self.0[4..12]).get_f64_le()
     }
 
+    pub fn as_date(&self) -> Date {
+        Date::from_le_bytes(self.0[4..12].try_into().unwrap())
+    }
+
+    pub fn as_local_time(&self) -> LocalTime {
+        LocalTime::from_le_bytes(self.0[4..12].try_into().unwrap())
+    }
+
     pub fn offset(&self) -> usize {
         (&self.0[4..12]).get_u64_le() as usize
     }
 
     pub fn is_inlined(&self) -> bool {
-        matches!(self.type_tag(), NULL_TAG | BOOL_TAG | INTEGER_TAG | FLOAT_TAG)
+        matches!(
+            self.type_tag(),
+            NULL_TAG | BOOL_TAG | INTEGER_TAG | FLOAT_TAG | DATE_TAG | LOCAL_TIME_TAG
+        )
     }
 }

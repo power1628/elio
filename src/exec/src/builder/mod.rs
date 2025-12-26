@@ -12,6 +12,7 @@ use crate::executor::all_node_scan::AllNodeScanExectuor;
 use crate::executor::create_node::{CreateNodeExectuor, CreateNodeItem};
 use crate::executor::create_rel::{CreateRelExectuor, CreateRelItem};
 use crate::executor::expand::ExpandExecutor;
+use crate::executor::filter::FilterExecutor;
 use crate::executor::produce_result::ProduceResultExecutor;
 use crate::executor::project::ProjectExecutor;
 use crate::executor::unit::UnitExecutor;
@@ -78,7 +79,7 @@ fn build_node(ctx: &mut ExecutorBuildContext, node: &PlanExpr) -> Result<BoxedEx
         PlanExpr::CreateRel(create_rel) => build_create_rel(ctx, create_rel, inputs),
         PlanExpr::Project(project) => build_project(ctx, project, inputs),
         PlanExpr::Sort(_sort) => todo!(),
-        PlanExpr::Filter(_filter) => todo!(),
+        PlanExpr::Filter(filter) => build_filter(ctx, filter, inputs),
         PlanExpr::Pagination(_pagination) => todo!(),
         PlanExpr::Empty(_empty) => todo!(),
     }
@@ -393,6 +394,31 @@ fn build_project(
         input,
         exprs: project_exprs,
         // we assume the schema is with the same order of projections
+        schema: node.schema().clone(),
+    }
+    .boxed())
+}
+
+fn build_filter(
+    ctx: &mut ExecutorBuildContext,
+    node: &plan_node::Filter,
+    inputs: Vec<BoxedExecutor>,
+) -> Result<BoxedExecutor, BuildError> {
+    assert_eq!(inputs.len(), 1);
+    let [input]: [BoxedExecutor; 1] = inputs.try_into().unwrap();
+
+    let schema = input.schema().clone();
+    let ectx = BuildExprContext::new(&schema, ctx);
+
+    // TODO(pgao): special handle and optimize
+    let expr = {
+        let expr: mojito_cypher::expr::Expr = node.inner().condition.clone().into();
+        build_expression(&ectx, &expr)?
+    };
+
+    Ok(FilterExecutor {
+        input,
+        filter: expr,
         schema: node.schema().clone(),
     }
     .boxed())

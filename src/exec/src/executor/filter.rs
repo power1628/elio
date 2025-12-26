@@ -7,9 +7,9 @@ use crate::executor::Executor;
 
 #[derive(Debug)]
 pub struct FilterExecutor {
-    input: BoxedExecutor,
-    filter: BoxedExpression,
-    schema: Arc<Schema>,
+    pub input: BoxedExecutor,
+    pub filter: BoxedExpression,
+    pub schema: Arc<Schema>,
 }
 
 // TODO(pgao): compact data chunk before expand and others

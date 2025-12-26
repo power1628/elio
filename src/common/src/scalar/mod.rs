@@ -71,7 +71,6 @@ pub enum ScalarValue {
     Date(Date),
     LocalTime(LocalTime),
     LocalDateTime(LocalDateTime),
-    ZonedTime(ZonedTime),
     ZonedDateTime(ZonedDateTime),
     Duration(Duration),
     #[display("'{}'", _0)]
@@ -113,7 +112,6 @@ impl_scalar_value_convert!(F64, Float);
 impl_scalar_value_convert!(Date, Date);
 impl_scalar_value_convert!(LocalTime, LocalTime);
 impl_scalar_value_convert!(LocalDateTime, LocalDateTime);
-impl_scalar_value_convert!(ZonedTime, ZonedTime);
 impl_scalar_value_convert!(ZonedDateTime, ZonedDateTime);
 impl_scalar_value_convert!(Duration, Duration);
 impl_scalar_value_convert!(String, String);
@@ -146,7 +144,6 @@ impl_scalar_dispatch!(
     {Date, Date},
     {LocalTime, LocalTime},
     {LocalDateTime, LocalDateTime},
-    {ZonedTime, ZonedTime},
     {ZonedDateTime, ZonedDateTime},
     {Duration, Duration},
     {String, &'a str},
@@ -172,7 +169,6 @@ pub enum ScalarRef<'a> {
     Date(Date),
     LocalTime(LocalTime),
     LocalDateTime(LocalDateTime),
-    ZonedTime(ZonedTime),
     ZonedDateTime(ZonedDateTime),
     Duration(Duration),
     #[display("'{}'", _0)]
@@ -226,7 +222,6 @@ impl_into_for_scalar_ref!(
     {Date, Date},
     {LocalTime, LocalTime},
     {LocalDateTime, LocalDateTime},
-    {ZonedTime, ZonedTime},
     {ZonedDateTime, ZonedDateTime},
     {Duration, Duration},
     {&'a str, String},
@@ -260,7 +255,6 @@ impl_scalar_ref_dispatch!(
     { Date },
     { LocalTime },
     { LocalDateTime },
-    { ZonedTime },
     { ZonedDateTime },
     { Duration },
     { String },
@@ -303,7 +297,6 @@ impl_scalar_for_primitive!(
     {Date, Date},
     {LocalTime, LocalTime},
     {LocalDateTime, LocalDateTime},
-    {ZonedTime, ZonedTime},
     {ZonedDateTime, ZonedDateTime},
     {Duration, Duration},
     {NodeId, NodeId}
