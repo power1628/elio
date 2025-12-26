@@ -1,7 +1,52 @@
+######## date ########
+
 query A
 RETURN date('2000-01-01')
 ----
 2000-01-01
+
+#query A
+#RETURN date()
+#----
+
+
+######## local time ############
+
+query A
+RETURN localtime('12:34:56')
+----
+12:34:56
+
+#query A
+#RETURN localtime()
+#----
+#11:10:51.231241
+
+######## localdatetime ##########
+query A
+RETURN localdatetime('2022-06-14T10:02:30.447')
+----
+2022-06-14 10:02:30.447
+
+#query A
+#RETURN localdatetime()
+#----
+#2025-12-26 11:22:38.389936
+
+
+#######    datetime    ###########
+
+query A
+RETURN datetime('1984-10-11T12:34:56 +0100')
+----
+1984-10-11 12:34:56 +01:00
+
+#query A
+#RETURN datetime()
+#----
+#2025-12-26 11:37:03.674187 +08:00
+
+
 
 query A
 RETURN 1 = 1

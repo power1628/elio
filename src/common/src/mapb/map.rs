@@ -121,6 +121,10 @@ impl PropertyMapMut {
             ScalarRef::Bool(b) => EntryMut::bool(key_id, *b),
             ScalarRef::Integer(i) => EntryMut::integer(key_id, *i),
             ScalarRef::Float(ordered_float) => EntryMut::float(key_id, **ordered_float),
+            ScalarRef::Date(date) => EntryMut::date(key_id, *date),
+            ScalarRef::LocalTime(time) => EntryMut::local_time(key_id, *time),
+            ScalarRef::LocalDateTime(dt) => EntryMut::local_date_time(key_id, *dt),
+            ScalarRef::ZonedDateTime(dt) => EntryMut::zoned_date_time(key_id, *dt),
             ScalarRef::String(s) => EntryMut::string(key_id, s),
             ScalarRef::VirtualNode(_) | ScalarRef::VirtualRel(_) | ScalarRef::Node(_) | ScalarRef::Rel(_) => {
                 return Err("node and rel cannot be property value".to_owned());
