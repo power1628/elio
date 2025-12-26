@@ -77,7 +77,7 @@ pub fn cypher_func(attr: TokenStream, item: TokenStream) -> TokenStream {
         #(#arg_array_i.get(i).unwrap()),*
     };
 
-    let debug_func_args = quote! {
+    let _debug_func_args = quote! {
         #(
             println!("{:?}", #arg_array_i.get(i));
         )*
