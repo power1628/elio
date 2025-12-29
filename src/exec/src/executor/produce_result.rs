@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
 use async_stream::try_stream;
+use bitvec::vec::BitVec;
 use futures::StreamExt;
-use mojito_common::array::{ListArray, PathArray};
+use mojito_common::array::{Array, ListArray, PathArray};
 
 use super::*;
 
@@ -25,6 +26,7 @@ impl Executor for ProduceResultExecutor {
 
             for await input in input_stream {
                 let input = input?;
+                println!("produce vis : {:?}", input.visibility());
                 let input = input.compact();
                 let vis = input.visibility();
 
@@ -33,7 +35,7 @@ impl Executor for ProduceResultExecutor {
                     let col = input.column(*col_idx);
                     // if col is type of virtual node, materialize it
                     if let Some(virtual_col) = col.as_virtual_node(){
-                        let node_col= ctx.tx().materialize_node(virtual_col)?;
+                        let node_col= ctx.tx().materialize_node(virtual_col, vis)?;
                         out_cols.push(Arc::new(node_col.into()));
                     } else if let Some(vpath) = col.as_virtual_path() {
                         let (path_vnodes, path_rels, valid) = vpath.clone().into_parts();
@@ -41,7 +43,8 @@ impl Executor for ProduceResultExecutor {
                         let path_nodes = {
                             let (offsets, child, valid) = path_vnodes.as_ref().clone().into_parts();
                             let child_nodes = child.as_virtual_node().expect("virtual path nodes should be virtual node");
-                            let mz_nodes = ctx.tx().materialize_node(child_nodes)?;
+                            let vis = BitVec::repeat(true, child_nodes.len());
+                            let mz_nodes = ctx.tx().materialize_node(child_nodes, &vis)?;
                             Arc::new(ListArray::from_parts(offsets, Arc::new(mz_nodes.into()), valid))
                         };
 

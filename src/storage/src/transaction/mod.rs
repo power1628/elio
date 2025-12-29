@@ -2,6 +2,7 @@ use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
+use bitvec::vec::BitVec;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::array::{ArrayImpl, NodeArray, RelArray, StructArray, VirtualNodeArray};
 use mojito_common::{NodeId, SemanticDirection, TokenId};
@@ -63,8 +64,8 @@ impl TransactionImpl {
         batch_node_scan(self, opts)
     }
 
-    pub fn materialize_node(&self, node_ids: &VirtualNodeArray) -> Result<NodeArray, GraphStoreError> {
-        batch_materialize_node(self, node_ids)
+    pub fn materialize_node(&self, node_ids: &VirtualNodeArray, vis: &BitVec) -> Result<NodeArray, GraphStoreError> {
+        batch_materialize_node(self, node_ids, vis)
     }
 
     pub fn node_create(&self, label: &[Arc<str>], prop: &ArrayImpl) -> Result<NodeArray, GraphStoreError> {

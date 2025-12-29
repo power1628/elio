@@ -12,8 +12,6 @@ pub struct FilterExecutor {
     pub schema: Arc<Schema>,
 }
 
-// TODO(pgao): compact data chunk before expand and others
-// For now, we force compaction after filter for simplicity.
 // TODO(pgao): short circuit filter
 impl Executor for FilterExecutor {
     fn build_stream(self: Box<Self>, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {

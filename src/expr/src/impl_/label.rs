@@ -27,6 +27,7 @@ impl Expression for HasLabelExpr {
 
     fn eval_batch(&self, chunk: &DataChunk, ctx: &dyn EvalCtx) -> Result<ArrayRef, EvalError> {
         let entity = self.entity.eval_batch(chunk, ctx)?;
+        let vis = chunk.visibility();
 
         match entity.as_ref() {
             ArrayImpl::Node(node_array) => {
@@ -40,7 +41,7 @@ impl Expression for HasLabelExpr {
                 Ok(Arc::new(out.into()))
             }
             ArrayImpl::VirtualNode(vnode_array) => {
-                let node = ctx.materialize_node(vnode_array)?;
+                let node = ctx.materialize_node(vnode_array, vis)?;
                 let valid = vnode_array.valid_map().clone() & chunk.visibility();
                 let out = label_contains(&node, &valid, &self.label);
                 Ok(Arc::new(out.into()))

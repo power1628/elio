@@ -6,6 +6,7 @@ edition.workspace = true
 [dependencies]
 # workspace
 async-stream = { workspace = true }
+bitvec = { workspace = true }
 educe = { workspace = true }
 futures = { workspace = true }
 indexmap = { workspace = true }
