@@ -6,6 +6,7 @@ use itertools::Itertools;
 use super::*;
 use crate::array::{ArrayBuilderImpl, ArrayImpl, ArrayRef, PhysicalType};
 
+#[derive(Clone)]
 pub struct DataChunk {
     columns: Vec<Arc<ArrayImpl>>,
     visibility: BitVec,
@@ -19,7 +20,7 @@ impl DataChunk {
         }
     }
 
-    pub fn new(columns: Vec<Arc<ArrayImpl>>) -> Self {
+    pub fn new(columns: Vec<Arc<ArrayImpl>>, visibility: BitVec) -> Self {
         if columns.is_empty() {
             return Self {
                 columns: Vec::new(),
@@ -35,10 +36,7 @@ impl DataChunk {
                 "All columns in a DataChunk must have the same length"
             );
         }
-        Self {
-            columns,
-            visibility: BitVec::repeat(true, len),
-        }
+        Self { columns, visibility }
     }
 
     pub fn add_column(&mut self, column: Arc<ArrayImpl>) {
@@ -52,6 +50,10 @@ impl DataChunk {
 
     pub fn column(&self, idx: usize) -> ArrayRef {
         self.columns[idx].clone()
+    }
+
+    pub fn columns(&self) -> &[Arc<ArrayImpl>] {
+        &self.columns
     }
 
     pub fn visibility(&self) -> &BitVec {
@@ -73,6 +75,24 @@ impl DataChunk {
             chunk: self,
             idx: 0,
             len: self.visibility.len(),
+        }
+    }
+
+    pub fn compact(&self) -> DataChunk {
+        // if all true,just clone
+        if self.visibility.all() {
+            return self.clone();
+        }
+        let card = self.visible_row_len();
+        let mut new_columns = vec![];
+
+        for col in &self.columns {
+            new_columns.push(Arc::new(col.compact(&self.visibility, card)));
+        }
+
+        DataChunk {
+            columns: new_columns,
+            visibility: BitVec::repeat(true, card),
         }
     }
 }
@@ -147,7 +167,7 @@ impl DataChunkBuilder {
     fn build_chunk(&mut self) -> DataChunk {
         let builders = std::mem::take(&mut self.columns);
         let columns = builders.into_iter().map(|b| Arc::new(b.finish())).collect_vec();
-        let chunk = DataChunk::new(columns);
+        let chunk = DataChunk::new(columns, BitVec::repeat(true, self.len));
         self.reset();
         chunk
     }

@@ -12,7 +12,7 @@ pub struct FilterExecutor {
     pub schema: Arc<Schema>,
 }
 
-// TODO(pgao): compact data chunk before expand and others
+// TODO(pgao): short circuit filter
 impl Executor for FilterExecutor {
     fn build_stream(self: Box<Self>, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
         let stream = try_stream! {
@@ -36,5 +36,9 @@ impl Executor for FilterExecutor {
 
     fn schema(&self) -> &Schema {
         &self.schema
+    }
+
+    fn name(&self) -> &'static str {
+        "Filter"
     }
 }

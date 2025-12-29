@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use bitvec::vec::BitVec;
 use mojito_common::TokenKind;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::array::{Array, ArrayImpl, NodeArray, NodeArrayBuilder, VirtualNodeArray, VirtualNodeArrayBuilder};
@@ -100,13 +101,17 @@ pub(crate) fn batch_node_scan(
 pub(crate) fn batch_materialize_node(
     tx: &TransactionImpl,
     node_ids: &VirtualNodeArray,
+    vis: &BitVec,
 ) -> Result<NodeArray, GraphStoreError> {
     let cf_handle = tx.inner._db.cf_handle(cf_property::CF_NAME).unwrap();
     let mut builder = NodeArrayBuilder::with_capacity(node_ids.len());
 
     let mut valid_node_keys = vec![];
-    for node_id in node_ids.iter().flatten() {
-        valid_node_keys.push(NodeFormat::encode_node_key(node_id));
+    for (idx, node_id) in node_ids.iter().enumerate() {
+        match (vis[idx], node_id) {
+            (true, Some(node_id)) => valid_node_keys.push(NodeFormat::encode_node_key(node_id)),
+            _ => continue,
+        }
     }
 
     // rocksdb batch read
@@ -114,8 +119,8 @@ pub(crate) fn batch_materialize_node(
     let batch = tx.inner.snapshot.multi_get_cf(keys_cf);
     let mut batch_iter = batch.into_iter();
 
-    for node_id in node_ids.iter() {
-        if node_id.is_none() {
+    for (idx, node_id) in node_ids.iter().enumerate() {
+        if !vis[idx] || node_id.is_none() {
             builder.push(None);
             continue;
         }
@@ -183,7 +188,8 @@ impl<'a, D: rocksdb::DBAccess> DataChunkIterator for NodeIterator<'a, D> {
         if array.is_empty() {
             Ok(None)
         } else {
-            let chunk = DataChunk::new(vec![Arc::new(array.into())]);
+            let vis = BitVec::repeat(true, array.len());
+            let chunk = DataChunk::new(vec![Arc::new(array.into())], vis);
             Ok(Some(chunk))
         }
     }

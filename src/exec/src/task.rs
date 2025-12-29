@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use bitvec::vec::BitVec;
 use educe::Educe;
 use futures::StreamExt;
 use itertools::Itertools;
@@ -57,9 +58,9 @@ impl EvalCtx for EvalCtxImpl {
             .map_err(|e| EvalError::GetOrCreateTokenError(e.to_string()))
     }
 
-    fn materialize_node(&self, node_ids: &VirtualNodeArray) -> Result<NodeArray, EvalError> {
+    fn materialize_node(&self, node_ids: &VirtualNodeArray, vis: &BitVec) -> Result<NodeArray, EvalError> {
         self.tx
-            .materialize_node(node_ids)
+            .materialize_node(node_ids, vis)
             .map_err(|e| EvalError::materialize_node_error(e.to_string()))
     }
 }

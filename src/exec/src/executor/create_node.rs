@@ -31,6 +31,10 @@ impl Executor for CreateNodeExectuor {
     fn schema(&self) -> &Schema {
         &self.schema
     }
+
+    fn name(&self) -> &'static str {
+        "CreateNode"
+    }
 }
 
 impl CreateNodeExectuor {
@@ -43,7 +47,8 @@ impl CreateNodeExectuor {
 
             // execute the stream
             while let Some(chunk) = input_stream.next().await{
-                let mut chunk = chunk?;
+                let chunk = chunk?;
+                let mut chunk = chunk.compact();
                 // for each variable execute create node
                 for (i, item) in self.items.iter().enumerate() {
                     let prop = item.properties.eval_batch(&chunk, &eval_ctx)?;

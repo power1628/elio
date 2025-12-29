@@ -19,7 +19,7 @@ use itertools::Itertools;
 use crate::array::{Array, ArrayImpl, StructArray};
 use crate::data_type::F64;
 use crate::store_types::RelDirection;
-use crate::{NodeId, RelationshipId};
+use crate::{IrToken, NodeId, RelationshipId};
 
 pub mod node;
 pub use node::*;
@@ -322,3 +322,7 @@ pub type Row = Vec<Option<ScalarValue>>;
 
 pub type Datum = Option<ScalarValue>;
 pub type DatumRef<'a> = Option<&'a ScalarValue>;
+
+pub trait EntityScalarRef {
+    fn has_ir_label(&self, label: &IrToken) -> bool;
+}

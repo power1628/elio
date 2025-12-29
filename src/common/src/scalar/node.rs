@@ -1,4 +1,5 @@
 pub use super::*;
+use crate::IrToken;
 
 #[derive(Debug, Clone, Default, Eq, PartialEq, Hash, derive_more::Display)]
 #[display("{{id: {}, labels: [{}], props: {}}}", id, labels.iter().map(|l| l.to_string()).collect::<Vec<_>>().join(", "), props)]
@@ -29,6 +30,13 @@ pub struct NodeValueRef<'a> {
     pub props: StructValueRef<'a>,
 }
 
+impl<'a> NodeValueRef<'a> {
+    // TODO(pgao): optimize by using token id, instead of using string compare
+    pub fn has_label(&self, label: &IrToken) -> bool {
+        self.labels.iter().any(|l| l == label.name())
+    }
+}
+
 impl<'a> ScalarRefVTable<'a> for NodeValueRef<'a> {
     type ScalarType = NodeValue;
 
@@ -38,5 +46,11 @@ impl<'a> ScalarRefVTable<'a> for NodeValueRef<'a> {
             labels: self.labels.to_vec(),
             props: self.props.to_owned_scalar(),
         }
+    }
+}
+
+impl<'a> EntityScalarRef for NodeValueRef<'a> {
+    fn has_ir_label(&self, label: &IrToken) -> bool {
+        self.has_label(label)
     }
 }

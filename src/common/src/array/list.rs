@@ -27,12 +27,29 @@ impl Array for ListArray {
         })
     }
 
+    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
+        let start = self.offsets[idx];
+        let end = self.offsets[idx + 1];
+        let child = self.child.as_ref();
+        ListValueRef::Index { child, start, end }
+    }
+
     fn len(&self) -> usize {
         self.valid.len()
     }
 
     fn physical_type(&self) -> PhysicalType {
         PhysicalType::List(Box::new(self.child.physical_type()))
+    }
+
+    fn compact(&self, visibility: &BitVec, new_len: usize) -> Self {
+        let mut builder = self.physical_type().array_builder(new_len).into_list().unwrap();
+
+        for idx in visibility.iter_ones() {
+            builder.push(self.get(idx));
+        }
+
+        builder.finish()
     }
 }
 

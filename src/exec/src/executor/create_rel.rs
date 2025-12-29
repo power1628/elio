@@ -31,7 +31,9 @@ impl Executor for CreateRelExectuor {
 
             // execute the stream
             for await chunk in input_stream {
-                let mut chunk = chunk?;
+                let chunk = chunk?;
+                // TODO(pgao): do not eager compact the chunk
+                let mut chunk = chunk.compact();
                 // for each variable execute create node
                 for (i, item) in self.items.iter().enumerate() {
                     let prop = item.properties.eval_batch(&chunk, &eval_ctx)?;
@@ -82,5 +84,9 @@ impl Executor for CreateRelExectuor {
 
     fn schema(&self) -> &Schema {
         &self.schema
+    }
+
+    fn name(&self) -> &'static str {
+        "CreateRel"
     }
 }

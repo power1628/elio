@@ -24,7 +24,7 @@ impl Executor for ProjectExecutor {
                     let column = expr.eval_batch(&chunk, &eval_ctx)?;
                     cols.push(column);
                 }
-                let output = DataChunk::new(cols);
+                let output = DataChunk::new(cols, chunk.visibility().clone());
                 yield output;
            }
         }
@@ -34,5 +34,9 @@ impl Executor for ProjectExecutor {
 
     fn schema(&self) -> &Schema {
         &self.schema
+    }
+
+    fn name(&self) -> &'static str {
+        "Project"
     }
 }

@@ -13,4 +13,8 @@ impl Executor for AllRelScanExecutor {
     fn schema(&self) -> &Schema {
         &self.schema
     }
+
+    fn name(&self) -> &'static str {
+        "AllRelScan"
+    }
 }

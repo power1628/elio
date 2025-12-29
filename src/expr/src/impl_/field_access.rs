@@ -45,6 +45,7 @@ impl Expression for FieldAccessExpr {
     fn eval_batch(&self, chunk: &DataChunk, ctx: &dyn EvalCtx) -> Result<ArrayRef, EvalError> {
         let input = self.input.eval_batch(chunk, ctx)?;
         let key = self.key.name();
+        let vis = chunk.visibility();
 
         // struct type
         if let ArrayImpl::Struct(input) = input.as_ref() {
@@ -72,7 +73,7 @@ impl Expression for FieldAccessExpr {
         // virtual node
         if let ArrayImpl::VirtualNode(input) = input.as_ref() {
             // materialize node
-            let node = ctx.materialize_node(input)?;
+            let node = ctx.materialize_node(input, vis)?;
             let output = access_properties(node.props_iter(), input.len(), key);
             return Ok(Arc::new(output.into()));
         }

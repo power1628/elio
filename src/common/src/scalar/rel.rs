@@ -1,4 +1,5 @@
 use super::*;
+use crate::IrToken;
 
 // TODO(pgao): we needs to hash and Eq only on id.
 // in varexpand, we needs to test if rel have already visited.
@@ -48,6 +49,12 @@ pub struct RelValueRef<'a> {
     pub start_id: NodeId,
     pub end_id: NodeId,
     pub props: StructValueRef<'a>,
+}
+
+impl<'a> RelValueRef<'a> {
+    pub fn has_label(&self, label: &IrToken) -> bool {
+        self.reltype == label.name()
+    }
 }
 
 impl<'a> ScalarRefVTable<'a> for RelValueRef<'a> {
@@ -117,5 +124,11 @@ impl<'a> ScalarRefVTable<'a> for VirtualRelRef<'a> {
             start_id: self.start_id,
             end_id: self.end_id,
         }
+    }
+}
+
+impl<'a> EntityScalarRef for RelValueRef<'a> {
+    fn has_ir_label(&self, label: &IrToken) -> bool {
+        self.has_label(label)
     }
 }

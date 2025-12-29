@@ -18,12 +18,12 @@ MATCH (n:Person) RETURN n
 /*
 RootIR { names: [n] }
 └─IrSingleQueryPart
-  ├─QueryGraph { nodes: [n@0], filter: n@0 HasAll[Person] }
+  ├─QueryGraph { nodes: [n@0], filter: n@0:Person }
   └─Project { items: [n@1 AS n@0] }
 RootPlan { names: [n] }
 └─ProduceResult { return_columns: n@1 }
   └─Project { exprs: [n@1 AS n@0] }
-    └─Filter { condition: n@0 HasAll[Person] }
+    └─Filter { condition: n@0:Person }
       └─AllNodeScan { variable: n@0 }
 */
 
@@ -33,12 +33,12 @@ MATCH (n:Person) RETURN *
 /*
 RootIR { names: [n] }
 └─IrSingleQueryPart
-  ├─QueryGraph { nodes: [n@0], filter: n@0 HasAll[Person] }
+  ├─QueryGraph { nodes: [n@0], filter: n@0:Person }
   └─Project { items: [n@0 AS n@0] }
 RootPlan { names: [n] }
 └─ProduceResult { return_columns: n@0 }
   └─Project { exprs: [n@0 AS n@0] }
-    └─Filter { condition: n@0 HasAll[Person] }
+    └─Filter { condition: n@0:Person }
       └─AllNodeScan { variable: n@0 }
 */
 
@@ -48,12 +48,12 @@ MATCH (n:Person) RETURN n.name
 /*
 RootIR { names: [n.name] }
 └─IrSingleQueryPart
-  ├─QueryGraph { nodes: [n@0], filter: n@0 HasAll[Person] }
+  ├─QueryGraph { nodes: [n@0], filter: n@0:Person }
   └─Project { items: [nname@1 AS n@0.name] }
 RootPlan { names: [n.name] }
 └─ProduceResult { return_columns: nname@1 }
   └─Project { exprs: [nname@1 AS n@0.name] }
-    └─Filter { condition: n@0 HasAll[Person] }
+    └─Filter { condition: n@0:Person }
       └─AllNodeScan { variable: n@0 }
 */
 
