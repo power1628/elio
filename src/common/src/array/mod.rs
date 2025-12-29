@@ -57,7 +57,13 @@ pub trait Array: Send + Sync + Sized + 'static + Into<ArrayImpl> + std::fmt::Deb
     type RefItem<'a>;
 
     /// Retrieve a reference to value.
+    /// TODO(pgao): use get_unchecked to implement get
     fn get(&self, idx: usize) -> Option<Self::RefItem<'_>>;
+
+    /// Get a reference to value without bounds check.
+    /// # SAFETY
+    ///    Caller must ensure that `idx` is valid.
+    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_>;
 
     /// Number of items of array.
     fn len(&self) -> usize;
@@ -73,6 +79,8 @@ pub trait Array: Send + Sync + Sized + 'static + Into<ArrayImpl> + std::fmt::Deb
     }
 
     fn physical_type(&self) -> PhysicalType;
+
+    fn compact(&self, visibility: &BitVec, new_len: usize) -> Self;
 }
 
 pub type ArrayRef = Arc<ArrayImpl>;
@@ -156,6 +164,11 @@ macro_rules! impl_array_dispatch {
                 }
             }
 
+            pub fn compact(&self, visibility: &BitVec, new_len: usize) -> Self {
+                match self {
+                    $(ArrayImpl::$variant(a) => a.compact(visibility, new_len).into(),)*
+                }
+            }
         }
     };
 }
@@ -360,4 +373,11 @@ impl PhysicalType {
             }
         }
     }
+}
+
+// Node or Rel Array
+pub trait EntityArray: Array
+where
+    for<'a> <Self as Array>::RefItem<'a>: EntityScalarRef,
+{
 }

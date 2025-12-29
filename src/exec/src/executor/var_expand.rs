@@ -41,6 +41,7 @@ impl<PATHMODE: PathContainer, EXPANDKIND: ExpandKindStrategy> Executor for VarEx
             let mut out_builder = DataChunkBuilder::new(self.schema.columns().iter().map(|col| col.typ.physical_type()), CHUNK_SIZE);
             for await chunk in input_stream{
                 let outer = chunk?;
+                let outer = outer.compact();
                 for row in outer.iter() {
                     // if from is null, then remove this row
                     let from_id = match row[self.from].and_then(|id| id.get_node_id()){
@@ -89,6 +90,10 @@ impl<PATHMODE: PathContainer, EXPANDKIND: ExpandKindStrategy> Executor for VarEx
 
     fn schema(&self) -> &Schema {
         &self.schema
+    }
+
+    fn name(&self) -> &'static str {
+        "VarExpand"
     }
 }
 

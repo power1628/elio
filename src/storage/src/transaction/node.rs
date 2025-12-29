@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use bitvec::vec::BitVec;
 use mojito_common::TokenKind;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::array::{Array, ArrayImpl, NodeArray, NodeArrayBuilder, VirtualNodeArray, VirtualNodeArrayBuilder};
@@ -183,7 +184,8 @@ impl<'a, D: rocksdb::DBAccess> DataChunkIterator for NodeIterator<'a, D> {
         if array.is_empty() {
             Ok(None)
         } else {
-            let chunk = DataChunk::new(vec![Arc::new(array.into())]);
+            let vis = BitVec::repeat(true, array.len());
+            let chunk = DataChunk::new(vec![Arc::new(array.into())], vis);
             Ok(Some(chunk))
         }
     }

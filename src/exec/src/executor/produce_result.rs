@@ -21,10 +21,12 @@ impl Executor for ProduceResultExecutor {
     fn build_stream(self: Box<Self>, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
         let stream = try_stream! {
 
-            let mut input_stream = self.input.build_stream(ctx.clone())?;
+            let input_stream = self.input.build_stream(ctx.clone())?;
 
-            while let Some(input) = input_stream.next().await{
+            for await input in input_stream {
                 let input = input?;
+                let input = input.compact();
+                let vis = input.visibility();
 
                 let mut out_cols = vec![];
                 for col_idx in self.return_columns.iter(){
@@ -50,7 +52,7 @@ impl Executor for ProduceResultExecutor {
                     }
                }
 
-               let output = DataChunk::new(out_cols);
+               let output = DataChunk::new(out_cols, vis.clone());
                yield output;
             }
         }
@@ -60,5 +62,9 @@ impl Executor for ProduceResultExecutor {
 
     fn schema(&self) -> &Schema {
         &self.schema
+    }
+
+    fn name(&self) -> &'static str {
+        "ProduceResult"
     }
 }

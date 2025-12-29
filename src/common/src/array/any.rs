@@ -24,12 +24,27 @@ impl Array for AnyArray {
         })
     }
 
+    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
+        self.data[idx].as_scalar_ref()
+    }
+
     fn len(&self) -> usize {
         self.valid.len()
     }
 
     fn physical_type(&self) -> PhysicalType {
         PhysicalType::Any
+    }
+
+    fn compact(&self, visibility: &BitVec, new_len: usize) -> Self {
+        let mut builder = AnyArrayBuilder::with_capacity(new_len);
+
+        for (idx, vis) in visibility.iter().enumerate() {
+            if *vis {
+                builder.push(self.get(idx));
+            }
+        }
+        builder.finish()
     }
 }
 

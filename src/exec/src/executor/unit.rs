@@ -24,4 +24,8 @@ impl Executor for UnitExecutor {
     fn schema(&self) -> &Schema {
         &self.schema
     }
+
+    fn name(&self) -> &'static str {
+        "Unit"
+    }
 }

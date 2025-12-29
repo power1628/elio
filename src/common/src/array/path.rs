@@ -46,12 +46,47 @@ impl Array for PathArray {
         })
     }
 
+    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
+        let (nodes, node_start, node_end) = {
+            let list = unsafe { self.nodes.get_unchecked(idx) };
+            match list {
+                ListValueRef::Index { child, start, end } => (child, start, end),
+                _ => unreachable!(),
+            }
+        };
+
+        let (rels, rel_start, rel_end) = {
+            match unsafe { self.rels.get_unchecked(idx) } {
+                ListValueRef::Index { child, start, end } => (child, start, end),
+                _ => unreachable!(),
+            }
+        };
+        PathValueRef {
+            nodes,
+            node_start,
+            node_end,
+            rels,
+            rel_start,
+            rel_end,
+        }
+    }
+
     fn len(&self) -> usize {
         self.valid.len()
     }
 
     fn physical_type(&self) -> PhysicalType {
         PhysicalType::Path
+    }
+
+    fn compact(&self, visibility: &BitVec, new_len: usize) -> Self {
+        let mut builder = PathArrayBuilder::with_capacity(new_len);
+        for (idx, vis) in visibility.iter().enumerate() {
+            if *vis {
+                builder.push(self.get(idx));
+            }
+        }
+        builder.finish()
     }
 }
 
@@ -165,12 +200,47 @@ impl Array for VirtualPathArray {
         })
     }
 
+    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
+        let (nodes, node_start, node_end) = {
+            let list = unsafe { self.nodes.get_unchecked(idx) };
+            match list {
+                ListValueRef::Index { child, start, end } => (child, start, end),
+                _ => unreachable!(),
+            }
+        };
+
+        let (rels, rel_start, rel_end) = {
+            match unsafe { self.rels.get_unchecked(idx) } {
+                ListValueRef::Index { child, start, end } => (child, start, end),
+                _ => unreachable!(),
+            }
+        };
+        VirtualPathRef {
+            nodes,
+            node_start,
+            node_end,
+            rels,
+            rel_start,
+            rel_end,
+        }
+    }
+
     fn len(&self) -> usize {
         self.valid.len()
     }
 
     fn physical_type(&self) -> PhysicalType {
         PhysicalType::VirtualPath
+    }
+
+    fn compact(&self, visibility: &BitVec, new_len: usize) -> Self {
+        let mut builder = VirtualPathArrayBuilder::with_capacity(new_len);
+        for (idx, vis) in visibility.iter().enumerate() {
+            if *vis {
+                builder.push(self.get(idx));
+            }
+        }
+        builder.finish()
     }
 }
 

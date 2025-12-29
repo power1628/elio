@@ -36,12 +36,30 @@ impl Array for NodeArray {
         })
     }
 
+    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
+        NodeValueRef {
+            id: self.ids[idx],
+            labels: &self.label_values[self.label_offsets[idx]..self.label_offsets[idx + 1]],
+            props: self.props[idx].as_scalar_ref(),
+        }
+    }
+
     fn len(&self) -> usize {
         self.valid.len()
     }
 
     fn physical_type(&self) -> PhysicalType {
         PhysicalType::Node
+    }
+
+    fn compact(&self, visibility: &BitVec, new_len: usize) -> Self {
+        let mut builder = NodeArrayBuilder::with_capacity(new_len);
+        for (idx, vis) in visibility.iter().enumerate() {
+            if *vis {
+                builder.push(self.get(idx));
+            }
+        }
+        builder.finish()
     }
 }
 
@@ -159,12 +177,26 @@ impl Array for VirtualNodeArray {
             .and_then(|valid| if *valid { Some(self.data[idx]) } else { None })
     }
 
+    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
+        self.data[idx]
+    }
+
     fn len(&self) -> usize {
         self.valid.len()
     }
 
     fn physical_type(&self) -> PhysicalType {
         PhysicalType::VirtualNode
+    }
+
+    fn compact(&self, visibility: &BitVec, new_len: usize) -> Self {
+        let mut builder = VirtualNodeArrayBuilder::with_capacity(new_len);
+        for (idx, vis) in visibility.iter().enumerate() {
+            if *vis {
+                builder.push(self.get(idx));
+            }
+        }
+        builder.finish()
     }
 }
 
@@ -224,3 +256,5 @@ impl VirtualNodeArrayBuilder {
         VirtualNodeArray { data, valid }
     }
 }
+
+impl EntityArray for NodeArray {}

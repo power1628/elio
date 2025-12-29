@@ -1,12 +1,9 @@
-use std::collections::HashSet;
-
 use mojito_common::TokenKind;
 use mojito_parser::ast;
 
 use crate::binder::pattern::PatternContext;
 use crate::error::PlanError;
-use crate::expr::Expr;
-use crate::expr::label::{LabelExpr, LabelOp};
+use crate::expr::{Expr, HasLabel};
 
 pub(crate) fn bind_label_expr(
     pctx: &PatternContext,
@@ -17,9 +14,9 @@ pub(crate) fn bind_label_expr(
         ast::LabelExpr::Label(label) => {
             // resolve label
             let label = pctx.bctx.resolve_token(label, TokenKind::Label);
-            Ok(Expr::LabelExpr(LabelExpr {
+            Ok(Expr::HasLabel(HasLabel {
                 entity: expr.clone(),
-                op: LabelOp::HasAll(HashSet::from_iter(vec![label])),
+                label_or_rel: label,
             })
             .boxed())
         }

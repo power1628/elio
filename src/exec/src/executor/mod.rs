@@ -38,6 +38,8 @@ pub trait Executor: Send + Sync + std::fmt::Debug {
     {
         Box::new(self)
     }
+
+    fn name(&self) -> &'static str;
 }
 
 pub type BoxedExecutor = Box<dyn Executor>;

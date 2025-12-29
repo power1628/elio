@@ -17,12 +17,27 @@ impl Array for BoolArray {
             .and_then(|valid| if *valid { Some(self.data[idx]) } else { None })
     }
 
+    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
+        self.data[idx]
+    }
+
     fn len(&self) -> usize {
         self.valid.len()
     }
 
     fn physical_type(&self) -> PhysicalType {
         PhysicalType::Bool
+    }
+
+    fn compact(&self, visibility: &BitVec, new_len: usize) -> Self {
+        let mut builder = BoolArrayBuilder::with_capacity(new_len);
+
+        for (idx, vis) in visibility.iter().enumerate() {
+            if *vis {
+                builder.push(self.get(idx));
+            }
+        }
+        builder.finish()
     }
 }
 

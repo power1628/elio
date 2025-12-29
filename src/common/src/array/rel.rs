@@ -34,12 +34,32 @@ impl Array for RelArray {
         })
     }
 
+    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
+        RelValueRef {
+            id: self.ids[idx],
+            reltype: &self.reltypes[idx],
+            start_id: self.start_ids[idx],
+            end_id: self.end_ids[idx],
+            props: self.props[idx].as_scalar_ref(),
+        }
+    }
+
     fn len(&self) -> usize {
         self.valid.len()
     }
 
     fn physical_type(&self) -> PhysicalType {
         PhysicalType::Rel
+    }
+
+    fn compact(&self, visibility: &BitVec, new_len: usize) -> Self {
+        let mut builder = RelArrayBuilder::with_capacity(new_len);
+        for (idx, vis) in visibility.iter().enumerate() {
+            if *vis {
+                builder.push(self.get(idx));
+            }
+        }
+        builder.finish()
     }
 }
 
@@ -169,12 +189,31 @@ impl Array for VirtualRelArray {
         })
     }
 
+    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
+        VirtualRelRef {
+            id: self.ids[idx],
+            reltype: &self.reltypes[idx],
+            start_id: self.start_ids[idx],
+            end_id: self.end_ids[idx],
+        }
+    }
+
     fn len(&self) -> usize {
         self.valid.len()
     }
 
     fn physical_type(&self) -> PhysicalType {
         PhysicalType::VirtualRel
+    }
+
+    fn compact(&self, visibility: &BitVec, new_len: usize) -> Self {
+        let mut builder = VirtualRelArrayBuilder::with_capacity(new_len);
+        for (idx, vis) in visibility.iter().enumerate() {
+            if *vis {
+                builder.push(self.get(idx));
+            }
+        }
+        builder.finish()
     }
 }
 
@@ -261,3 +300,5 @@ impl VirtualRelArrayBuilder {
         }
     }
 }
+
+impl EntityArray for RelArray {}

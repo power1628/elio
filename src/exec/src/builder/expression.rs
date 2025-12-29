@@ -7,6 +7,7 @@ use mojito_expr::impl_::constant::ConstantExpr;
 use mojito_expr::impl_::create_struct::CreateStructExpr;
 use mojito_expr::impl_::field_access::FieldAccessExpr;
 use mojito_expr::impl_::func_call::FuncCallExpr;
+use mojito_expr::impl_::label::HasLabelExpr;
 use mojito_expr::impl_::project_path::ProjectPathExpr;
 use mojito_expr::impl_::variable_ref::VariableRefExpr;
 use mojito_expr::impl_::{BoxedExpression, Expression};
@@ -34,7 +35,7 @@ pub(crate) fn build_expression(ctx: &BuildExprContext<'_>, expr: &Expr) -> Resul
         Expr::FuncCall(func_call) => build_func_call(ctx, func_call),
         Expr::AggCall(_agg_call) => todo!(),
         Expr::Subquery(_subquery) => todo!(),
-        Expr::LabelExpr(_label_expr) => todo!(),
+        Expr::HasLabel(has_label) => build_has_label(ctx, has_label),
         Expr::CreateStruct(create_map) => build_create_map(ctx, create_map),
         Expr::ProjectPath(project_path) => build_project_path(ctx, project_path),
     }
@@ -85,6 +86,15 @@ fn build_func_call(ctx: &BuildExprContext<'_>, func_call: &expr::FuncCall) -> Re
         inputs: args,
         func: func_impl.func,
         typ: func_call.typ(),
+    }
+    .boxed())
+}
+
+fn build_has_label(ctx: &BuildExprContext<'_>, has_label: &expr::HasLabel) -> Result<BoxedExpression, BuildError> {
+    let entity = build_expression(ctx, &has_label.entity)?;
+    Ok(HasLabelExpr {
+        entity,
+        label: has_label.label_or_rel.clone(),
     }
     .boxed())
 }

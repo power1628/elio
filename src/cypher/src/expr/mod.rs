@@ -35,7 +35,7 @@ pub enum Expr {
     FuncCall(FuncCall),
     AggCall(AggCall),
     Subquery(Subquery),
-    LabelExpr(LabelExpr),
+    HasLabel(HasLabel),
     CreateStruct(CreateStruct),
     // graph
     ProjectPath(ProjectPath),
@@ -78,7 +78,7 @@ impl_expr_node_for_enum!(
     FuncCall,
     AggCall,
     Subquery,
-    LabelExpr,
+    HasLabel,
     CreateStruct,
     ProjectPath
 );
@@ -136,8 +136,8 @@ impl Expr {
             }
             Expr::AggCall(_agg_call) => todo!(),
             Expr::Subquery(_subquery) => todo!(),
-            Expr::LabelExpr(label_expr) => {
-                format!("{} {}", label_expr.entity.pretty(), label_expr.op)
+            Expr::HasLabel(has_label) => {
+                format!("{}:{}", has_label.entity.pretty(), has_label.label_or_rel)
             }
             Expr::CreateStruct(create_map) => {
                 format!(

@@ -26,6 +26,10 @@ impl Array for StructArray {
         })
     }
 
+    unsafe fn get_unchecked(&self, idx: usize) -> Self::RefItem<'_> {
+        StructValueRef::Index { array: self, idx }
+    }
+
     fn len(&self) -> usize {
         self.valid.len()
     }
@@ -38,6 +42,16 @@ impl Array for StructArray {
                 .collect_vec()
                 .into_boxed_slice(),
         )
+    }
+
+    fn compact(&self, visibility: &BitVec, new_len: usize) -> Self {
+        let mut builder = self.physical_type().array_builder(new_len).into_struct().unwrap();
+        for (idx, vis) in visibility.iter().enumerate() {
+            if *vis {
+                builder.push(self.get(idx));
+            }
+        }
+        builder.finish()
     }
 }
 

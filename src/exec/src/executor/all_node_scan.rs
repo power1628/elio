@@ -69,4 +69,8 @@ impl Executor for AllNodeScanExectuor {
     fn schema(&self) -> &Schema {
         &self.schema
     }
+
+    fn name(&self) -> &'static str {
+        "AllNodeScan"
+    }
 }

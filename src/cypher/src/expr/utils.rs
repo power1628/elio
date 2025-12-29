@@ -19,8 +19,8 @@ impl Expr {
                 vars.extend(agg_call.args.iter().flat_map(|arg| arg.collect_variables()));
             }
             Expr::Subquery(_) => todo!("subquery not supported"),
-            Expr::LabelExpr(label_expr) => {
-                vars.extend(label_expr.entity.collect_variables());
+            Expr::HasLabel(HasLabel { entity, .. }) => {
+                vars.extend(entity.collect_variables());
             }
             Expr::CreateStruct(CreateStruct { properties, .. }) => {
                 vars.extend(properties.iter().flat_map(|(_, expr)| expr.collect_variables()));
