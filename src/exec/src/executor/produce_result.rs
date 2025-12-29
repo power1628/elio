@@ -26,7 +26,6 @@ impl Executor for ProduceResultExecutor {
 
             for await input in input_stream {
                 let input = input?;
-                println!("produce vis : {:?}", input.visibility());
                 let input = input.compact();
                 let vis = input.visibility();
 

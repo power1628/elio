@@ -32,11 +32,10 @@ impl Array for BoolArray {
     fn compact(&self, visibility: &BitVec, new_len: usize) -> Self {
         let mut builder = BoolArrayBuilder::with_capacity(new_len);
 
-        for (idx, vis) in visibility.iter().enumerate() {
-            if *vis {
-                builder.push(self.get(idx));
-            }
+        for idx in visibility.iter_ones() {
+            builder.push(self.get(idx));
         }
+
         builder.finish()
     }
 }

@@ -45,11 +45,10 @@ impl Array for ListArray {
     fn compact(&self, visibility: &BitVec, new_len: usize) -> Self {
         let mut builder = self.physical_type().array_builder(new_len).into_list().unwrap();
 
-        for (idx, vis) in visibility.iter().enumerate() {
-            if *vis {
-                builder.push(self.get(idx));
-            }
+        for idx in visibility.iter_ones() {
+            builder.push(self.get(idx));
         }
+
         builder.finish()
     }
 }

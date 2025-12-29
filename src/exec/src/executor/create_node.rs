@@ -48,7 +48,6 @@ impl CreateNodeExectuor {
             // execute the stream
             while let Some(chunk) = input_stream.next().await{
                 let chunk = chunk?;
-                // TODO(pgao): do not eager compact the chunk
                 let mut chunk = chunk.compact();
                 // for each variable execute create node
                 for (i, item) in self.items.iter().enumerate() {

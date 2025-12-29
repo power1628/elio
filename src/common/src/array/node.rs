@@ -54,11 +54,10 @@ impl Array for NodeArray {
 
     fn compact(&self, visibility: &BitVec, new_len: usize) -> Self {
         let mut builder = NodeArrayBuilder::with_capacity(new_len);
-        for (idx, vis) in visibility.iter().enumerate() {
-            if *vis {
-                builder.push(self.get(idx));
-            }
+        for idx in visibility.iter_ones() {
+            builder.push(self.get(idx));
         }
+
         builder.finish()
     }
 }
@@ -191,11 +190,10 @@ impl Array for VirtualNodeArray {
 
     fn compact(&self, visibility: &BitVec, new_len: usize) -> Self {
         let mut builder = VirtualNodeArrayBuilder::with_capacity(new_len);
-        for (idx, vis) in visibility.iter().enumerate() {
-            if *vis {
-                builder.push(self.get(idx));
-            }
+        for idx in visibility.iter_ones() {
+            builder.push(self.get(idx));
         }
+
         builder.finish()
     }
 }

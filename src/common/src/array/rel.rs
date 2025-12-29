@@ -54,11 +54,10 @@ impl Array for RelArray {
 
     fn compact(&self, visibility: &BitVec, new_len: usize) -> Self {
         let mut builder = RelArrayBuilder::with_capacity(new_len);
-        for (idx, vis) in visibility.iter().enumerate() {
-            if *vis {
-                builder.push(self.get(idx));
-            }
+        for idx in visibility.iter_ones() {
+            builder.push(self.get(idx));
         }
+
         builder.finish()
     }
 }
@@ -208,11 +207,10 @@ impl Array for VirtualRelArray {
 
     fn compact(&self, visibility: &BitVec, new_len: usize) -> Self {
         let mut builder = VirtualRelArrayBuilder::with_capacity(new_len);
-        for (idx, vis) in visibility.iter().enumerate() {
-            if *vis {
-                builder.push(self.get(idx));
-            }
+        for idx in visibility.iter_ones() {
+            builder.push(self.get(idx));
         }
+
         builder.finish()
     }
 }

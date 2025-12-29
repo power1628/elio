@@ -39,11 +39,10 @@ impl Array for AnyArray {
     fn compact(&self, visibility: &BitVec, new_len: usize) -> Self {
         let mut builder = AnyArrayBuilder::with_capacity(new_len);
 
-        for (idx, vis) in visibility.iter().enumerate() {
-            if *vis {
-                builder.push(self.get(idx));
-            }
+        for idx in visibility.iter_ones() {
+            builder.push(self.get(idx));
         }
+
         builder.finish()
     }
 }
