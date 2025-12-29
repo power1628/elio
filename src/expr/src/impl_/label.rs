@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use bitvec::vec::BitVec;
 use mojito_common::IrToken;
-use mojito_common::array::{Array, ArrayImpl, BoolArray, BoolArrayBuilder, EntityArray};
+use mojito_common::array::{ArrayImpl, BoolArray, BoolArrayBuilder, EntityArray};
 use mojito_common::scalar::EntityScalarRef;
 
 use super::*;
