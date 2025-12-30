@@ -4,7 +4,7 @@
 //! - ZonedDateTime:
 //! - Duration:
 
-use chrono::{FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Timelike};
+use chrono::{Days, FixedOffset, Months, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Timelike};
 
 use super::*;
 
@@ -25,6 +25,36 @@ impl Date {
 
     pub fn to_le_bytes(self) -> [u8; 8] {
         self.0.to_le_bytes()
+    }
+
+    pub fn checked_add(self, duration: &Duration) -> Option<Self> {
+        let mut date: NaiveDate = self.into();
+
+        if duration.months != 0 {
+            // TODO: support months > u32::MAX
+            let months = Months::new(duration.months.unsigned_abs() as u32);
+            date = if duration.months > 0 {
+                date.checked_add_months(months)
+            } else {
+                date.checked_sub_months(months)
+            }?;
+        }
+
+        if duration.days != 0 {
+            // TODO: support days > u64::MAX
+            let days = Days::new(duration.days.unsigned_abs());
+            date = if duration.days > 0 {
+                date.checked_add_days(days)
+            } else {
+                date.checked_sub_days(days)
+            }?;
+        }
+
+        Some(date.into())
+    }
+
+    pub fn add(self, duration: &Duration) -> Self {
+        self.checked_add(duration).expect("overflow adding duration to date")
     }
 }
 
@@ -77,6 +107,28 @@ impl LocalTime {
 
     pub fn to_le_bytes(self) -> [u8; 8] {
         self.0.to_le_bytes()
+    }
+
+    pub fn checked_add(&self, duration: &Duration) -> Option<Self> {
+        let nanos_per_day: i128 = 86_400_000_000_000;
+        let mut total_nanos = self.0 as i128;
+
+        // Add seconds
+        let seconds_ns = (duration.seconds as i128).checked_mul(1_000_000_000)?;
+        total_nanos = total_nanos.checked_add(seconds_ns)?;
+
+        // Add nanoseconds
+        total_nanos = total_nanos.checked_add(duration.nanoseconds as i128)?;
+
+        // Wrap around
+        let result_nanos = total_nanos.rem_euclid(nanos_per_day);
+
+        Some(LocalTime(result_nanos as u64))
+    }
+
+    pub fn add(&self, duration: &Duration) -> Self {
+        self.checked_add(duration)
+            .expect("overflow adding duration to LocalTime")
     }
 }
 
@@ -154,6 +206,35 @@ impl LocalDateTime {
         bytes[0..8].copy_from_slice(&self.seconds.to_le_bytes());
         bytes[8..12].copy_from_slice(&self.nanoseconds.to_le_bytes());
         bytes
+    }
+
+    pub fn checked_add(&self, duration: &Duration) -> Option<Self> {
+        let mut dt: NaiveDateTime = (*self).into();
+
+        // Add months
+        if duration.months != 0 {
+            if duration.months > 0 {
+                dt = dt.checked_add_months(Months::new(duration.months as u32))?;
+            } else {
+                dt = dt.checked_sub_months(Months::new(duration.months.unsigned_abs() as u32))?;
+            }
+        }
+
+        // Add days
+        if duration.days != 0 {
+            if duration.days > 0 {
+                dt = dt.checked_add_days(Days::new(duration.days as u64))?;
+            } else {
+                dt = dt.checked_sub_days(Days::new(duration.days.unsigned_abs()))?;
+            }
+        }
+
+        // Add seconds and nanoseconds
+        let time_duration = chrono::Duration::seconds(duration.seconds)
+            .checked_add(&chrono::Duration::nanoseconds(duration.nanoseconds))?;
+        dt = dt.checked_add_signed(time_duration)?;
+
+        Some(dt.into())
     }
 }
 
@@ -246,6 +327,35 @@ impl ZonedDateTime {
         bytes[12..16].copy_from_slice(&self.tz_offset_seconds.to_le_bytes());
         bytes
     }
+
+    pub fn checked_add(&self, duration: &Duration) -> Option<Self> {
+        let mut dt: chrono::DateTime<FixedOffset> = (*self).into();
+
+        // Add months
+        if duration.months != 0 {
+            if duration.months > 0 {
+                dt = dt.checked_add_months(Months::new(duration.months as u32))?;
+            } else {
+                dt = dt.checked_sub_months(Months::new(duration.months.unsigned_abs() as u32))?;
+            }
+        }
+
+        // Add days
+        if duration.days != 0 {
+            if duration.days > 0 {
+                dt = dt.checked_add_days(Days::new(duration.days as u64))?;
+            } else {
+                dt = dt.checked_sub_days(Days::new(duration.days.unsigned_abs()))?;
+            }
+        }
+
+        // Add seconds and nanoseconds
+        let time_duration = chrono::Duration::seconds(duration.seconds)
+            .checked_add(&chrono::Duration::nanoseconds(duration.nanoseconds))?;
+        dt = dt.checked_add_signed(time_duration)?;
+
+        Some(dt.into())
+    }
 }
 
 impl TryFrom<&str> for ZonedDateTime {
@@ -308,6 +418,70 @@ pub struct Duration {
     pub nanoseconds: i64,
 }
 
+impl Duration {
+    pub fn checked_add(&self, other: &Self) -> Option<Self> {
+        let months = self.months.checked_add(other.months)?;
+        let days = self.days.checked_add(other.days)?;
+        let mut seconds = self.seconds.checked_add(other.seconds)?;
+        let mut nanoseconds = self.nanoseconds.checked_add(other.nanoseconds)?;
+
+        if nanoseconds >= 1_000_000_000 || nanoseconds <= -1_000_000_000 {
+            seconds = seconds.checked_add(nanoseconds / 1_000_000_000)?;
+            nanoseconds %= 1_000_000_000;
+        }
+
+        Some(Self {
+            months,
+            days,
+            seconds,
+            nanoseconds,
+        })
+    }
+
+    pub fn add(&self, other: &Self) -> Self {
+        self.checked_add(other).expect("overflow adding durations")
+    }
+}
+
+impl TryFrom<&str> for Duration {
+    type Error = (String, String, String);
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        use iso8601_duration::Duration as IsoDuration;
+
+        let d = IsoDuration::parse(value).map_err(|e| {
+            (
+                "duration()".to_string(),
+                "valid ISO8601 duration".to_string(),
+                format!("{}: {:?}", value, e),
+            )
+        })?;
+
+        // Calculate months
+        // Note: iso8601-duration uses f32 for all fields.
+        // We assume standard integer values for months/days usually, but handle fractions if present by rounding or
+        // truncation? Neo4j/Cypher usually treats P1.5M as 1 month 15 days? No, Cypher durations are complex.
+        // For now, we follow the simple conversion: 1Y = 12M.
+        // Weeks are typically normalized to days by the parser or we assume days field covers it?
+        // Actually iso8601-duration parser (0.2.0) seems to parse weeks into days or simply doesn't expose it.
+        // Let's assume d.day includes weeks * 7 if the crate handles it.
+        let months = (d.year * 12.0 + d.month) as i64;
+        let days = d.day as i64;
+
+        // Calculate time
+        let total_seconds = (d.hour as f64) * 3600.0 + (d.minute as f64) * 60.0 + (d.second as f64);
+        let seconds = total_seconds.trunc() as i64;
+        let nanoseconds = ((total_seconds - total_seconds.trunc()) * 1_000_000_000.0).round() as i64;
+
+        Ok(Duration {
+            months,
+            days,
+            seconds,
+            nanoseconds,
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use chrono::{FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
@@ -354,6 +528,80 @@ mod tests {
     fn test_date_display() {
         let date = Date::try_from("2023-10-27").unwrap();
         assert_eq!(format!("{}", date), "2023-10-27");
+    }
+
+    #[test]
+    fn test_duration_add() {
+        let d1 = Duration {
+            months: 1,
+            days: 1,
+            seconds: 1,
+            nanoseconds: 500_000_000,
+        };
+        let d2 = Duration {
+            months: 2,
+            days: 2,
+            seconds: 2,
+            nanoseconds: 600_000_000,
+        };
+        let d3 = d1.add(&d2);
+        assert_eq!(d3.months, 3);
+        assert_eq!(d3.days, 3);
+        assert_eq!(d3.seconds, 4); // 1 + 2 + 1 (carry)
+        assert_eq!(d3.nanoseconds, 100_000_000); // 1100000000 % 1000000000
+
+        let d4 = Duration {
+            months: 1,
+            days: 1,
+            seconds: 1,
+            nanoseconds: -500_000_000,
+        };
+        let d5 = Duration {
+            months: 2,
+            days: 2,
+            seconds: 2,
+            nanoseconds: -600_000_000,
+        };
+        let d6 = d4.add(&d5);
+        assert_eq!(d6.months, 3);
+        assert_eq!(d6.days, 3);
+        assert_eq!(d6.seconds, 2); // 1 + 2 - 1 (carry)
+        assert_eq!(d6.nanoseconds, -100_000_000); // -1100000000 % 1000000000
+    }
+
+    #[test]
+    fn test_localtime_add() {
+        let time = LocalTime(10 * 3600 * 1_000_000_000); // 10:00:00
+        let duration = Duration {
+            months: 1,     // should be ignored
+            days: 1,       // should be ignored
+            seconds: 3600, // 1 hour
+            nanoseconds: 0,
+        };
+        let new_time = time.add(&duration);
+        assert_eq!(new_time.0, 11 * 3600 * 1_000_000_000); // 11:00:00
+
+        // Wrap around
+        let time = LocalTime(23 * 3600 * 1_000_000_000); // 23:00:00
+        let duration = Duration {
+            months: 0,
+            days: 0,
+            seconds: 7200, // 2 hours
+            nanoseconds: 0,
+        };
+        let new_time = time.add(&duration);
+        assert_eq!(new_time.0, 3600 * 1_000_000_000); // 01:00:00
+
+        // Negative duration
+        let time = LocalTime(10 * 3600 * 1_000_000_000); // 10:00:00
+        let duration = Duration {
+            months: 0,
+            days: 0,
+            seconds: -3600, // -1 hour
+            nanoseconds: 0,
+        };
+        let new_time = time.add(&duration);
+        assert_eq!(new_time.0, 9 * 3600 * 1_000_000_000); // 09:00:00
     }
 
     #[test]
@@ -639,5 +887,89 @@ mod tests {
             nanoseconds: -4,
         };
         assert_eq!(format!("{}", neg_duration), "P-1M-2DT-3S-4");
+    }
+
+    #[test]
+    fn test_localdatetime_add() {
+        // Normal case
+        let dt = LocalDateTime {
+            seconds: 1698402600, // 2023-10-27 10:30:00
+            nanoseconds: 0,
+        };
+        let duration = Duration {
+            months: 1,
+            days: 1,
+            seconds: 3600,
+            nanoseconds: 0,
+        };
+        // 2023-10-27 -> +1 month = 2023-11-27
+        // 2023-11-27 -> +1 day = 2023-11-28
+        // 10:30:00 -> +1 hour = 11:30:00
+        let new_dt = dt.checked_add(&duration).unwrap();
+
+        let expected_naive = NaiveDate::from_ymd_opt(2023, 11, 28)
+            .unwrap()
+            .and_hms_nano_opt(11, 30, 0, 0)
+            .unwrap();
+        let expected: LocalDateTime = expected_naive.into();
+        assert_eq!(new_dt, expected);
+
+        // Clamping case: 2023-01-31 + 1 month -> 2023-02-28
+        let dt_clamp = NaiveDate::from_ymd_opt(2023, 1, 31)
+            .unwrap()
+            .and_hms_nano_opt(10, 0, 0, 0)
+            .unwrap();
+        let dt_clamp: LocalDateTime = dt_clamp.into();
+
+        let duration_clamp = Duration {
+            months: 1,
+            days: 1,
+            seconds: 0,
+            nanoseconds: 0,
+        };
+        // 2023-01-31 + 1 month = 2023-02-28
+        // 2023-02-28 + 1 day = 2023-03-01
+        let new_dt_clamp = dt_clamp.checked_add(&duration_clamp).unwrap();
+
+        let expected_clamp_naive = NaiveDate::from_ymd_opt(2023, 3, 1)
+            .unwrap()
+            .and_hms_nano_opt(10, 0, 0, 0)
+            .unwrap();
+        let expected_clamp: LocalDateTime = expected_clamp_naive.into();
+        assert_eq!(new_dt_clamp, expected_clamp);
+    }
+
+    #[test]
+    fn test_zoneddatetime_add() {
+        // 2023-10-27 10:30:00 +01:00
+        // Timestamp: 1698402600 (local) - 3600 = 1698399000 (UTC)
+        let dt = ZonedDateTime {
+            seconds: 1698399000,
+            nanoseconds: 0,
+            tz_offset_seconds: 3600,
+        };
+        let duration = Duration {
+            months: 1,
+            days: 1,
+            seconds: 3600,
+            nanoseconds: 0,
+        };
+        // 2023-10-27 -> +1 month = 2023-11-27
+        // 2023-11-27 -> +1 day = 2023-11-28
+        // 10:30:00 -> +1 hour = 11:30:00
+        // Result: 2023-11-28 11:30:00 +01:00
+        let new_dt = dt.checked_add(&duration).unwrap();
+
+        let expected_fixed = FixedOffset::east_opt(3600)
+            .unwrap()
+            .from_local_datetime(
+                &NaiveDate::from_ymd_opt(2023, 11, 28)
+                    .unwrap()
+                    .and_hms_nano_opt(11, 30, 0, 0)
+                    .unwrap(),
+            )
+            .unwrap();
+        let expected: ZonedDateTime = expected_fixed.into();
+        assert_eq!(new_dt, expected);
     }
 }

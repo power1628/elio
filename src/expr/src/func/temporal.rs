@@ -147,6 +147,22 @@ fn current_zoned_date_time() -> Result<ScalarValue, EvalError> {
     )))
 }
 
+#[cypher_func(batch_name = "duration_batch", sig = "(any) -> any")]
+fn any_duration(arg: ScalarRef<'_>) -> Result<ScalarValue, EvalError> {
+    match arg {
+        ScalarRef::Duration(d) => Ok(ScalarValue::Duration(d)),
+        ScalarRef::String(s) => Ok(ScalarValue::Duration(
+            Duration::try_from(s)
+                .map_err(|(ctx, expected, actual)| EvalError::invalid_argument(ctx, expected, actual))?,
+        )),
+        _ => Err(EvalError::invalid_argument(
+            "duration()",
+            "Duration or String",
+            format!("{:?}", arg),
+        )),
+    }
+}
+
 pub(crate) fn register(registry: &mut FunctionRegistry) {
     let date = define_function!( name: "date", impls: 
     [
@@ -176,8 +192,15 @@ pub(crate) fn register(registry: &mut FunctionRegistry) {
     ],
     is_agg: false);
 
+    let duration = define_function!( name: "duration", impls: 
+    [
+        { args: [{anyof String | Duration}], ret: Any, func: duration_batch}
+    ],
+    is_agg: false);
+
     registry.insert(date);
     registry.insert(local_time);
     registry.insert(local_date_time);
     registry.insert(date_time);
+    registry.insert(duration);
 }

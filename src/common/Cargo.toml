@@ -11,5 +11,6 @@ chrono = { workspace = true }
 common_macros = { path = "./macros" }
 derive_more = { workspace = true, features = ["full"] }
 enum-as-inner = { workspace = true }
+iso8601-duration = { workspace = true }
 itertools = { workspace = true }
 ordered-float = { workspace = true }

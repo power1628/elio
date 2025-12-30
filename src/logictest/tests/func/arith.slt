@@ -1,0 +1,114 @@
+query A
+return 1 + 1
+----
+2
+
+query A
+return 1.5 + 2.5
+----
+4
+
+query A
+return 1 + 2.5
+----
+3.5
+
+query A
+return 'a' + 'b'
+----
+'ab'
+
+query A
+return 'a' + 1
+----
+'a1'
+
+# query A
+# return [1, 2] + [3, 4]
+# ----
+# [1, 2, 3, 4]
+
+#query A
+#return [1, 2] + 3
+#----
+#[1, 2, 3]
+
+#query A
+#return 1 + [2, 3]
+#----
+#[1, 2, 3]
+
+query A
+return date('2023-01-01') + duration('P1M')
+----
+2023-02-01
+
+query A
+return date('2023-01-31') + duration('P1M')
+----
+2023-02-28
+
+query A
+return localtime('10:00:00') + duration('PT1H')
+----
+11:00:00
+
+query A
+return localdatetime('2023-01-01T10:00:00') + duration('P1M')
+----
+2023-02-01 10:00:00
+
+query A
+return datetime('2023-01-01T10:00:00+01:00') + duration('P1M')
+----
+2023-02-01 10:00:00 +01:00
+
+query A
+return date('2023-03-31') + duration('P-1M')
+----
+2023-02-28
+
+query A
+return localdatetime('2023-01-01T10:00:00') + duration('P-1D')
+----
+2022-12-31 10:00:00
+
+query A
+return localdatetime('2023-01-01T10:00:00') + duration('PT-25H')
+----
+2022-12-31 09:00:00
+
+query A
+return localtime('10:00:00') + duration('PT-1H')
+----
+09:00:00
+
+query A
+return localtime('00:30:00') + duration('PT-1H')
+----
+23:30:00
+
+query A
+return duration('P1M') + duration('P1D')
+----
+P1M1DT0S0
+
+query A
+return duration('PT1H') + duration('PT30M')
+----
+P0M0DT5400S0
+
+query A
+return duration('P1Y') + duration('P-1M')
+----
+P11M0DT0S0
+
+query A
+return duration('P1D') + duration('PT1H')
+----
+P0M1DT3600S0
+
+query A
+return duration('P1W')
+----
+P0M7DT0S0

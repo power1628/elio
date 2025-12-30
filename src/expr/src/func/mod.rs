@@ -60,6 +60,7 @@ pub static FUNCTION_REGISTRY: LazyLock<FunctionRegistry> = LazyLock::new(|| {
     bool::register(&mut registry);
     compare::register(&mut registry);
     temporal::register(&mut registry);
+    arith::register(&mut registry);
 
     // register agg functions
 
