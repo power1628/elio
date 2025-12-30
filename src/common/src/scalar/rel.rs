@@ -3,7 +3,8 @@ use crate::IrToken;
 
 // TODO(pgao): we needs to hash and Eq only on id.
 // in varexpand, we needs to test if rel have already visited.
-#[derive(Debug, Clone, Default, Eq, PartialEq, Hash, derive_more::Display)]
+#[derive(Debug, Clone, Default, Eq, PartialEq, Hash, derive_more::Display, ScalarPartialOrd)]
+#[scalar_partial_ord(id)]
 #[display(
     "{{id: {}, rtype: {}, start: {}, end: {}, props: {}}}",
     id,
@@ -34,7 +35,8 @@ impl ScalarVTable for RelValue {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, derive_more::Display)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, derive_more::Display, ScalarPartialOrd)]
+#[scalar_partial_ord(id)]
 #[display(
     "{{id: {}, rtype: {}, start: {}, end: {}, props: {}}}",
     id,
@@ -83,7 +85,8 @@ impl<'a> RelValueRef<'a> {
     }
 }
 
-#[derive(Debug, Clone, Default, Eq, PartialEq, Hash, derive_more::Display)]
+#[derive(Debug, Clone, Default, Eq, PartialEq, Hash, derive_more::Display, ScalarPartialOrd)]
+#[scalar_partial_ord(id)]
 #[display("VirtualRel{{id: {}, rtype: {}, start: {}, end: {}}}", id, reltype, start_id, end_id)]
 pub struct VirtualRel {
     pub id: RelationshipId,
@@ -105,7 +108,8 @@ impl ScalarVTable for VirtualRel {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, derive_more::Display)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, derive_more::Display, ScalarPartialOrd)]
+#[scalar_partial_ord(id)]
 #[display("{{id: {}, rtype: {}, start: {}, end: {}}}", id, reltype, start_id, end_id)]
 pub struct VirtualRelRef<'a> {
     pub id: RelationshipId,

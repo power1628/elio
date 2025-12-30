@@ -15,6 +15,12 @@ impl ScalarVTable for StructValue {
     }
 }
 
+impl ScalarPartialOrd for StructValue {
+    fn scalar_partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.as_scalar_ref().scalar_partial_cmp(&other.as_scalar_ref())
+    }
+}
+
 impl StructValue {
     pub fn new(fields: Vec<(Arc<str>, ScalarValue)>) -> Self {
         Self { fields }
@@ -37,6 +43,10 @@ impl StructValue {
 
     pub fn as_scalar_ref(&self) -> StructValueRef<'_> {
         StructValueRef::Value { value: self }
+    }
+
+    pub fn len(&self) -> usize {
+        self.fields.len()
     }
 }
 
@@ -61,6 +71,29 @@ impl<'a> std::hash::Hash for StructValueRef<'a> {
             k.hash(state);
             v.hash(state);
         })
+    }
+}
+
+impl<'a> ScalarPartialOrd for StructValueRef<'a> {
+    fn scalar_partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        // first compare length then compare fields
+        match self.len().partial_cmp(&other.len()) {
+            Some(std::cmp::Ordering::Equal) => {
+                let iter1 = self.iter();
+                let iter2 = other.iter();
+                for ((k1, v1), (k2, v2)) in iter1.zip(iter2) {
+                    match k1.cmp(k2) {
+                        std::cmp::Ordering::Equal => match v1.scalar_partial_cmp(&v2) {
+                            Some(std::cmp::Ordering::Equal) => continue,
+                            ord => return ord,
+                        },
+                        ord => return Some(ord),
+                    }
+                }
+                Some(std::cmp::Ordering::Equal)
+            }
+            ord => ord,
+        }
     }
 }
 

@@ -1,22 +1,3 @@
-//! register operatorsA
-//! NOTE: the operator name should be sync with the parser/src/ast/expr.rs
-//! including:
-//! - AND
-//! - OR
-//! - EQ
-//! - NOT
-//! - GT
-//! - LT
-//! - GTE
-//! - LTE
-//! - PLUS
-//! - MINUS
-//! - MULTIPLY
-//! - DIVIDE
-//! - MOD
-//! - IS NULL
-//! - IS NOT NULL
-
 use bitvec::prelude::*;
 use expr_macros::cypher_func;
 use mojito_common::array::*;
@@ -36,17 +17,10 @@ fn bool_or(arg0: bool, arg1: bool) -> Result<bool, EvalError> {
     Ok(arg0 || arg1)
 }
 
-#[cypher_func(batch_name = "any_eq_batch", sig = "(any, any) -> bool")]
-fn any_eq(arg0: ScalarRef<'_>, arg1: ScalarRef<'_>) -> Result<bool, EvalError> {
-    Ok(arg0 == arg1)
-}
-
 pub(crate) fn register(registry: &mut FunctionRegistry) {
     let and = define_function!( name: "and", impls: [ {args: [{exact Bool}, {exact Bool}], ret: Bool, func: bool_and_batch}],is_agg: false);
     let or = define_function!( name: "or", impls: [ {args: [{exact Bool}, {exact Bool}], ret: Bool, func: bool_or_batch}],is_agg: false);
-    let equal = define_function!( name: "eq", impls: [ {args: [{exact Any}, {exact Any}], ret: Bool, func: any_eq_batch}],is_agg: false);
 
     registry.insert(and);
     registry.insert(or);
-    registry.insert(equal);
 }

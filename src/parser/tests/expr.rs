@@ -42,6 +42,17 @@ fn test_operator() {
 }
 
 #[test]
+fn test_compare() {
+    assert_snapshot!(expr!("1 > 2"), @"(1) > (2)");
+    assert_snapshot!(expr!("1 >= 2"), @"(1) >= (2)");
+    assert_snapshot!(expr!("1 < 2"), @"(1) < (2)");
+    assert_snapshot!(expr!("1 <= 2"), @"(1) <= (2)");
+    assert_snapshot!(expr!("1 = 2"), @"(1) = (2)");
+    assert_snapshot!(expr!("1 <> 2"), @"(1) <> (2)");
+    assert_snapshot!(expr!("1 != 2"), @"(1) <> (2)");
+}
+
+#[test]
 fn test_label_expr() {
     assert_snapshot!(label_expr!(":a|b"), @"(a|b)");
     assert_snapshot!(label_expr!(":a"), @"a");

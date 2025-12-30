@@ -14,6 +14,12 @@ impl ScalarVTable for ListValue {
     }
 }
 
+impl ScalarPartialOrd for ListValue {
+    fn scalar_partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.as_scalar_ref().scalar_partial_cmp(&other.as_scalar_ref())
+    }
+}
+
 impl ListValue {
     pub fn new(values: Vec<ScalarValue>) -> Self {
         Self { values }
@@ -145,5 +151,17 @@ impl<'a> ScalarRefVTable<'a> for ListValueRef<'a> {
         ListValue {
             values: self.iter().map(|x| x.to_owned_scalar()).collect_vec(),
         }
+    }
+}
+
+impl<'a> ScalarPartialOrd for ListValueRef<'a> {
+    fn scalar_partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        for (v1, v2) in self.iter().zip(other.iter()) {
+            match v1.scalar_partial_cmp(&v2) {
+                Some(std::cmp::Ordering::Equal) => (),
+                ord => return ord,
+            }
+        }
+        self.len().partial_cmp(&other.len())
     }
 }

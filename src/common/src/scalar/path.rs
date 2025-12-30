@@ -20,6 +20,12 @@ impl Hash for VirtualPath {
     }
 }
 
+impl ScalarPartialOrd for VirtualPath {
+    fn scalar_partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.as_scalar_ref().scalar_partial_cmp(&other.as_scalar_ref())
+    }
+}
+
 impl ScalarVTable for VirtualPath {
     type RefType<'a> = VirtualPathRef<'a>;
 
@@ -128,6 +134,40 @@ impl<'a> std::hash::Hash for VirtualPathRef<'a> {
     }
 }
 
+impl<'a> ScalarPartialOrd for VirtualPathRef<'a> {
+    fn scalar_partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        let len1 = self.nodes.len();
+        let len2 = other.nodes.len();
+        let min_len = len1.min(len2);
+
+        let mut n1_iter = self.node_iter();
+        let mut n2_iter = other.node_iter();
+        let mut r1_iter = self.rel_iter();
+        let mut r2_iter = other.rel_iter();
+
+        for i in 0..min_len {
+            // # SAFETY
+            //    element in path is always non-null
+            let n1 = n1_iter.next().unwrap().expect("node is null in path lhs");
+            let n2 = n2_iter.next().unwrap().expect("node is null in path rhs");
+            match n1.partial_cmp(&n2) {
+                Some(std::cmp::Ordering::Equal) => {}
+                ord => return ord,
+            }
+
+            if i < min_len - 1 {
+                let r1 = r1_iter.next().unwrap().expect("rel is null in path lhs");
+                let r2 = r2_iter.next().unwrap().expect("rel is null in path rhs");
+                match r1.scalar_partial_cmp(&r2) {
+                    Some(std::cmp::Ordering::Equal) => {}
+                    ord => return ord,
+                }
+            }
+        }
+        len1.partial_cmp(&len2)
+    }
+}
+
 impl<'a> ScalarRefVTable<'a> for VirtualPathRef<'a> {
     type ScalarType = VirtualPath;
 
@@ -205,6 +245,12 @@ impl Hash for PathValue {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.node_iter().for_each(|node| node.hash(state));
         self.rel_iter().for_each(|rel| rel.hash(state));
+    }
+}
+
+impl ScalarPartialOrd for PathValue {
+    fn scalar_partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.as_scalar_ref().scalar_partial_cmp(&other.as_scalar_ref())
     }
 }
 
@@ -324,5 +370,39 @@ impl<'a> std::fmt::Display for PathValueRef<'a> {
         let mut buf = String::new();
         format_path(&mut buf, self.node_iter(), self.rel_iter())?;
         write!(f, "{}", buf)
+    }
+}
+
+impl<'a> ScalarPartialOrd for PathValueRef<'a> {
+    fn scalar_partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        let len1 = self.nodes.len();
+        let len2 = other.nodes.len();
+        let min_len = len1.min(len2);
+
+        let mut n1_iter = self.node_iter();
+        let mut n2_iter = other.node_iter();
+        let mut r1_iter = self.rel_iter();
+        let mut r2_iter = other.rel_iter();
+
+        for i in 0..min_len {
+            // # SAFETY
+            //    element in path is always non-null
+            let n1 = n1_iter.next().unwrap().expect("node is null in path lhs");
+            let n2 = n2_iter.next().unwrap().expect("node is null in path rhs");
+            match n1.scalar_partial_cmp(&n2) {
+                Some(std::cmp::Ordering::Equal) => {}
+                ord => return ord,
+            }
+
+            if i < min_len - 1 {
+                let r1 = r1_iter.next().unwrap().expect("rel is null in path lhs");
+                let r2 = r2_iter.next().unwrap().expect("rel is null in path rhs");
+                match r1.scalar_partial_cmp(&r2) {
+                    Some(std::cmp::Ordering::Equal) => {}
+                    ord => return ord,
+                }
+            }
+        }
+        len1.partial_cmp(&len2)
     }
 }
