@@ -21,7 +21,7 @@ pub(crate) fn pretty_order_items(order_by: &[SortItem]) -> Pretty<'_> {
     Pretty::Array(order_by.iter().map(Pretty::display).collect::<Vec<_>>())
 }
 
-pub(crate) fn xmlnode_to_string<'a>(xml: XmlNode<'a>) -> String {
+pub(crate) fn _xmlnode_to_string<'a>(xml: XmlNode<'a>) -> String {
     let record = Pretty::Record(xml);
     let mut config = PrettyConfig {
         indent: 3,

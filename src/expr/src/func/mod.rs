@@ -1,10 +1,11 @@
 pub mod sig;
 
-pub mod arith;
-pub mod bool; // and / or
-pub mod compare;
+pub mod compare; // gt/eq/lt/le/ge/ne
+pub mod op_arith;
+pub mod op_bool; // and / or
+pub mod op_unary;
 pub mod path;
-pub mod temporal; // gt/eq/lt/le/ge/ne
+pub mod temporal;
 
 use std::collections::HashMap;
 use std::sync::LazyLock;
@@ -57,10 +58,11 @@ pub static FUNCTION_REGISTRY: LazyLock<FunctionRegistry> = LazyLock::new(|| {
     };
 
     // register scalar functions
-    bool::register(&mut registry);
+    op_bool::register(&mut registry);
     compare::register(&mut registry);
     temporal::register(&mut registry);
-    arith::register(&mut registry);
+    op_arith::register(&mut registry);
+    op_unary::register(&mut registry);
 
     // register agg functions
 

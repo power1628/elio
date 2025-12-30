@@ -53,7 +53,7 @@ impl Date {
         Some(date.into())
     }
 
-    pub fn add(self, duration: &Duration) -> Self {
+    pub fn add_duration(self, duration: &Duration) -> Self {
         self.checked_add(duration).expect("overflow adding duration to date")
     }
 

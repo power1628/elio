@@ -98,8 +98,10 @@ fn bind_single_query(bctx: &BindContext, query: &ast::SingleQuery) -> Result<(Ir
 ///  - OrderBy
 ///  - Pagination
 ///  - Where
+///
 /// If the projection is an aggregation, the order by and where subclause
 /// only sees variables defined in with clause.
+///
 /// Otherwise, the order by and where subclause sees all variables defined
 /// in previous with clause and all variables defined in incomming scope
 fn bind_with(

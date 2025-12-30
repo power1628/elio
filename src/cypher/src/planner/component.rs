@@ -51,7 +51,7 @@ pub(crate) fn plan_qg_simple(ctx: &mut PlannerContext, qg: &QueryGraph) -> Resul
 ///
 /// Topology is our first class citizon, purly solve the graph traversal.
 struct TraversalSolver<'a> {
-    pub ctx: &'a mut PlannerContext,
+    pub _ctx: &'a mut PlannerContext,
     pub qg: &'a QueryGraph,
     solved: IndexSet<VariableName>,
     stack: VecDeque<&'a RelPattern>,
@@ -110,7 +110,7 @@ impl<'a> TraversalSolver<'a> {
         }
 
         Self {
-            ctx,
+            _ctx: ctx,
             qg,
             solved,
             stack,

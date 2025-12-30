@@ -157,7 +157,7 @@ impl TestEnv {
 // TODO(pgao): task options
 #[derive(Debug, Default)]
 pub struct TaskOption {
-    rules: Vec<String>,
+    _rules: Vec<String>,
 }
 /// Available tasks
 ///   - plan: generate plan

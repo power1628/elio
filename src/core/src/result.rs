@@ -37,6 +37,7 @@ pub enum QueryExecutionKind {
 ///     - on query failed
 ///     - on query finished
 ///     - ...
+///
 /// ResultHandle communicate with execution engine with QueryExecutionHandle object
 pub trait ResultHandle: Stream<Item = Result<Row, Error>> + Send {
     fn columns(&self) -> &[String];

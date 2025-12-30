@@ -1,6 +1,5 @@
 use std::backtrace::Backtrace;
 use std::sync::Arc;
-use std::usize;
 
 use mojito_common::schema::Name2ColumnMap;
 use mojito_common::variable::VariableName;

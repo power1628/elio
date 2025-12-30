@@ -36,7 +36,7 @@ pub use struct_::*;
 
 use super::scalar::*;
 use crate::array::iter::ArrayIterator;
-use crate::scalar::{ScalarRefVTable, ScalarVTable};
+use crate::scalar::ScalarRefVTable;
 use crate::{NodeId, RelationshipId};
 
 /// [`Array`] is a collection of data of the same type.
