@@ -56,6 +56,22 @@ impl Date {
     pub fn add(self, duration: &Duration) -> Self {
         self.checked_add(duration).expect("overflow adding duration to date")
     }
+
+    pub fn checked_sub(&self, duration: &Duration) -> Option<Self> {
+        self.checked_add(&duration.checked_neg()?)
+    }
+
+    pub fn diff(&self, other: &Date) -> Duration {
+        let me: NaiveDate = (*self).into();
+        let other: NaiveDate = (*other).into();
+        let diff = me.signed_duration_since(other);
+        Duration {
+            months: 0,
+            days: diff.num_days(),
+            seconds: 0,
+            nanoseconds: 0,
+        }
+    }
 }
 
 impl TryFrom<&str> for Date {
@@ -129,6 +145,22 @@ impl LocalTime {
     pub fn add(&self, duration: &Duration) -> Self {
         self.checked_add(duration)
             .expect("overflow adding duration to LocalTime")
+    }
+
+    pub fn checked_sub(&self, duration: &Duration) -> Option<Self> {
+        self.checked_add(&duration.checked_neg()?)
+    }
+
+    pub fn diff(&self, other: &LocalTime) -> Duration {
+        let me: NaiveTime = (*self).into();
+        let other: NaiveTime = (*other).into();
+        let diff = me.signed_duration_since(other);
+        Duration {
+            months: 0,
+            days: 0,
+            seconds: diff.num_seconds(),
+            nanoseconds: diff.subsec_nanos() as i64,
+        }
     }
 }
 
@@ -235,6 +267,22 @@ impl LocalDateTime {
         dt = dt.checked_add_signed(time_duration)?;
 
         Some(dt.into())
+    }
+
+    pub fn checked_sub(&self, duration: &Duration) -> Option<Self> {
+        self.checked_add(&duration.checked_neg()?)
+    }
+
+    pub fn diff(&self, other: &LocalDateTime) -> Duration {
+        let me: NaiveDateTime = (*self).into();
+        let other: NaiveDateTime = (*other).into();
+        let diff = me.signed_duration_since(other);
+        Duration {
+            months: 0,
+            days: diff.num_days(),
+            seconds: (diff - chrono::Duration::days(diff.num_days())).num_seconds(),
+            nanoseconds: diff.subsec_nanos() as i64,
+        }
     }
 }
 
@@ -356,6 +404,22 @@ impl ZonedDateTime {
 
         Some(dt.into())
     }
+
+    pub fn checked_sub(&self, duration: &Duration) -> Option<Self> {
+        self.checked_add(&duration.checked_neg()?)
+    }
+
+    pub fn diff(&self, other: &ZonedDateTime) -> Duration {
+        let me: chrono::DateTime<FixedOffset> = (*self).into();
+        let other: chrono::DateTime<FixedOffset> = (*other).into();
+        let diff = me.signed_duration_since(other);
+        Duration {
+            months: 0,
+            days: diff.num_days(),
+            seconds: (diff - chrono::Duration::days(diff.num_days())).num_seconds(),
+            nanoseconds: diff.subsec_nanos() as i64,
+        }
+    }
 }
 
 impl TryFrom<&str> for ZonedDateTime {
@@ -438,8 +502,56 @@ impl Duration {
         })
     }
 
+    pub fn checked_neg(&self) -> Option<Self> {
+        Some(Self {
+            months: self.months.checked_neg()?,
+            days: self.days.checked_neg()?,
+            seconds: self.seconds.checked_neg()?,
+            nanoseconds: self.nanoseconds.checked_neg()?,
+        })
+    }
+
+    pub fn checked_sub(&self, other: &Self) -> Option<Self> {
+        self.checked_add(&other.checked_neg()?)
+    }
+
     pub fn add(&self, other: &Self) -> Self {
         self.checked_add(other).expect("overflow adding durations")
+    }
+
+    pub fn checked_mul(&self, scalar: i64) -> Option<Self> {
+        let months = self.months.checked_mul(scalar)?;
+        let days = self.days.checked_mul(scalar)?;
+        let mut seconds = self.seconds.checked_mul(scalar)?;
+        let mut nanoseconds = self.nanoseconds.checked_mul(scalar)?;
+
+        if nanoseconds >= 1_000_000_000 || nanoseconds <= -1_000_000_000 {
+            seconds = seconds.checked_add(nanoseconds / 1_000_000_000)?;
+            nanoseconds %= 1_000_000_000;
+        }
+
+        Some(Self {
+            months,
+            days,
+            seconds,
+            nanoseconds,
+        })
+    }
+
+    pub fn checked_mul_f64(&self, scalar: f64) -> Option<Self> {
+        let months = (self.months as f64 * scalar).round() as i64;
+        let days = (self.days as f64 * scalar).round() as i64;
+
+        let total_seconds = (self.seconds as f64 + self.nanoseconds as f64 / 1e9) * scalar;
+        let seconds = total_seconds.trunc() as i64;
+        let nanoseconds = (total_seconds.fract() * 1e9).round() as i64;
+
+        Some(Self {
+            months,
+            days,
+            seconds,
+            nanoseconds,
+        })
     }
 }
 

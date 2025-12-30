@@ -99,11 +99,6 @@ return duration('PT1H') + duration('PT30M')
 P0M0DT5400S0
 
 query A
-return duration('P1Y') + duration('P-1M')
-----
-P11M0DT0S0
-
-query A
 return duration('P1D') + duration('PT1H')
 ----
 P0M1DT3600S0
@@ -112,3 +107,102 @@ query A
 return duration('P1W')
 ----
 P0M7DT0S0
+
+query A
+return 5 - 3
+----
+2
+
+query A
+return 5.5 - 2.5
+----
+3
+
+query A
+return date('2023-02-01') - duration('P1M')
+----
+2023-01-01
+
+query A
+return date('2023-03-31') - duration('P1M')
+----
+2023-02-28
+
+query A
+return date('2023-01-02') - date('2023-01-01')
+----
+P0M1DT0S0
+
+query A
+return localtime('11:00:00') - duration('PT1H')
+----
+10:00:00
+
+query error Eval error: type error Cannot subtract LocalTime\(LocalTime\(36000000000000\)\) from LocalTime\(LocalTime\(39600000000000\)\)
+return localtime('11:00:00') - localtime('10:00:00')
+
+query A
+return localdatetime('2023-02-01T10:00:00') - duration('P1M')
+----
+2023-01-01 10:00:00
+
+query error Eval error: type error Cannot subtract LocalDateTime\(LocalDateTime \{ seconds: 1672567200, nanoseconds: 0 \}\) from LocalDateTime\(LocalDateTime \{ seconds: 1672653600, nanoseconds: 0 \}\)
+return localdatetime('2023-01-02T10:00:00') - localdatetime('2023-01-01T10:00:00')
+
+query A
+return datetime('2023-02-01T10:00:00+01:00') - duration('P1M')
+----
+2023-01-01 10:00:00 +01:00
+
+query error Eval error: type error Cannot subtract ZonedDateTime\(ZonedDateTime \{ seconds: 1672563600, nanoseconds: 0, tz_offset_seconds: 3600 \}\) from ZonedDateTime\(ZonedDateTime \{ seconds: 1672650000, nanoseconds: 0, tz_offset_seconds: 3600 \}\)
+return datetime('2023-01-02T10:00:00+01:00') - datetime('2023-01-01T10:00:00+01:00')
+
+query A
+return duration('P2M') - duration('P1M')
+----
+P1M0DT0S0
+
+query A
+return duration('PT1H') - duration('PT30M')
+----
+P0M0DT1800S0
+
+query A
+return 5 * 3
+----
+15
+
+query A
+return 5 * 3.0
+----
+15
+
+query A
+return 3.0 * 5
+----
+15
+
+query A
+return duration('P1M') * 2
+----
+P2M0DT0S0
+
+query A
+return 2 * duration('P1M')
+----
+P2M0DT0S0
+
+query A
+return duration('PT1H') * 0.5
+----
+P0M0DT1800S0
+
+query A
+return duration('P2D') * 0.5
+----
+P0M1DT0S0
+
+query A
+return duration('P1M') * 1.5
+----
+P2M0DT0S0

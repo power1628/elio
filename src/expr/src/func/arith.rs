@@ -96,7 +96,93 @@ fn any_add(lhs: ScalarRef<'_>, rhs: ScalarRef<'_>) -> Result<ScalarValue, EvalEr
     }
 }
 
+#[cypher_func(batch_name = "any_sub_batch", sig = "(any, any) -> any")]
 fn any_sub(lhs: ScalarRef<'_>, rhs: ScalarRef<'_>) -> Result<ScalarValue, EvalError> {
+    match (lhs, rhs) {
+        (ScalarRef::Null, _) | (_, ScalarRef::Null) => Ok(ScalarValue::Unknown),
+        // Numeric
+        (ScalarRef::Integer(a), ScalarRef::Integer(b)) => a
+            .checked_sub(b)
+            .map(ScalarValue::Integer)
+            .ok_or_else(|| EvalError::arithmetic_overflow("subtract", vec![a.to_string(), b.to_string()])),
+        (ScalarRef::Float(a), ScalarRef::Float(b)) => Ok(ScalarValue::Float(a - b)),
+        (ScalarRef::Integer(a), ScalarRef::Float(b)) => Ok(ScalarValue::Float(F64::from(a as f64) - b)),
+        (ScalarRef::Float(a), ScalarRef::Integer(b)) => Ok(ScalarValue::Float(a - F64::from(b as f64))),
+
+        // Temporal
+        (ScalarRef::Date(d), ScalarRef::Duration(dur)) => d
+            .checked_sub(&dur)
+            .map(ScalarValue::Date)
+            .ok_or_else(|| EvalError::arithmetic_overflow("subtract", vec![d.to_string(), dur.to_string()])),
+        (ScalarRef::Date(a), ScalarRef::Date(b)) => Ok(ScalarValue::Duration(a.diff(&b))),
+
+        (ScalarRef::LocalTime(t), ScalarRef::Duration(dur)) => t
+            .checked_sub(&dur)
+            .map(ScalarValue::LocalTime)
+            .ok_or_else(|| EvalError::arithmetic_overflow("subtract", vec![t.to_string(), dur.to_string()])),
+        // (ScalarRef::LocalTime(a), ScalarRef::LocalTime(b)) => Ok(ScalarValue::Duration(a.diff(&b))),
+        (ScalarRef::LocalDateTime(dt), ScalarRef::Duration(dur)) => dt
+            .checked_sub(&dur)
+            .map(ScalarValue::LocalDateTime)
+            .ok_or_else(|| EvalError::arithmetic_overflow("subtract", vec![dt.to_string(), dur.to_string()])),
+        // (ScalarRef::LocalDateTime(a), ScalarRef::LocalDateTime(b)) => Ok(ScalarValue::Duration(a.diff(&b))),
+        (ScalarRef::ZonedDateTime(dt), ScalarRef::Duration(dur)) => dt
+            .checked_sub(&dur)
+            .map(ScalarValue::ZonedDateTime)
+            .ok_or_else(|| EvalError::arithmetic_overflow("subtract", vec![dt.to_string(), dur.to_string()])),
+        // (ScalarRef::ZonedDateTime(a), ScalarRef::ZonedDateTime(b)) => Ok(ScalarValue::Duration(a.diff(&b))),
+        (ScalarRef::Duration(a), ScalarRef::Duration(b)) => a
+            .checked_sub(&b)
+            .map(ScalarValue::Duration)
+            .ok_or_else(|| EvalError::arithmetic_overflow("subtract", vec![a.to_string(), b.to_string()])),
+
+        _ => Err(EvalError::type_error(format!(
+            "Cannot subtract {:?} from {:?}",
+            rhs, lhs
+        ))),
+    }
+}
+
+#[cypher_func(batch_name = "any_mul_batch", sig = "(any, any) -> any")]
+fn any_mul(lhs: ScalarRef<'_>, rhs: ScalarRef<'_>) -> Result<ScalarValue, EvalError> {
+    match (lhs, rhs) {
+        (ScalarRef::Null, _) | (_, ScalarRef::Null) => Ok(ScalarValue::Unknown),
+        // Numeric
+        (ScalarRef::Integer(a), ScalarRef::Integer(b)) => a
+            .checked_mul(b)
+            .map(ScalarValue::Integer)
+            .ok_or_else(|| EvalError::arithmetic_overflow("multiply", vec![a.to_string(), b.to_string()])),
+        (ScalarRef::Float(a), ScalarRef::Float(b)) => Ok(ScalarValue::Float(a * b)),
+        (ScalarRef::Integer(a), ScalarRef::Float(b)) => Ok(ScalarValue::Float(F64::from(a as f64) * b)),
+        (ScalarRef::Float(a), ScalarRef::Integer(b)) => Ok(ScalarValue::Float(a * F64::from(b as f64))),
+
+        // Duration * Numeric
+        (ScalarRef::Duration(d), ScalarRef::Integer(i)) => d
+            .checked_mul(i)
+            .map(ScalarValue::Duration)
+            .ok_or_else(|| EvalError::arithmetic_overflow("multiply", vec![d.to_string(), i.to_string()])),
+        (ScalarRef::Integer(i), ScalarRef::Duration(d)) => d
+            .checked_mul(i)
+            .map(ScalarValue::Duration)
+            .ok_or_else(|| EvalError::arithmetic_overflow("multiply", vec![i.to_string(), d.to_string()])),
+
+        (ScalarRef::Duration(d), ScalarRef::Float(f)) => d
+            .checked_mul_f64(f.0)
+            .map(ScalarValue::Duration)
+            .ok_or_else(|| EvalError::arithmetic_overflow("multiply", vec![d.to_string(), f.to_string()])),
+        (ScalarRef::Float(f), ScalarRef::Duration(d)) => d
+            .checked_mul_f64(f.0)
+            .map(ScalarValue::Duration)
+            .ok_or_else(|| EvalError::arithmetic_overflow("multiply", vec![f.to_string(), d.to_string()])),
+
+        _ => Err(EvalError::type_error(format!(
+            "Cannot multiply {:?} with {:?}",
+            lhs, rhs
+        ))),
+    }
+}
+
+fn any_div(lhs: ScalarRef<'_>, rhs: ScalarRef<'_>) -> Result<ScalarValue, EvalError> {
     todo!()
 }
 
@@ -109,4 +195,31 @@ pub(crate) fn register(registry: &mut FunctionRegistry) {
         is_agg: false
     );
     registry.insert(add);
+
+    let subtract = define_function!(
+        name: "subtract",
+        impls: [
+            {args: [{anyof Integer | Float}, {anyof Integer | Float}], ret: Any, func: any_sub_batch},
+            {args: [{anyof Date | LocalTime | LocalDateTime | ZonedDateTime}, {exact Duration}], ret: Any, func: any_sub_batch},
+            {args: [{exact Duration}, {exact Duration}], ret: Any, func: any_sub_batch},
+            // in the case of input is generated by function which output any type,
+            // we do not support union type for now, if we support it, we need to handle the case of union type
+            {args: [{exact Any}, {exact Any}], ret: Any, func: any_sub_batch}
+        ],
+        is_agg: false
+    );
+    registry.insert(subtract);
+
+    let multiply = define_function!(
+        name: "multiply",
+        impls: [
+            {args: [{anyof Integer | Float}, {anyof Integer | Float}], ret: Any, func: any_mul_batch},
+            {args: [{anyof Integer | Float}, {exact Duration}], ret: Any, func: any_mul_batch},
+            {args: [{exact Duration}, {anyof Integer | Float}], ret: Any, func: any_mul_batch},
+            // same as subtract
+            {args: [{exact Any}, {exact Any}], ret: Any, func: any_mul_batch}
+        ],
+        is_agg: false
+    );
+    registry.insert(multiply);
 }
