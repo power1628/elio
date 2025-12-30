@@ -1,7 +1,8 @@
 pub use super::*;
 use crate::IrToken;
 
-#[derive(Debug, Clone, Default, Eq, PartialEq, Hash, derive_more::Display)]
+#[derive(Debug, Clone, Default, Eq, PartialEq, Hash, derive_more::Display, ScalarPartialOrd)]
+#[scalar_partial_ord(id)]
 #[display("{{id: {}, labels: [{}], props: {}}}", id, labels.iter().map(|l| l.to_string()).collect::<Vec<_>>().join(", "), props)]
 pub struct NodeValue {
     pub id: NodeId,
@@ -22,7 +23,8 @@ impl ScalarVTable for NodeValue {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, derive_more::Display)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, derive_more::Display, ScalarPartialOrd)]
+#[scalar_partial_ord(id)]
 #[display("{{id: {}, labels: [{}], props: {}}}", id, labels.iter().map(|l| l.to_string()).collect::<Vec<_>>().join(", "), props)]
 pub struct NodeValueRef<'a> {
     pub id: NodeId,

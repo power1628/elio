@@ -107,6 +107,7 @@ pub fn cypher_func(attr: TokenStream, item: TokenStream) -> TokenStream {
                     let ret = #fn_name(#func_args)?;
                     output_builder.push(Some(ret.as_scalar_ref()));
                 } else {
+                    // tenary logic, if either one of the inputs is null, return null
                     output_builder.push(None);
                 }
             }

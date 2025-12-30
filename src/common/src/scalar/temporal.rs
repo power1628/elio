@@ -6,12 +6,15 @@
 
 use chrono::{FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Timelike};
 
+use super::*;
+
 /// Date without timezone
 /// days since unix epoch
 /// may be negative numbers
 /// e.g. 2007-12-03
 /// chrono::NaiveDate
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, ScalarPartialOrd)]
+#[scalar_partial_ord(_0)]
 #[repr(transparent)]
 pub struct Date(pub i64);
 
@@ -62,7 +65,8 @@ impl std::fmt::Display for Date {
 /// time of a day without timezone
 // nanoseconds since midnight
 // chrono::NaiveTime
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, ScalarPartialOrd)]
+#[scalar_partial_ord(_0)]
 #[repr(transparent)]
 pub struct LocalTime(pub u64);
 
@@ -116,7 +120,8 @@ impl std::fmt::Display for LocalTime {
 
 /// Date and time without timezone
 /// chrono::NaiveDatetime
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, ScalarPartialOrd)]
+#[scalar_partial_ord(seconds, nanoseconds)]
 pub struct LocalDateTime {
     // seconds since unix epoch
     pub seconds: i64,
@@ -278,6 +283,14 @@ impl From<ZonedDateTime> for chrono::DateTime<FixedOffset> {
     }
 }
 
+impl ScalarPartialOrd for ZonedDateTime {
+    fn scalar_partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        let me: chrono::DateTime<FixedOffset> = (*self).into();
+        let other: chrono::DateTime<FixedOffset> = (*other).into();
+        me.partial_cmp(&other)
+    }
+}
+
 impl std::fmt::Display for ZonedDateTime {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", chrono::DateTime::<FixedOffset>::from(*self))
@@ -285,7 +298,8 @@ impl std::fmt::Display for ZonedDateTime {
 }
 
 /// Duration
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, derive_more::Display)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, derive_more::Display, ScalarPartialOrd)]
+#[scalar_partial_ord(months, days, seconds, nanoseconds)]
 #[display("P{months}M{days}DT{seconds}S{nanoseconds}")]
 pub struct Duration {
     pub months: i64,

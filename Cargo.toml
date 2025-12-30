@@ -3,6 +3,7 @@ members = [
     "src/catalog",
     "src/cmd",
     "src/common",
+    "src/common/macros",
     "src/core",
     "src/cypher",
     "src/exec",

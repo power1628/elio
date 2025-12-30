@@ -1,0 +1,7 @@
+query AAAA
+RETURN true AND true, true AND false, true OR true, true OR false
+----
+true	false	true	true
+
+query error Invalid argument types Bool, Any for function and in Return Clause
+RETURN true AND null, true OR null, false AND null, false OR null

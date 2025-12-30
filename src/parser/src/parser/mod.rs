@@ -494,7 +494,7 @@ peg::parser! {
             --
                     _? NOT() _ right:@ {Expr::new_unary(UnaryOperator::Not, right)}
             --
-            left:(@) _? op:$("=" / "!=" / "<>" / "<" / "<=" / ">" / ">=") _? right:@ {
+            left:(@) _? op:$("=" / "!=" / "<>" / "<=" / "<" / ">=" / ">") _? right:@ {
                 let operator = match op {
                     "=" => BinaryOperator::Eq,
                     "!="  | "<>" => BinaryOperator::NotEq,

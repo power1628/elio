@@ -8,6 +8,7 @@ edition.workspace = true
 bitvec = { workspace = true }
 bytes = { workspace = true }
 chrono = { workspace = true }
+common_macros = { path = "./macros" }
 derive_more = { workspace = true, features = ["full"] }
 enum-as-inner = { workspace = true }
 itertools = { workspace = true }

@@ -13,6 +13,7 @@
 use std::hash::Hash;
 use std::sync::Arc;
 
+use common_macros::ScalarPartialOrd;
 use enum_as_inner::EnumAsInner;
 use itertools::Itertools;
 
@@ -325,4 +326,52 @@ pub type DatumRef<'a> = Option<&'a ScalarValue>;
 
 pub trait EntityScalarRef {
     fn has_ir_label(&self, label: &IrToken) -> bool;
+}
+
+pub trait ScalarPartialOrd {
+    fn scalar_partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering>;
+}
+
+impl<'a> ScalarPartialOrd for ScalarRef<'a> {
+    fn scalar_partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        macro_rules! match_same_type {
+            ($($variant:ident),*) => {
+                match (self, other) {
+                    // Null != Null
+                    (ScalarRef::Null, ScalarRef::Null) => None,
+                    (ScalarRef::Bool(x), ScalarRef::Bool(y)) => x.partial_cmp(y),
+                    (ScalarRef::Integer(x), ScalarRef::Integer(y)) => x.partial_cmp(y),
+                    (ScalarRef::Float(x), ScalarRef::Float(y)) => x.partial_cmp(y),
+                    (ScalarRef::String(x), ScalarRef::String(y)) => x.partial_cmp(y),
+                    (ScalarRef::VirtualNode(x), ScalarRef::VirtualNode(y)) => x.partial_cmp(y),
+                    // different types, cast to upper
+                    (ScalarRef::Integer(x), ScalarRef::Float(y)) =>{
+                        (F64::from(*x as f64)).partial_cmp(y)
+                    }
+                    (ScalarRef::Float(x), ScalarRef::Integer(y)) =>{
+                        x.partial_cmp(&F64::from(*y as f64))
+                    }
+                    $(
+                        (Self::$variant(x), Self::$variant(y)) => x.scalar_partial_cmp(y),
+                    )*
+                    _ => None,
+                }
+            };
+        }
+
+        match_same_type!(
+            Date,
+            LocalTime,
+            LocalDateTime,
+            ZonedDateTime,
+            Duration,
+            VirtualRel,
+            VirtualPath,
+            Node,
+            Rel,
+            Path,
+            List,
+            Struct
+        )
+    }
 }
