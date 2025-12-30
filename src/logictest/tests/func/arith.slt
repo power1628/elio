@@ -206,3 +206,41 @@ query A
 return duration('P1M') * 1.5
 ----
 P2M0DT0S0
+
+query A
+return 5 / 2
+----
+2
+
+query A
+return 5.0 / 2
+----
+2.5
+
+query A
+return 5 / 2.0
+----
+2.5
+
+query A
+return duration('P2M') / 2
+----
+P1M0DT0S0
+
+query A
+return duration('P1M') / 0.5
+----
+P2M0DT0S0
+
+query A
+return duration('PT1H') / 2
+----
+P0M0DT1800S0
+
+query A
+return duration('PT1H') / 0.5
+----
+P0M0DT7200S0
+
+query error Eval error: arithmetic overflow, op: divide, args: \["P1M0DT0S0", "0"\]
+return duration('P1M') / 0

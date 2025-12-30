@@ -182,8 +182,50 @@ fn any_mul(lhs: ScalarRef<'_>, rhs: ScalarRef<'_>) -> Result<ScalarValue, EvalEr
     }
 }
 
+#[cypher_func(batch_name = "any_div_batch", sig = "(any, any) -> any")]
 fn any_div(lhs: ScalarRef<'_>, rhs: ScalarRef<'_>) -> Result<ScalarValue, EvalError> {
-    todo!()
+    match (lhs, rhs) {
+        (ScalarRef::Null, _) | (_, ScalarRef::Null) => Ok(ScalarValue::Unknown),
+        // Numeric / Numeric
+        (ScalarRef::Integer(a), ScalarRef::Integer(b)) => {
+            if b == 0 {
+                return Err(EvalError::arithmetic_overflow(
+                    "divide",
+                    vec![a.to_string(), b.to_string()],
+                ));
+            }
+            Ok(ScalarValue::Integer(a / b))
+        }
+        (ScalarRef::Float(a), ScalarRef::Float(b)) => Ok(ScalarValue::Float(a / b)),
+        (ScalarRef::Integer(a), ScalarRef::Float(b)) => Ok(ScalarValue::Float(F64::from(a as f64) / b)),
+        (ScalarRef::Float(a), ScalarRef::Integer(b)) => Ok(ScalarValue::Float(a / F64::from(b as f64))),
+
+        // Duration / Numeric
+        (ScalarRef::Duration(d), ScalarRef::Integer(i)) => {
+            if i == 0 {
+                return Err(EvalError::arithmetic_overflow(
+                    "divide",
+                    vec![d.to_string(), i.to_string()],
+                ));
+            }
+            d.checked_div(i as f64)
+                .map(ScalarValue::Duration)
+                .ok_or_else(|| EvalError::arithmetic_overflow("divide", vec![d.to_string(), i.to_string()]))
+        }
+        (ScalarRef::Duration(d), ScalarRef::Float(f)) => {
+            if f.0 == 0.0 {
+                return Err(EvalError::arithmetic_overflow(
+                    "divide",
+                    vec![d.to_string(), f.to_string()],
+                ));
+            }
+            d.checked_div(*f)
+                .map(ScalarValue::Duration)
+                .ok_or_else(|| EvalError::arithmetic_overflow("divide", vec![d.to_string(), f.to_string()]))
+        }
+
+        _ => Err(EvalError::type_error(format!("Cannot divide {:?} by {:?}", lhs, rhs))),
+    }
 }
 
 pub(crate) fn register(registry: &mut FunctionRegistry) {
@@ -222,4 +264,16 @@ pub(crate) fn register(registry: &mut FunctionRegistry) {
         is_agg: false
     );
     registry.insert(multiply);
+
+    let divide = define_function!(
+        name: "divide",
+        impls: [
+            {args: [{anyof Integer | Float}, {anyof Integer | Float}], ret: Any, func: any_div_batch},
+            {args: [{exact Duration}, {anyof Integer | Float}], ret: Any, func: any_div_batch},
+            // same as subtract
+            {args: [{exact Any}, {exact Any}], ret: Any, func: any_div_batch}
+        ],
+        is_agg: false
+    );
+    registry.insert(divide);
 }

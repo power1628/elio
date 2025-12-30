@@ -553,6 +553,25 @@ impl Duration {
             nanoseconds,
         })
     }
+
+    pub fn checked_div(&self, scalar: f64) -> Option<Self> {
+        if scalar == 0.0 {
+            return None;
+        }
+        let months = (self.months as f64 / scalar).round() as i64;
+        let days = (self.days as f64 / scalar).round() as i64;
+
+        let total_seconds = (self.seconds as f64 + self.nanoseconds as f64 / 1e9) / scalar;
+        let seconds = total_seconds.trunc() as i64;
+        let nanoseconds = (total_seconds.fract() * 1e9).round() as i64;
+
+        Some(Self {
+            months,
+            days,
+            seconds,
+            nanoseconds,
+        })
+    }
 }
 
 impl TryFrom<&str> for Duration {
@@ -1083,5 +1102,32 @@ mod tests {
             .unwrap();
         let expected: ZonedDateTime = expected_fixed.into();
         assert_eq!(new_dt, expected);
+    }
+
+    #[test]
+    fn test_duration_div() {
+        let d = Duration {
+            months: 6,
+            days: 10,
+            seconds: 3600,
+            nanoseconds: 500_000_000,
+        };
+
+        // Divide by 2
+        let d2 = d.checked_div(2.0).unwrap();
+        assert_eq!(d2.months, 3);
+        assert_eq!(d2.days, 5);
+        assert_eq!(d2.seconds, 1800);
+        assert_eq!(d2.nanoseconds, 250_000_000);
+
+        // Divide by 0.5 (multiply by 2)
+        let d3 = d.checked_div(0.5).unwrap();
+        assert_eq!(d3.months, 12);
+        assert_eq!(d3.days, 20);
+        assert_eq!(d3.seconds, 7201);
+        assert_eq!(d3.nanoseconds, 0);
+
+        // Divide by 0 should return None
+        assert!(d.checked_div(0.0).is_none());
     }
 }
