@@ -18,3 +18,9 @@ query AAAAAA
 RETURN 1 > 3.14, 1 >= 3.14, 1 < 3.14, 1 <= 3.14, 1 = 3.14, 1 <> 3.14
 ----
 false	false	true	true	false	true
+
+# testing i64 to f64 conversion and comparsion
+query AAAA
+RETURN 1 > 1.0, 1 < 1.0, 1 = 1.0, 1 <> 1.0
+----
+false	false	true	false

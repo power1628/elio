@@ -17,16 +17,6 @@ use crate::define_function;
 use crate::error::EvalError;
 use crate::func::FunctionRegistry;
 
-#[cypher_func(batch_name = "any_eq_batch", sig = "(any, any) -> bool")]
-fn any_eq(arg0: ScalarRef<'_>, arg1: ScalarRef<'_>) -> Result<bool, EvalError> {
-    Ok(arg0 == arg1)
-}
-
-#[cypher_func(batch_name = "any_not_eq_batch", sig = "(any, any) -> bool")]
-fn any_not_eq(arg0: ScalarRef<'_>, arg1: ScalarRef<'_>) -> Result<bool, EvalError> {
-    Ok(arg0 != arg1)
-}
-
 // Tenary Logic
 // if lhs and rhs is not comparable, then return NULL
 fn do_compare(
@@ -34,6 +24,7 @@ fn do_compare(
     vis: &BitVec,
     len: usize,
     op: impl Fn(Ordering) -> bool,
+    non_handling: impl Fn() -> Option<bool>,
 ) -> Result<ArrayImpl, EvalError> {
     assert_eq!(inputs.len(), 2);
     let lhs = &inputs[0];
@@ -47,7 +38,7 @@ fn do_compare(
             let rhs_val = rhs.get(i).unwrap();
             match lhs_val.scalar_partial_cmp(&rhs_val) {
                 Some(ord) => out_builder.push(Some(op(ord))),
-                None => out_builder.push(None),
+                None => out_builder.push(non_handling()),
             }
         } else {
             out_builder.push(None);
@@ -57,22 +48,40 @@ fn do_compare(
     Ok(out_builder.finish().into())
 }
 
+fn any_eq_batch(inputs: &[ArrayRef], vis: &BitVec, len: usize) -> Result<ArrayImpl, EvalError> {
+    do_compare(inputs, vis, len, |ord| matches!(ord, Ordering::Equal), || Some(false))
+}
+
+fn any_not_eq_batch(inputs: &[ArrayRef], vis: &BitVec, len: usize) -> Result<ArrayImpl, EvalError> {
+    do_compare(inputs, vis, len, |ord| !matches!(ord, Ordering::Equal), || Some(true))
+}
+
 fn any_gt_batch(inputs: &[ArrayRef], vis: &BitVec, len: usize) -> Result<ArrayImpl, EvalError> {
-    do_compare(inputs, vis, len, |ord| matches!(ord, Ordering::Greater))
+    do_compare(inputs, vis, len, |ord| matches!(ord, Ordering::Greater), || None)
 }
 
 fn any_gt_eq_batch(inputs: &[ArrayRef], vis: &BitVec, len: usize) -> Result<ArrayImpl, EvalError> {
-    do_compare(inputs, vis, len, |ord| {
-        matches!(ord, Ordering::Greater | Ordering::Equal)
-    })
+    do_compare(
+        inputs,
+        vis,
+        len,
+        |ord| matches!(ord, Ordering::Greater | Ordering::Equal),
+        || None,
+    )
 }
 
 fn any_lt_batch(inputs: &[ArrayRef], vis: &BitVec, len: usize) -> Result<ArrayImpl, EvalError> {
-    do_compare(inputs, vis, len, |ord| matches!(ord, Ordering::Less))
+    do_compare(inputs, vis, len, |ord| matches!(ord, Ordering::Less), || None)
 }
 
 fn any_lt_eq_batch(inputs: &[ArrayRef], vis: &BitVec, len: usize) -> Result<ArrayImpl, EvalError> {
-    do_compare(inputs, vis, len, |ord| matches!(ord, Ordering::Less | Ordering::Equal))
+    do_compare(
+        inputs,
+        vis,
+        len,
+        |ord| matches!(ord, Ordering::Less | Ordering::Equal),
+        || None,
+    )
 }
 
 pub(crate) fn register(registry: &mut FunctionRegistry) {
