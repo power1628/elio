@@ -55,8 +55,8 @@ impl NodeConnections {
 #[derive(Clone)]
 pub struct SelectivePathPattern {
     path_pattern: NodeConnections,
-    filter: FilterExprs,
-    selector: Selector,
+    _filter: FilterExprs,
+    _selector: Selector,
 }
 
 impl SelectivePathPattern {

@@ -9,7 +9,6 @@
 use std::cmp::Ordering;
 
 use bitvec::prelude::*;
-use expr_macros::cypher_func;
 use mojito_common::array::*;
 use mojito_common::scalar::*;
 

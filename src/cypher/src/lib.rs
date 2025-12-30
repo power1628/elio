@@ -1,4 +1,5 @@
 #![feature(error_generic_member_access)]
+#![allow(clippy::double_parens)] // this is because EnumAsInner will generate extra parens
 
 pub mod binder;
 pub mod error;

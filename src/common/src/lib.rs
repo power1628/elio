@@ -1,4 +1,5 @@
 #![feature(trusted_len)]
+#![allow(clippy::double_parens)] // this is because EnumAsInner will generate extra parens
 
 use std::sync::Arc;
 
@@ -8,7 +9,7 @@ pub mod array;
 pub mod scalar;
 
 pub mod data_type;
-mod macros;
+// mod macros;
 pub mod mapb;
 pub mod order;
 pub mod schema;

@@ -55,14 +55,15 @@ where
     let mut values = Vec::with_capacity(len);
     let empty_prop = StructValue::default();
     let empty_prop_ref = empty_prop.as_scalar_ref();
-    for i in 0..len {
-        let rel_id = rel_ids[i];
+    for (i, rel_id) in rel_ids.iter().enumerate() {
+        // for i in 0..len {
+        // let rel_id = rel_ids[i];
         let start_id = start.get_unchecked(i);
         let end_id = end.get_unchecked(i);
         let prop = prop.get(i);
 
-        let out_key = RelFormat::encode_key(start_id, RelDirection::Out, rtype_id, end_id, rel_id);
-        let in_key = RelFormat::encode_key(end_id, RelDirection::In, rtype_id, start_id, rel_id);
+        let out_key = RelFormat::encode_key(start_id, RelDirection::Out, rtype_id, end_id, *rel_id);
+        let in_key = RelFormat::encode_key(end_id, RelDirection::In, rtype_id, start_id, *rel_id);
         out_keys.push(out_key);
         in_keys.push(in_key);
 

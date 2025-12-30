@@ -45,6 +45,7 @@ either = "1.15.0"
 enum-as-inner = "0.6.1"
 futures = "0.3"
 indexmap = "2.12.0"
+iso8601-duration = "0.2.0"                           # for duration parsing
 itertools = "0.14.0"
 jiff = "0.2.16"                                      # for temporal data repr
 ordered-float = "5.1.0"                              # float scalar type repr

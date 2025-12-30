@@ -41,6 +41,10 @@ impl Array for BoolArray {
 }
 
 impl BoolArray {
+    pub fn from_parts(data: BitVec, valid: BitVec) -> Self {
+        Self { data, valid }
+    }
+
     pub fn valid_map(&self) -> &BitVec {
         &self.valid
     }

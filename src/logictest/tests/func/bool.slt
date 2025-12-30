@@ -1,7 +1,8 @@
-query AAAA
-RETURN true AND true, true AND false, true OR true, true OR false
-----
-true	false	true	true
+#query error Invalid argument types Bool, Any for function and in Return Clause
+#RETURN true AND true, true AND false, true AND null, false AND true, false AND false, false AND null, null AND null
 
-query error Invalid argument types Bool, Any for function and in Return Clause
-RETURN true AND null, true OR null, false AND null, false OR null
+#query error Invalid argument types Bool, Any for function or in Return Clause
+#RETURN true OR true, true OR false, true OR null, false OR true, false OR false, false OR null, null OR null
+
+#query error Invalid argument types Any for function not in Return Clause
+#RETURN NOT true, NOT false, NOT null

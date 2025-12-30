@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use bitvec::vec::BitVec;
-use itertools::Itertools;
 use mojito_common::NodeId;
 use mojito_common::array::{
     Array, ArrayImpl, ListArrayBuilder, RelArrayBuilder, VirtualNodeArrayBuilder, VirtualPathArray,

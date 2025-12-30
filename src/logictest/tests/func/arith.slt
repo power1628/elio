@@ -1,0 +1,303 @@
+query A
+return 1 + 1
+----
+2
+
+query A
+return 1.5 + 2.5
+----
+4
+
+query A
+return 1 + 2.5
+----
+3.5
+
+query A
+return 'a' + 'b'
+----
+'ab'
+
+query A
+return 'a' + 1
+----
+'a1'
+
+# query A
+# return [1, 2] + [3, 4]
+# ----
+# [1, 2, 3, 4]
+
+#query A
+#return [1, 2] + 3
+#----
+#[1, 2, 3]
+
+#query A
+#return 1 + [2, 3]
+#----
+#[1, 2, 3]
+
+query A
+return date('2023-01-01') + duration('P1M')
+----
+2023-02-01
+
+query A
+return date('2023-01-31') + duration('P1M')
+----
+2023-02-28
+
+query A
+return localtime('10:00:00') + duration('PT1H')
+----
+11:00:00
+
+query A
+return localdatetime('2023-01-01T10:00:00') + duration('P1M')
+----
+2023-02-01 10:00:00
+
+query A
+return datetime('2023-01-01T10:00:00+01:00') + duration('P1M')
+----
+2023-02-01 10:00:00 +01:00
+
+query A
+return date('2023-03-31') + duration('P-1M')
+----
+2023-02-28
+
+query A
+return localdatetime('2023-01-01T10:00:00') + duration('P-1D')
+----
+2022-12-31 10:00:00
+
+query A
+return localdatetime('2023-01-01T10:00:00') + duration('PT-25H')
+----
+2022-12-31 09:00:00
+
+query A
+return localtime('10:00:00') + duration('PT-1H')
+----
+09:00:00
+
+query A
+return localtime('00:30:00') + duration('PT-1H')
+----
+23:30:00
+
+query A
+return duration('P1M') + duration('P1D')
+----
+P1M1DT0S0
+
+query A
+return duration('PT1H') + duration('PT30M')
+----
+P0M0DT5400S0
+
+query A
+return duration('P1D') + duration('PT1H')
+----
+P0M1DT3600S0
+
+query A
+return duration('P1W')
+----
+P0M7DT0S0
+
+query A
+return 5 - 3
+----
+2
+
+query A
+return 5.5 - 2.5
+----
+3
+
+query A
+return date('2023-02-01') - duration('P1M')
+----
+2023-01-01
+
+query A
+return date('2023-03-31') - duration('P1M')
+----
+2023-02-28
+
+query A
+return date('2023-01-02') - date('2023-01-01')
+----
+P0M1DT0S0
+
+query A
+return localtime('11:00:00') - duration('PT1H')
+----
+10:00:00
+
+query error Eval error: type error Cannot subtract LocalTime\(LocalTime\(36000000000000\)\) from LocalTime\(LocalTime\(39600000000000\)\)
+return localtime('11:00:00') - localtime('10:00:00')
+
+query A
+return localdatetime('2023-02-01T10:00:00') - duration('P1M')
+----
+2023-01-01 10:00:00
+
+query error Eval error: type error Cannot subtract LocalDateTime\(LocalDateTime \{ seconds: 1672567200, nanoseconds: 0 \}\) from LocalDateTime\(LocalDateTime \{ seconds: 1672653600, nanoseconds: 0 \}\)
+return localdatetime('2023-01-02T10:00:00') - localdatetime('2023-01-01T10:00:00')
+
+query A
+return datetime('2023-02-01T10:00:00+01:00') - duration('P1M')
+----
+2023-01-01 10:00:00 +01:00
+
+query error Eval error: type error Cannot subtract ZonedDateTime\(ZonedDateTime \{ seconds: 1672563600, nanoseconds: 0, tz_offset_seconds: 3600 \}\) from ZonedDateTime\(ZonedDateTime \{ seconds: 1672650000, nanoseconds: 0, tz_offset_seconds: 3600 \}\)
+return datetime('2023-01-02T10:00:00+01:00') - datetime('2023-01-01T10:00:00+01:00')
+
+query A
+return duration('P2M') - duration('P1M')
+----
+P1M0DT0S0
+
+query A
+return duration('PT1H') - duration('PT30M')
+----
+P0M0DT1800S0
+
+query A
+return 5 * 3
+----
+15
+
+query A
+return 5 * 3.0
+----
+15
+
+query A
+return 3.0 * 5
+----
+15
+
+query A
+return duration('P1M') * 2
+----
+P2M0DT0S0
+
+query A
+return 2 * duration('P1M')
+----
+P2M0DT0S0
+
+query A
+return duration('PT1H') * 0.5
+----
+P0M0DT1800S0
+
+query A
+return duration('P2D') * 0.5
+----
+P0M1DT0S0
+
+query A
+return duration('P1M') * 1.5
+----
+P2M0DT0S0
+
+query A
+return 5 / 2
+----
+2
+
+query A
+return 5.0 / 2
+----
+2.5
+
+query A
+return 5 / 2.0
+----
+2.5
+
+query A
+return duration('P2M') / 2
+----
+P1M0DT0S0
+
+query A
+return duration('P1M') / 0.5
+----
+P2M0DT0S0
+
+query A
+return duration('PT1H') / 2
+----
+P0M0DT1800S0
+
+query A
+return duration('PT1H') / 0.5
+----
+P0M0DT7200S0
+
+query error Eval error: arithmetic overflow, op: divide, args: \["P1M0DT0S0", "0"\]
+return duration('P1M') / 0
+
+query A
+return 5 % 2.5
+----
+0
+
+query A
+return 5.5 % 2
+----
+1.5
+
+query error Eval error: arithmetic overflow, op: modulo, args: \["5", "0"\]
+return 5 % 0
+
+query A
+return 5 % 0.0
+----
+NaN
+
+query error Unknown function unary_substract in Return Clause
+return -5 % 3
+
+query error Unknown function unary_substract in Return Clause
+return 5 % -3
+
+query A
+return 2 ^ 3
+----
+8
+
+query A
+return 2.5 ^ 2
+----
+6.25
+
+query A
+return 2 ^ 3.0
+----
+8
+
+query A
+return 4 ^ 0.5
+----
+2
+
+query A
+return 3 ^ 2
+----
+9
+
+query A
+return 0 ^ 0
+----
+1
+
+query error Unknown function unary_substract in Return Clause
+return 4 ^ -0.5

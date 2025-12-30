@@ -48,6 +48,10 @@ impl StructValue {
     pub fn len(&self) -> usize {
         self.fields.len()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 #[derive(Debug, Clone, Copy, derive_more::Display)]

@@ -18,6 +18,8 @@ pub enum EvalError {
         expected: String,
         actual: String,
     },
+    #[error("arithmetic overflow, op: {op}, args: {args:?}")]
+    ArithmeticOverflow { op: String, args: Vec<String> },
 }
 
 impl EvalError {
@@ -46,6 +48,13 @@ impl EvalError {
             context: context.to_string(),
             expected: expected.to_string(),
             actual: actual.to_string(),
+        }
+    }
+
+    pub fn arithmetic_overflow<T1: Display, T2: Display>(op: T1, args: Vec<T2>) -> Self {
+        Self::ArithmeticOverflow {
+            op: op.to_string(),
+            args: args.into_iter().map(|x| x.to_string()).collect(),
         }
     }
 }
