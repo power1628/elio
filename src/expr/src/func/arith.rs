@@ -228,6 +228,42 @@ fn any_div(lhs: ScalarRef<'_>, rhs: ScalarRef<'_>) -> Result<ScalarValue, EvalEr
     }
 }
 
+#[cypher_func(batch_name = "any_mod_batch", sig = "(any, any) -> any")]
+fn any_mod(lhs: ScalarRef<'_>, rhs: ScalarRef<'_>) -> Result<ScalarValue, EvalError> {
+    match (lhs, rhs) {
+        (ScalarRef::Null, _) | (_, ScalarRef::Null) => Ok(ScalarValue::Unknown),
+        // Numeric
+        (ScalarRef::Integer(a), ScalarRef::Integer(b)) => {
+            if b == 0 {
+                return Err(EvalError::arithmetic_overflow(
+                    "modulo",
+                    vec![a.to_string(), b.to_string()],
+                ));
+            }
+            Ok(ScalarValue::Integer(a % b))
+        }
+        (ScalarRef::Float(a), ScalarRef::Float(b)) => Ok(ScalarValue::Float(a % b)),
+        (ScalarRef::Integer(a), ScalarRef::Float(b)) => Ok(ScalarValue::Float(F64::from(a as f64) % b)),
+        (ScalarRef::Float(a), ScalarRef::Integer(b)) => Ok(ScalarValue::Float(a % F64::from(b as f64))),
+
+        _ => Err(EvalError::type_error(format!("Cannot modulo {:?} by {:?}", lhs, rhs))),
+    }
+}
+
+#[cypher_func(batch_name = "any_pow_batch", sig = "(any, any) -> any")]
+fn any_pow(lhs: ScalarRef<'_>, rhs: ScalarRef<'_>) -> Result<ScalarValue, EvalError> {
+    match (lhs, rhs) {
+        (ScalarRef::Null, _) | (_, ScalarRef::Null) => Ok(ScalarValue::Unknown),
+        // Numeric
+        (ScalarRef::Integer(a), ScalarRef::Integer(b)) => Ok(ScalarValue::Float(F64::from((a as f64).powf(b as f64)))),
+        (ScalarRef::Float(a), ScalarRef::Float(b)) => Ok(ScalarValue::Float(F64::from(a.0.powf(b.0)))),
+        (ScalarRef::Integer(a), ScalarRef::Float(b)) => Ok(ScalarValue::Float(F64::from((a as f64).powf(b.0)))),
+        (ScalarRef::Float(a), ScalarRef::Integer(b)) => Ok(ScalarValue::Float(F64::from(a.0.powf(b as f64)))),
+
+        _ => Err(EvalError::type_error(format!("Cannot pow {:?} by {:?}", lhs, rhs))),
+    }
+}
+
 pub(crate) fn register(registry: &mut FunctionRegistry) {
     let add = define_function!(
         name: "add",
@@ -276,4 +312,24 @@ pub(crate) fn register(registry: &mut FunctionRegistry) {
         is_agg: false
     );
     registry.insert(divide);
+
+    let modulo = define_function!(
+        name: "modulo",
+        impls: [
+            {args: [{anyof Integer | Float}, {anyof Integer | Float}], ret: Any, func: any_mod_batch},
+            {args: [{exact Any}, {exact Any}], ret: Any, func: any_mod_batch}
+        ],
+        is_agg: false
+    );
+    registry.insert(modulo);
+
+    let pow = define_function!(
+        name: "pow",
+        impls: [
+            {args: [{anyof Integer | Float}, {anyof Integer | Float}], ret: Any, func: any_pow_batch},
+            {args: [{exact Any}, {exact Any}], ret: Any, func: any_pow_batch}
+        ],
+        is_agg: false
+    );
+    registry.insert(pow);
 }

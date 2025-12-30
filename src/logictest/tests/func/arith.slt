@@ -244,3 +244,60 @@ P0M0DT7200S0
 
 query error Eval error: arithmetic overflow, op: divide, args: \["P1M0DT0S0", "0"\]
 return duration('P1M') / 0
+
+query A
+return 5 % 2.5
+----
+0
+
+query A
+return 5.5 % 2
+----
+1.5
+
+query error Eval error: arithmetic overflow, op: modulo, args: \["5", "0"\]
+return 5 % 0
+
+query A
+return 5 % 0.0
+----
+NaN
+
+query error Unknown function unary_substract in Return Clause
+return -5 % 3
+
+query error Unknown function unary_substract in Return Clause
+return 5 % -3
+
+query A
+return 2 ^ 3
+----
+8
+
+query A
+return 2.5 ^ 2
+----
+6.25
+
+query A
+return 2 ^ 3.0
+----
+8
+
+query A
+return 4 ^ 0.5
+----
+2
+
+query A
+return 3 ^ 2
+----
+9
+
+query A
+return 0 ^ 0
+----
+1
+
+query error Unknown function unary_substract in Return Clause
+return 4 ^ -0.5
