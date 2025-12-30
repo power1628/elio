@@ -146,16 +146,18 @@ impl<'a> ScalarPartialOrd for VirtualPathRef<'a> {
         let mut r2_iter = other.rel_iter();
 
         for i in 0..min_len {
-            let n1 = n1_iter.next().unwrap().unwrap();
-            let n2 = n2_iter.next().unwrap().unwrap();
+            // # SAFETY
+            //    element in path is always non-null
+            let n1 = n1_iter.next().unwrap().expect("node is null in path lhs");
+            let n2 = n2_iter.next().unwrap().expect("node is null in path rhs");
             match n1.partial_cmp(&n2) {
                 Some(std::cmp::Ordering::Equal) => {}
                 ord => return ord,
             }
 
             if i < min_len - 1 {
-                let r1 = r1_iter.next().unwrap().unwrap();
-                let r2 = r2_iter.next().unwrap().unwrap();
+                let r1 = r1_iter.next().unwrap().expect("rel is null in path lhs");
+                let r2 = r2_iter.next().unwrap().expect("rel is null in path rhs");
                 match r1.scalar_partial_cmp(&r2) {
                     Some(std::cmp::Ordering::Equal) => {}
                     ord => return ord,
@@ -383,16 +385,18 @@ impl<'a> ScalarPartialOrd for PathValueRef<'a> {
         let mut r2_iter = other.rel_iter();
 
         for i in 0..min_len {
-            let n1 = n1_iter.next().unwrap().unwrap();
-            let n2 = n2_iter.next().unwrap().unwrap();
+            // # SAFETY
+            //    element in path is always non-null
+            let n1 = n1_iter.next().unwrap().expect("node is null in path lhs");
+            let n2 = n2_iter.next().unwrap().expect("node is null in path rhs");
             match n1.scalar_partial_cmp(&n2) {
                 Some(std::cmp::Ordering::Equal) => {}
                 ord => return ord,
             }
 
             if i < min_len - 1 {
-                let r1 = r1_iter.next().unwrap().unwrap();
-                let r2 = r2_iter.next().unwrap().unwrap();
+                let r1 = r1_iter.next().unwrap().expect("rel is null in path lhs");
+                let r2 = r2_iter.next().unwrap().expect("rel is null in path rhs");
                 match r1.scalar_partial_cmp(&r2) {
                     Some(std::cmp::Ordering::Equal) => {}
                     ord => return ord,
