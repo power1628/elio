@@ -1,0 +1,50 @@
+# Test null literal type coercion in function calls
+
+# Test null with comparison operators
+query AAAAAA
+RETURN null > 1, null >= 1, null < 1, null <= 1, null = 1, null <> 1
+----
+null	null	null	null	null	null
+
+query AAAAAA
+RETURN 1 > null, 1 >= null, 1 < null, 1 <= null, 1 = null, 1 <> null
+----
+null	null	null	null	null	null
+
+# Test null with arithmetic operators
+query AAA
+RETURN null + 1, 1 + null, null + null
+----
+null	null	null
+
+query AAA
+RETURN null - 1, 1 - null, null - null
+----
+null	null	null
+
+query AAA
+RETURN null * 1, 1 * null, null * null
+----
+null	null	null
+
+# Test null with boolean operators
+query AAA
+RETURN null AND true, true AND null, null AND null
+----
+null	null	null
+
+query AAA
+RETURN null OR true, true OR null, null OR null
+----
+true	true	null
+
+# Test null with string concatenation
+query A
+RETURN null + 'hello'
+----
+null
+
+query A
+RETURN 'hello' + null
+----
+null

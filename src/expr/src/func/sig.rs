@@ -70,6 +70,72 @@ impl FuncImpl {
         }
         Some(self.ret.resolve_ret(args))
     }
+
+    /// Match function signature with null coercion support.
+    ///
+    /// For arguments marked as untyped null, this method will try to infer
+    /// their types from the function signature.
+    ///
+    /// # Arguments
+    /// * `args` - The argument types
+    /// * `is_untyped_null` - Boolean array indicating which arguments are untyped nulls
+    ///
+    /// # Returns
+    /// * `Some((return_type, coerced_arg_types))` if match succeeds
+    /// * `None` if match fails
+    pub fn matches_with_null_coercion(
+        &self,
+        args: &[DataType],
+        is_untyped_null: &[bool],
+    ) -> Option<(DataType, Vec<DataType>)> {
+        if self.args.len() != args.len() || self.args.len() != is_untyped_null.len() {
+            return None;
+        }
+
+        let mut coerced_types = Vec::with_capacity(args.len());
+
+        for (i, func_arg) in self.args.iter().enumerate() {
+            let arg_type = if is_untyped_null[i] {
+                // For untyped null, infer type from function signature
+                match func_arg {
+                    FuncImplArg::Exact(dt) => dt.clone(),
+                    FuncImplArg::Union(types) => {
+                        // Use first type in union as default
+                        types.first().cloned().unwrap_or(DataType::Any)
+                    }
+                    FuncImplArg::Templated(_) => {
+                        // For templated args, keep as Any for now
+                        DataType::Any
+                    }
+                }
+            } else {
+                // Use original type
+                args[i].clone()
+            };
+
+            // Check if the coerced type matches the function signature
+            match func_arg {
+                FuncImplArg::Union(types) => {
+                    if !types.contains(&arg_type) {
+                        return None;
+                    }
+                }
+                FuncImplArg::Exact(dt) => {
+                    if dt != &arg_type && *dt != DataType::Any {
+                        return None;
+                    }
+                }
+                FuncImplArg::Templated(_) => {
+                    // TODO(power): add type inference for templated arguments
+                    unimplemented!()
+                }
+            }
+
+            coerced_types.push(arg_type);
+        }
+
+        Some((self.ret.resolve_ret(&coerced_types), coerced_types))
+    }
 }
 
 #[derive(Clone, Debug, Hash)]
@@ -122,14 +188,14 @@ impl FuncImplReturn {
 
 #[macro_export]
 macro_rules! func_impl_arg {
-            ({ exact $dt:ident }) => {
-                FuncImplArg::Exact(DataType::$dt)
-            };
+    ({ exact $dt:ident }) => {
+        $crate::func::sig::FuncImplArg::Exact(DataType::$dt)
+    };
 
-            ({ anyof $($dt:ident)|+ }) => {
-                FuncImplArg::Union(vec![$(DataType::$dt),+])
-            };
-        }
+    ({ anyof $($dt:ident)|+ }) => {
+        $crate::func::sig::FuncImplArg::Union(vec![$(DataType::$dt),+])
+    };
+}
 
 // generate function implementation
 #[macro_export]
@@ -148,13 +214,12 @@ macro_rules! define_function {
             name: $name.to_string(),
             impls: vec![
                 $({
-                    use $crate::func::sig::{FuncImplArg, FuncImplReturn};
+                    use $crate::func::sig::{FuncImplReturn};
                     use mojito_common::data_type::DataType;
-                    use $crate::func_impl_arg;
 
                     $crate::func::sig::FuncImpl::new(
                         $name,
-                        vec![$(func_impl_arg!($arg_type)),*],
+                        vec![$($crate::func_impl_arg!($arg_type)),*],
                         FuncImplReturn::Exact(DataType::$ret_type),
                         $func_impl,
                     )

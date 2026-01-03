@@ -26,6 +26,6 @@ impl Expression for ConstantExpr {
 
         builder.push_n(self.value.as_ref().map(|x| x.as_scalar_ref()), chunk.len());
 
-        Ok(Arc::new(builder.finish().into()))
+        Ok(Arc::new(builder.finish()))
     }
 }
