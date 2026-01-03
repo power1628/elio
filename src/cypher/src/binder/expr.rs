@@ -212,7 +212,11 @@ fn bind_func_call(
     }
 }
 
-fn resolve_func(ectx: &ExprContext, name: &str, args: &[Expr]) -> Result<(FuncImpl, bool, DataType, Vec<DataType>), PlanError> {
+fn resolve_func(
+    ectx: &ExprContext,
+    name: &str,
+    args: &[Expr],
+) -> Result<(FuncImpl, bool, DataType, Vec<DataType>), PlanError> {
     let FunctionCatalog { name, func } = ectx
         .bctx
         .session()
@@ -240,9 +244,7 @@ fn resolve_func(ectx: &ExprContext, name: &str, args: &[Expr]) -> Result<(FuncIm
     for func_impl in func.impls.iter() {
         if has_untyped_null {
             // Try matching with null coercion
-            if let Some((ret, coerced_types)) =
-                func_impl.matches_with_null_coercion(&args_types, &is_untyped_null)
-            {
+            if let Some((ret, coerced_types)) = func_impl.matches_with_null_coercion(&args_types, &is_untyped_null) {
                 return Ok((func_impl.clone(), is_agg, ret, coerced_types));
             }
         } else {
