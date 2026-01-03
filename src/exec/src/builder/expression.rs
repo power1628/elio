@@ -1,4 +1,5 @@
 use mojito_common::IrToken;
+use mojito_common::data_type::DataType;
 use mojito_common::schema::{Name2ColumnMap, Schema};
 use mojito_cypher::expr;
 use mojito_cypher::expr::{Constant, CreateStruct, Expr, ExprNode, PropertyAccess, VariableRef};
@@ -68,7 +69,9 @@ fn build_property_access(
 fn build_constant(_ctx: &BuildExprContext<'_>, constant: &Constant) -> Result<BoxedExpression, BuildError> {
     Ok(ConstantExpr {
         value: constant.data.clone(),
-        typ: constant.typ.clone(),
+        // After null coercion in binder, all constants should have a type.
+        // If not, fall back to Any type for runtime handling.
+        typ: constant.typ.clone().unwrap_or(DataType::Any),
     }
     .boxed())
 }

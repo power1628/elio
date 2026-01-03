@@ -22,7 +22,7 @@ mod tail;
 // planner temporaray state
 pub struct PlannerContext {
     ctx: Arc<PlanContext>,
-    config: PlannerConfig,
+    _config: PlannerConfig,
 }
 
 #[derive(Default)]
@@ -64,7 +64,7 @@ pub fn plan_root(
     let mut ctx = PlannerContext {
         ctx: plan_ctx,
         // generate from session context
-        config: Default::default(),
+        _config: Default::default(),
     };
 
     let IrQuery { queries, union_all: _ } = inner;

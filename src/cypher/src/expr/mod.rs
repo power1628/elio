@@ -117,6 +117,14 @@ impl Expr {
     pub fn property(self, prop: &IrToken, typ: &DataType) -> Self {
         Expr::PropertyAccess(PropertyAccess::new_unchecked(self.boxed(), prop, typ))
     }
+
+    pub fn as_null_constant_mut(&mut self) -> Option<&mut Constant> {
+        if let Expr::Constant(constant) = self {
+            Some(constant)
+        } else {
+            None
+        }
+    }
 }
 
 impl Expr {

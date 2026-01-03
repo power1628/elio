@@ -98,8 +98,8 @@ fn bind_constant(_ectx: &ExprContext, lit: &ast::Literal) -> Result<Constant, Pl
             }
         }
         ast::Literal::String(s) => Ok(Constant::string(s.clone())),
-        // TODO(pgao): double check
-        ast::Literal::Null => Ok(Constant::null(DataType::Any)),
+        // null should be resolved type in an expr context
+        ast::Literal::Null => Ok(Constant::untyped_null()),
         ast::Literal::Inf => Ok(Constant::float(F64::infinity())),
     }
 }
@@ -133,7 +133,11 @@ fn bind_unary(
 
     // SAFETY: builtin operator are always ok
     let func_name = op.as_func_name();
-    let (func_impl, _is_agg, typ) = resolve_func(ectx, func_name, &args)?;
+    let (func_impl, _is_agg, typ, coerced_types) = resolve_func(ectx, func_name, &args)?;
+
+    // Coerce untyped null arguments to typed nulls
+    let args = coerce_null_args(args, &coerced_types);
+
     let func_call = FuncCall::new_unchecked(func_name.to_string(), func_impl.func_id, args, typ);
     Ok(func_call.into())
 }
@@ -151,7 +155,11 @@ fn bind_binary(
 
     // SAFETY: builtin operator are always ok
     let func_name = op.as_func_name();
-    let (func_impl, _is_agg, typ) = resolve_func(ectx, func_name, &args)?;
+    let (func_impl, _is_agg, typ, coerced_types) = resolve_func(ectx, func_name, &args)?;
+
+    // Coerce untyped null arguments to typed nulls
+    let args = coerce_null_args(args, &coerced_types);
+
     let func_call = FuncCall::new_unchecked(func_name.to_string(), func_impl.func_id, args, typ);
     Ok(func_call.into())
 }
@@ -187,7 +195,11 @@ fn bind_func_call(
         .map(|x| bind_expr(&inner_ectx, outer_scope, x))
         .collect::<Result<Vec<_>, _>>()?;
 
-    let (func_impl, is_agg, typ) = resolve_func(ectx, name, &args)?;
+    let (func_impl, is_agg, typ, coerced_types) = resolve_func(ectx, name, &args)?;
+
+    // Coerce untyped null arguments to typed nulls
+    let args = coerce_null_args(args, &coerced_types);
+
     if is_agg {
         let agg = AggCall::new_unchecked(name.to_string(), args, distinct, typ);
         Ok(agg.into())
@@ -200,7 +212,11 @@ fn bind_func_call(
     }
 }
 
-fn resolve_func(ectx: &ExprContext, name: &str, args: &[Expr]) -> Result<(FuncImpl, bool, DataType), PlanError> {
+fn resolve_func(
+    ectx: &ExprContext,
+    name: &str,
+    args: &[Expr],
+) -> Result<(FuncImpl, bool, DataType, Vec<DataType>), PlanError> {
     let FunctionCatalog { name, func } = ectx
         .bctx
         .session()
@@ -209,16 +225,58 @@ fn resolve_func(ectx: &ExprContext, name: &str, args: &[Expr]) -> Result<(FuncIm
 
     let is_agg = func.is_agg;
 
-    let args_types = args.iter().map(|x| x.typ()).collect_vec();
-    // select function implementations
+    // Prepare argument types and null flags
+    let args_types: Vec<DataType> = args.iter().map(|x| x.typ()).collect_vec();
+    let is_untyped_null: Vec<bool> = args
+        .iter()
+        .map(|arg| {
+            if let Expr::Constant(const_val) = arg {
+                const_val.is_untyped_null()
+            } else {
+                false
+            }
+        })
+        .collect();
+
+    let has_untyped_null = is_untyped_null.iter().any(|&x| x);
+
+    // Select function implementation
     for func_impl in func.impls.iter() {
-        if let Some(ret) = func_impl.matches(&args_types) {
-            return Ok((func_impl.clone(), is_agg, ret));
+        if has_untyped_null {
+            // Try matching with null coercion
+            if let Some((ret, coerced_types)) = func_impl.matches_with_null_coercion(&args_types, &is_untyped_null) {
+                return Ok((func_impl.clone(), is_agg, ret, coerced_types));
+            }
+        } else {
+            // No untyped nulls, use regular matching
+            if let Some(ret) = func_impl.matches(&args_types) {
+                return Ok((func_impl.clone(), is_agg, ret, args_types.clone()));
+            }
         }
     }
 
     // found no function matches the signature
     Err(SemanticError::invalid_function_arg_types(name, &args_types, ectx.name).into())
+}
+
+/// Coerce untyped null literals to typed nulls based on inferred types
+fn coerce_null_args(args: Vec<Expr>, coerced_types: &[DataType]) -> Vec<Expr> {
+    args.into_iter()
+        .enumerate()
+        .map(|(i, arg)| {
+            // Check if argument is an untyped null constant
+            if let Expr::Constant(const_val) = &arg
+                && const_val.is_untyped_null()
+            {
+                let target_type = &coerced_types[i];
+                // Create typed null if we found a concrete type (not Any)
+                if target_type != &DataType::Any {
+                    return Expr::Constant(Constant::typed_null(target_type.clone()));
+                }
+            }
+            arg
+        })
+        .collect()
 }
 
 pub fn bind_where(bctx: &BindContext, scope: &Scope, where_: &ast::Expr) -> Result<FilterExprs, PlanError> {
