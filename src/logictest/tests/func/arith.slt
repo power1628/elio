@@ -263,11 +263,15 @@ return 5 % 0.0
 ----
 NaN
 
-query error Unknown function unary_substract in Return Clause
+query A
 return -5 % 3
+----
+-2
 
-query error Unknown function unary_substract in Return Clause
+query A
 return 5 % -3
+----
+2
 
 query A
 return 2 ^ 3
@@ -299,5 +303,7 @@ return 0 ^ 0
 ----
 1
 
-query error Unknown function unary_substract in Return Clause
+query A
 return 4 ^ -0.5
+----
+0.5

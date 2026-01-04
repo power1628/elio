@@ -8,7 +8,28 @@ RETURN true OR true, true OR false, true OR null, false OR true, false OR false,
 ----
 true	true	true	true	false	false	null
 
+query AAAAAAA
+RETURN true XOR true, true XOR false, true XOR null, false XOR true, false XOR false, false XOR null, null XOR null
+----
+false	true	null	true	false	null	null
+
 query AAA
 RETURN NOT true, NOT false, NOT null
 ----
 false	true	null
+
+
+query A
+RETURN null = null
+----
+null
+
+query AAA
+RETURN true IS NULL, false IS NULL, null IS NULL
+----
+false	false	true
+
+query AAA
+RETURN true IS NOT NULL, false IS NOT NULL, null IS NOT NULL
+----
+true	true	false
