@@ -1,9 +1,6 @@
 //! Unary op
 //!  - unary_add
 //!  - unary_subtract
-//!  - not
-//!  - is_null
-//!  - is_not_null
 
 use bitvec::prelude::*;
 use expr_macros::cypher_func;
@@ -52,7 +49,7 @@ pub(crate) fn register(registry: &mut FunctionRegistry) {
     registry.insert(add);
 
     let sub = define_function!(
-        name: "unary_subtract",
+        name: "unary_substract",
         impls: [
             {args: [{anyof Integer | Float}], ret: Any, func: any_unary_subtract_batch},
             {args: [{exact Any}], ret: Any, func: any_unary_subtract_batch}
