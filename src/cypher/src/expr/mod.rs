@@ -4,6 +4,7 @@ use mojito_common::data_type::DataType;
 use mojito_common::schema::Variable;
 
 pub mod agg_call;
+pub mod create_list;
 pub mod create_map;
 pub mod filters;
 /// Logical expr
@@ -16,6 +17,7 @@ pub mod utils;
 pub mod value;
 pub mod variable_ref;
 pub use agg_call::*;
+pub use create_list::*;
 pub use create_map::*;
 pub use filters::*;
 pub use func_call::*;
@@ -37,6 +39,7 @@ pub enum Expr {
     Subquery(Subquery),
     HasLabel(HasLabel),
     CreateStruct(CreateStruct),
+    CreateList(CreateList),
     // graph
     ProjectPath(ProjectPath),
 }
@@ -80,6 +83,7 @@ impl_expr_node_for_enum!(
     Subquery,
     HasLabel,
     CreateStruct,
+    CreateList,
     ProjectPath
 );
 
@@ -158,6 +162,7 @@ impl Expr {
                         .join(", ")
                 )
             }
+            Expr::CreateList(create_list) => create_list.pretty(),
             Expr::ProjectPath(project_path) => project_path.pretty(),
         }
     }

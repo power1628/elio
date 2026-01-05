@@ -7,10 +7,10 @@ pub fn plan_match(
     ctx: &mut PlannerContext,
     _part @ IrSingleQueryPart {
         query_graph,
-        horizon: _,
+        query_project: _,
     }: &IrSingleQueryPart,
 ) -> Result<Box<PlanExpr>, PlanError> {
-    // TODO(pgao): pushdown horizon order by to query graph
+    // TODO(pgao): pushdown projection order by to query graph
     plan_query_graph(ctx, query_graph)
 }
 

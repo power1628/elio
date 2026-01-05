@@ -7,6 +7,7 @@ use mojito_common::{TokenId, TokenKind};
 use crate::error::EvalError;
 
 pub mod constant;
+pub mod create_list;
 pub mod create_struct;
 pub mod field_access;
 pub mod func_call;

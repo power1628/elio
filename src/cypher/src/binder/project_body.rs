@@ -14,10 +14,10 @@ use crate::binder::query::ClauseKind;
 use crate::binder::scope::{Scope, ScopeItem};
 use crate::error::{PlanError, SemanticError};
 use crate::expr::{Constant, Expr, ExprNode, FilterExprs, VariableRef};
-use crate::ir::horizon::{
-    AggregateProjection, DistinctProjection, Pagination, QueryHorizon, QueryProjection, RegularProjection,
-};
 use crate::ir::order::SortItem;
+use crate::ir::query_project::{
+    AggregateProjection, DistinctProjection, Pagination, Projection, QueryProjection, RegularProjection,
+};
 
 pub enum BoundReturnItems {
     Project(Vec<(Variable, Expr)>),
@@ -124,7 +124,7 @@ pub fn bind_return_items(
     }
 
     if post_proj.is_empty() {
-        let horizon = {
+        let query_project = {
             if distinct {
                 let proj = DistinctProjection {
                     group_by: group_by_expr,
@@ -132,19 +132,19 @@ pub fn bind_return_items(
                     pagination: Default::default(),
                     filter: FilterExprs::empty(),
                 };
-                let proj = QueryProjection::Distinct(proj);
-                QueryHorizon::Project(proj)
+                let proj = Projection::Distinct(proj);
+                QueryProjection::Project(proj)
             } else {
-                let proj = QueryProjection::Regular(RegularProjection {
+                let proj = Projection::Regular(RegularProjection {
                     items: group_by_expr,
                     order_by: Default::default(),
                     pagination: Default::default(),
                     filter: FilterExprs::empty(),
                 });
-                QueryHorizon::Project(proj)
+                QueryProjection::Project(proj)
             }
         };
-        builder.tail_mut().unwrap().with_projection(horizon);
+        builder.tail_mut().unwrap().with_projection(query_project);
         return Ok(agg_in_scope);
     }
 
@@ -219,7 +219,7 @@ pub fn bind_return_items(
         builder
             .tail_mut()
             .unwrap()
-            .with_projection(QueryHorizon::Project(QueryProjection::Aggregate(agg_proj)));
+            .with_projection(QueryProjection::Project(Projection::Aggregate(agg_proj)));
     }
 
     // post projection
@@ -247,7 +247,7 @@ pub fn bind_return_items(
         builder
             .tail_mut()
             .unwrap()
-            .with_projection(QueryHorizon::Project(QueryProjection::Regular(RegularProjection {
+            .with_projection(QueryProjection::Project(Projection::Regular(RegularProjection {
                 items: projs,
                 order_by: Default::default(),
                 pagination: Default::default(),

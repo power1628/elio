@@ -18,7 +18,7 @@ use enum_as_inner::EnumAsInner;
 use itertools::Itertools;
 
 use crate::array::{Array, ArrayImpl, StructArray};
-use crate::data_type::F64;
+use crate::data_type::{DataType, F64};
 use crate::store_types::RelDirection;
 use crate::{IrToken, NodeId, RelationshipId};
 
@@ -56,6 +56,31 @@ pub trait ScalarRefVTable<'a>:
 
     /// Convert the reference into an owned value.
     fn to_owned_scalar(&self) -> Self::ScalarType;
+}
+
+/// ScalarTypes which are non nested and the data type can be known at compile time
+pub trait LeafScalarType: ScalarVTable {
+    const TYPE: DataType;
+}
+
+impl ScalarVTable for ScalarValue {
+    type RefType<'a> = ScalarRef<'a>;
+
+    fn as_scalar_ref(&self) -> Self::RefType<'_> {
+        self.as_scalar_ref()
+    }
+}
+
+impl<'a> ScalarRefVTable<'a> for ScalarRef<'a> {
+    type ScalarType = ScalarValue;
+
+    fn to_owned_scalar(&self) -> Self::ScalarType {
+        self.to_owned_scalar()
+    }
+}
+
+impl LeafScalarType for ScalarValue {
+    const TYPE: DataType = DataType::Any;
 }
 
 #[derive(derive_more::Display, Debug, Clone, Default, EnumAsInner, Eq, PartialEq, Hash)]
@@ -318,6 +343,34 @@ impl<'a> ScalarRefVTable<'a> for &'a str {
         self.to_string()
     }
 }
+
+macro_rules! impl_leaf_scalar_type {
+    ($({$type:ty, $type_name:ident}),*) => {
+        $(
+            impl LeafScalarType for $type {
+                const TYPE: DataType = DataType::$type_name;
+            }
+        )*
+    }
+}
+
+impl_leaf_scalar_type!(
+    {bool, Bool},
+    {i64, Integer},
+    {F64, Float},
+    {Date, Date},
+    {LocalTime, LocalTime},
+    {LocalDateTime, LocalDateTime},
+    {ZonedDateTime, ZonedDateTime},
+    {Duration, Duration},
+    {String, String},
+    {NodeId, VirtualNode},
+    {VirtualRel, VirtualRel},
+    {NodeValue, Node},
+    {VirtualPath, VirtualPath},
+    {RelValue, Rel},
+    {PathValue, Path}
+);
 
 pub type Row = Vec<Option<ScalarValue>>;
 

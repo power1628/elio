@@ -8,96 +8,96 @@ use crate::ir::order::SortItem;
 use crate::pretty_utils::{pretty_order_items, pretty_project_items};
 
 // Rename to QueryProjection
-pub enum QueryHorizon {
-    Unwind(UnwindProjection),
-    Project(QueryProjection),
+pub enum QueryProjection {
+    Unwind(Unwind),
+    Project(Projection),
 }
 
-impl QueryHorizon {
+impl QueryProjection {
     pub fn xmlnode(&self) -> XmlNode<'_> {
         match self {
-            QueryHorizon::Unwind(u) => u.xmlnode(),
-            QueryHorizon::Project(p) => p.xmlnode(),
+            QueryProjection::Unwind(u) => u.xmlnode(),
+            QueryProjection::Project(p) => p.xmlnode(),
         }
     }
 }
 
-impl QueryHorizon {
+impl QueryProjection {
     pub fn set_order_by(&mut self, order_by: Vec<SortItem>) {
         match self {
-            QueryHorizon::Unwind(_) => unreachable!(),
-            QueryHorizon::Project(q) => q.set_order_by(order_by),
+            QueryProjection::Unwind(_) => unreachable!(),
+            QueryProjection::Project(q) => q.set_order_by(order_by),
         }
     }
 
     pub fn set_pagination(&mut self, pagination: Pagination) {
         match self {
-            QueryHorizon::Unwind(_) => unreachable!(),
-            QueryHorizon::Project(q) => q.set_pagination(pagination),
+            QueryProjection::Unwind(_) => unreachable!(),
+            QueryProjection::Project(q) => q.set_pagination(pagination),
         }
     }
 
     pub fn set_filter(&mut self, filter: FilterExprs) {
         match self {
-            QueryHorizon::Unwind(_) => unreachable!(),
-            QueryHorizon::Project(q) => q.set_filter(filter),
+            QueryProjection::Unwind(_) => unreachable!(),
+            QueryProjection::Project(q) => q.set_filter(filter),
         }
     }
 }
 
-impl std::default::Default for QueryHorizon {
+impl std::default::Default for QueryProjection {
     fn default() -> Self {
-        Self::Project(QueryProjection::empty())
+        Self::Project(Projection::empty())
     }
 }
 
-impl QueryHorizon {
+impl QueryProjection {
     pub fn empty() -> Self {
         Self::default()
     }
 }
 
-pub enum QueryProjection {
+pub enum Projection {
     Regular(RegularProjection),
     Aggregate(AggregateProjection),
     Distinct(DistinctProjection),
 }
-impl QueryProjection {
+impl Projection {
     pub fn xmlnode(&self) -> XmlNode<'_> {
         match self {
-            QueryProjection::Regular(r) => r.xmlnode(),
-            QueryProjection::Aggregate(a) => a.xmlnode(),
-            QueryProjection::Distinct(d) => d.xmlnode(),
+            Projection::Regular(r) => r.xmlnode(),
+            Projection::Aggregate(a) => a.xmlnode(),
+            Projection::Distinct(d) => d.xmlnode(),
         }
     }
 }
 
-impl QueryProjection {
+impl Projection {
     pub fn empty() -> Self {
         Self::Regular(RegularProjection::default())
     }
 
     pub fn set_order_by(&mut self, order_by: Vec<SortItem>) {
         match self {
-            QueryProjection::Regular(r) => r.order_by = order_by,
-            QueryProjection::Aggregate(a) => a.order_by = order_by,
-            QueryProjection::Distinct(d) => d.order_by = order_by,
+            Projection::Regular(r) => r.order_by = order_by,
+            Projection::Aggregate(a) => a.order_by = order_by,
+            Projection::Distinct(d) => d.order_by = order_by,
         }
     }
 
     pub fn set_pagination(&mut self, pagination: Pagination) {
         match self {
-            QueryProjection::Regular(r) => r.pagination = pagination,
-            QueryProjection::Aggregate(a) => a.pagination = pagination,
-            QueryProjection::Distinct(d) => d.pagination = pagination,
+            Projection::Regular(r) => r.pagination = pagination,
+            Projection::Aggregate(a) => a.pagination = pagination,
+            Projection::Distinct(d) => d.pagination = pagination,
         }
     }
 
     pub fn set_filter(&mut self, filter: FilterExprs) {
         match self {
-            QueryProjection::Regular(r) => r.filter = filter,
-            QueryProjection::Aggregate(a) => a.filter = filter,
-            QueryProjection::Distinct(d) => d.filter = filter,
+            Projection::Regular(r) => r.filter = filter,
+            Projection::Aggregate(a) => a.filter = filter,
+            Projection::Distinct(d) => d.filter = filter,
         }
     }
 }
@@ -126,12 +126,12 @@ impl Pagination {
     }
 }
 
-pub struct UnwindProjection {
+pub struct Unwind {
     pub variable: Variable,
     pub expr: Expr,
 }
 
-impl UnwindProjection {
+impl Unwind {
     pub fn xmlnode(&self) -> XmlNode<'_> {
         XmlNode::simple_record(
             "UnwindProjection",

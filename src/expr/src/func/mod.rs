@@ -1,6 +1,7 @@
 pub mod sig;
 
 pub mod compare; // gt/eq/lt/le/ge/ne
+pub mod list;
 pub mod op_arith;
 pub mod op_bool; // and / or
 pub mod op_unary;
@@ -63,6 +64,7 @@ pub static FUNCTION_REGISTRY: LazyLock<FunctionRegistry> = LazyLock::new(|| {
     temporal::register(&mut registry);
     op_arith::register(&mut registry);
     op_unary::register(&mut registry);
+    list::register(&mut registry);
 
     // register agg functions
 

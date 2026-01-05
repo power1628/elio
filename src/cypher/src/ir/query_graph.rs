@@ -10,7 +10,7 @@ use pretty_xmlish::{Pretty, XmlNode};
 use crate::binder::pattern::PathPatternWithExtra;
 use crate::expr::FilterExprs;
 use crate::ir::mutating_pattern::{CreatePattern, MutatingPattern};
-use crate::ir::node_connection::{ExhaustiveNodeConnection, QuantifiedPathPattern, RelPattern};
+use crate::ir::node_connection::{ExhaustiveNodeConnection, RelPattern};
 use crate::ir::path_pattern::{PathPattern, SelectivePathPattern, SingleNode};
 use crate::pretty_utils::pretty_display_iter;
 
@@ -20,7 +20,6 @@ pub struct QueryGraph {
     pub nodes: IndexSet<VariableName>,
     // node connections
     pub rels: IndexSet<RelPattern>,
-    quantified_paths: Vec<QuantifiedPathPattern>,
     // selective path patterns
     selective_paths: Vec<SelectivePathPattern>,
     // predicate, i.e. post filter
@@ -70,11 +69,6 @@ impl QueryGraph {
         self.rels.insert(rel.clone());
     }
 
-    pub fn add_quantifled_path(&mut self, qpp: &QuantifiedPathPattern) {
-        qpp.endpoint_nodes().iter().for_each(|x| self.add_node(x));
-        self.quantified_paths.push(qpp.clone());
-    }
-
     pub fn add_selective_path(&mut self, spp: &SelectivePathPattern) {
         spp.endpoint_nodes().iter().for_each(|x| self.add_node(x));
         self.selective_paths.push(spp.clone());
@@ -83,8 +77,8 @@ impl QueryGraph {
     pub fn add_node_connection(&mut self, conn: &ExhaustiveNodeConnection) {
         match conn {
             ExhaustiveNodeConnection::RelPattern(rel_pattern) => self.add_rel(rel_pattern),
-            ExhaustiveNodeConnection::QuantifiedPathPattern(quantified_path_pattern) => {
-                self.add_quantifled_path(quantified_path_pattern)
+            ExhaustiveNodeConnection::QuantifiedPathPattern(_quantified_path_pattern) => {
+                unreachable!("not supported")
             }
         }
     }
@@ -104,10 +98,6 @@ impl QueryGraph {
     pub fn merge(&mut self, other: QueryGraph) {
         other.nodes.iter().for_each(|n| self.add_node(n));
         other.rels.iter().for_each(|r| self.add_rel(r));
-        other
-            .quantified_paths
-            .iter()
-            .for_each(|qpp| self.add_quantifled_path(qpp));
         other
             .selective_paths
             .iter()
@@ -174,8 +164,8 @@ impl QueryGraph {
     pub fn contains_node_connection(&self, nc: &ExhaustiveNodeConnection) -> bool {
         match nc {
             ExhaustiveNodeConnection::RelPattern(rel_pattern) => self.rels.contains(rel_pattern),
-            ExhaustiveNodeConnection::QuantifiedPathPattern(quantified_path_pattern) => {
-                self.quantified_paths.contains(quantified_path_pattern)
+            ExhaustiveNodeConnection::QuantifiedPathPattern(_quantified_path_pattern) => {
+                unreachable!("not supported")
             }
         }
     }

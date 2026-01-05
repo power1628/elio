@@ -2,9 +2,10 @@ use mojito_common::IrToken;
 use mojito_common::data_type::DataType;
 use mojito_common::schema::{Name2ColumnMap, Schema};
 use mojito_cypher::expr;
-use mojito_cypher::expr::{Constant, CreateStruct, Expr, ExprNode, PropertyAccess, VariableRef};
+use mojito_cypher::expr::{Constant, CreateList, CreateStruct, Expr, ExprNode, PropertyAccess, VariableRef};
 use mojito_expr::func::FUNCTION_REGISTRY;
 use mojito_expr::impl_::constant::ConstantExpr;
+use mojito_expr::impl_::create_list::CreateListExpr;
 use mojito_expr::impl_::create_struct::CreateStructExpr;
 use mojito_expr::impl_::field_access::FieldAccessExpr;
 use mojito_expr::impl_::func_call::FuncCallExpr;
@@ -38,6 +39,7 @@ pub(crate) fn build_expression(ctx: &BuildExprContext<'_>, expr: &Expr) -> Resul
         Expr::Subquery(_subquery) => todo!(),
         Expr::HasLabel(has_label) => build_has_label(ctx, has_label),
         Expr::CreateStruct(create_map) => build_create_map(ctx, create_map),
+        Expr::CreateList(create_list) => build_create_list(ctx, create_list),
         Expr::ProjectPath(project_path) => build_project_path(ctx, project_path),
     }
 }
@@ -115,6 +117,16 @@ fn build_create_map(ctx: &BuildExprContext<'_>, create_map: &CreateStruct) -> Re
         physical_type: create_map.typ().physical_type(),
     }
     .boxed())
+}
+
+fn build_create_list(ctx: &BuildExprContext<'_>, create_list: &CreateList) -> Result<BoxedExpression, BuildError> {
+    let elements = create_list
+        .elements
+        .iter()
+        .map(|expr| build_expression(ctx, expr))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(CreateListExpr::new(elements, create_list.typ()).boxed())
 }
 
 fn build_project_path(
