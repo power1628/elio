@@ -78,8 +78,8 @@ pub fn bind_expr(ectx: &ExprContext, outer_scope: &[Scope], expr: &ast::Expr) ->
         ast::Expr::Binary { left, op, right } => bind_binary(ectx, outer_scope, left, op, right),
         ast::Expr::FunctionCall { name, distinct, args } => bind_func_call(ectx, outer_scope, name, *distinct, args),
         ast::Expr::ListExpression { items } => bind_list_expression(ectx, outer_scope, items),
-        ast::Expr::ListSlice { .. } => not_supported!("list slice"),
-        ast::Expr::ListIndex { .. } => not_supported!("list index"),
+        ast::Expr::ListSlice { list, start, end } => bind_list_slice(ectx, outer_scope, list, start, end),
+        ast::Expr::ListIndex { list, index } => bind_list_index(ectx, outer_scope, list, index),
     }
 }
 
@@ -164,6 +164,56 @@ fn bind_binary(
     let args = coerce_null_args(args, &coerced_types);
 
     let func_call = FuncCall::new_unchecked(func_name.to_string(), func_impl.func_id, args, typ);
+    Ok(func_call.into())
+}
+
+fn bind_list_index(
+    ectx: &ExprContext,
+    outer_scope: &[Scope],
+    list: &ast::Expr,
+    index: &ast::Expr,
+) -> Result<Expr, PlanError> {
+    let list_expr = bind_expr(ectx, outer_scope, list)?;
+    let index_expr = bind_expr(ectx, outer_scope, index)?;
+    let args = vec![list_expr, index_expr];
+
+    let (func_impl, _is_agg, typ, coerced_types) = resolve_func(ectx, "list_index", &args)?;
+    let args = coerce_null_args(args, &coerced_types);
+
+    let func_call = FuncCall::new_unchecked("list_index".to_string(), func_impl.func_id, args, typ);
+    Ok(func_call.into())
+}
+
+fn bind_list_slice(
+    ectx: &ExprContext,
+    outer_scope: &[Scope],
+    list: &ast::Expr,
+    start: &Option<Box<ast::Expr>>,
+    end: &Option<Box<ast::Expr>>,
+) -> Result<Expr, PlanError> {
+    let list_expr = bind_expr(ectx, outer_scope, list)?;
+
+    // For start/end, use 0 and MAX_INT as defaults if not specified
+    let start_expr = if let Some(s) = start {
+        bind_expr(ectx, outer_scope, s)?
+    } else {
+        Expr::Constant(Constant::integer(0))
+    };
+
+    let end_expr = if let Some(e) = end {
+        bind_expr(ectx, outer_scope, e)?
+    } else {
+        // Use a large number as "end of list" indicator
+        // The actual implementation will clamp to list length
+        Expr::Constant(Constant::integer(i64::MAX))
+    };
+
+    let args = vec![list_expr, start_expr, end_expr];
+
+    let (func_impl, _is_agg, typ, coerced_types) = resolve_func(ectx, "list_slice", &args)?;
+    let args = coerce_null_args(args, &coerced_types);
+
+    let func_call = FuncCall::new_unchecked("list_slice".to_string(), func_impl.func_id, args, typ);
     Ok(func_call.into())
 }
 

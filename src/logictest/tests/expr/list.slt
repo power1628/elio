@@ -71,3 +71,101 @@ MATCH (n:Person) RETURN [n.name, n.age]
 ----
 ['Alex', 30]
 
+# =====================
+# Test list_index (list[index])
+# =====================
+
+# Basic list index - first element
+query A
+return [1, 2, 3][0]
+----
+1
+
+# Basic list index - last element
+query A
+return [1, 2, 3][2]
+----
+3
+
+# Negative index - last element
+query A
+return [1, 2, 3][-1]
+----
+3
+
+# Negative index - first element
+query A
+return [1, 2, 3][-3]
+----
+1
+
+# String list index
+query A
+return ['a', 'b', 'c'][1]
+----
+'b'
+
+# Out of bounds returns null
+query A
+return [1, 2, 3][10]
+----
+null
+
+# Negative out of bounds returns null
+query A
+return [1, 2, 3][-10]
+----
+null
+
+# =====================
+# Test list_slice (list[start..end])
+# =====================
+
+# Basic slice
+query A
+return [1, 2, 3, 4, 5][1..3]
+----
+[2, 3]
+
+# Slice from start
+query A
+return [1, 2, 3, 4, 5][..3]
+----
+[1, 2, 3]
+
+# Slice to end
+query A
+return [1, 2, 3, 4, 5][2..]
+----
+[3, 4, 5]
+
+# Full slice
+query A
+return [1, 2, 3][..]
+----
+[1, 2, 3]
+
+# Empty slice (start >= end)
+query A
+return [1, 2, 3][2..1]
+----
+[]
+
+# Negative indices in slice
+query A
+return [1, 2, 3, 4, 5][-3..-1]
+----
+[3, 4]
+
+# Slice with negative start
+query A
+return [1, 2, 3, 4, 5][-2..]
+----
+[4, 5]
+
+# Slice with negative end
+query A
+return [1, 2, 3, 4, 5][..-2]
+----
+[1, 2, 3]
+

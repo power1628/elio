@@ -49,23 +49,9 @@ impl FuncImpl {
         if self.args.len() != args.len() {
             return None;
         }
-        for (i, arg) in self.args.iter().enumerate() {
-            match arg {
-                FuncImplArg::Union(types) => {
-                    if !types.contains(&args[i]) {
-                        return None;
-                    }
-                }
-                FuncImplArg::Exact(dt) => {
-                    // special handle for any, we think any type is equal to any other type
-                    if dt != &args[i] && *dt != DataType::Any {
-                        return None;
-                    }
-                }
-                FuncImplArg::Templated(_) => {
-                    // TODO(power): add type inference for templated arguments
-                    unimplemented!()
-                }
+        for (i, func_arg) in self.args.iter().enumerate() {
+            if !func_arg.matches_type(&args[i]) {
+                return None;
             }
         }
         Some(self.ret.resolve_ret(args))
@@ -107,6 +93,10 @@ impl FuncImpl {
                         // For templated args, keep as Any for now
                         DataType::Any
                     }
+                    FuncImplArg::AnyList => {
+                        // For AnyList with null, default to List<Any>
+                        DataType::new_list(DataType::Any)
+                    }
                 }
             } else {
                 // Use original type
@@ -114,21 +104,8 @@ impl FuncImpl {
             };
 
             // Check if the coerced type matches the function signature
-            match func_arg {
-                FuncImplArg::Union(types) => {
-                    if !types.contains(&arg_type) {
-                        return None;
-                    }
-                }
-                FuncImplArg::Exact(dt) => {
-                    if dt != &arg_type && *dt != DataType::Any {
-                        return None;
-                    }
-                }
-                FuncImplArg::Templated(_) => {
-                    // TODO(power): add type inference for templated arguments
-                    unimplemented!()
-                }
+            if !func_arg.matches_type(&arg_type) {
+                return None;
             }
 
             coerced_types.push(arg_type);
@@ -148,6 +125,8 @@ pub enum FuncImplArg {
     Exact(DataType),
     /// Templated argument type, e.g. `add<T>(T, T)`
     Templated(String),
+    /// Matches any List type, e.g. `list_index(List<T>, Int) -> T`
+    AnyList,
 }
 
 impl FuncImplArg {
@@ -161,6 +140,21 @@ impl FuncImplArg {
             }
             FuncImplArg::Exact(dt) => dt.signature(),
             FuncImplArg::Templated(t) => format!("{}<T>", t),
+            FuncImplArg::AnyList => "list(any)".to_string(),
+        }
+    }
+
+    /// Check if the given data type matches this argument spec.
+    /// Returns true if it matches.
+    pub fn matches_type(&self, dt: &DataType) -> bool {
+        match self {
+            FuncImplArg::Union(types) => types.contains(dt),
+            FuncImplArg::Exact(expected) => expected == dt || *expected == DataType::Any,
+            FuncImplArg::Templated(_) => {
+                // TODO(power): add type inference for templated arguments
+                false
+            }
+            FuncImplArg::AnyList => matches!(dt, DataType::List(_)),
         }
     }
 }
@@ -171,16 +165,29 @@ pub enum FuncImplReturn {
     Exact(DataType),
     /// Templated return type, e.g. `add<T>(T, T) -> T`
     Templated(String),
+    /// Return type is the same as the nth argument, e.g. `list_slice(List<T>, Int, Int) -> List<T>`
+    SameAsArg(usize),
+    /// Return type is the element type of the nth argument (which must be a List),
+    /// e.g. `list_index(List<T>, Int) -> T`
+    ListElement(usize),
 }
 
 impl FuncImplReturn {
     // resolve return type
-    pub fn resolve_ret(&self, _args: &[DataType]) -> DataType {
+    pub fn resolve_ret(&self, args: &[DataType]) -> DataType {
         match self {
             FuncImplReturn::Exact(data_type) => data_type.clone(),
             FuncImplReturn::Templated(_t) => {
                 // TODO(power): add type inference for templated return type
                 unimplemented!()
+            }
+            FuncImplReturn::SameAsArg(idx) => args.get(*idx).cloned().unwrap_or(DataType::Any),
+            FuncImplReturn::ListElement(idx) => {
+                if let Some(DataType::List(inner)) = args.get(*idx) {
+                    (**inner).clone()
+                } else {
+                    DataType::Any
+                }
             }
         }
     }
