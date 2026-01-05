@@ -19,6 +19,18 @@ pub enum Expr {
         map: Box<Expr>,
         key: String,
     },
+    ListExpression {
+        items: Vec<Expr>,
+    },
+    ListSlice {
+        list: Box<Expr>,
+        start: Option<Box<Expr>>,
+        end: Option<Box<Expr>>,
+    },
+    ListIndex {
+        list: Box<Expr>,
+        index: Box<Expr>,
+    },
     Unary {
         op: UnaryOperator,
         oprand: Box<Expr>,
@@ -83,6 +95,25 @@ impl Expr {
         }
     }
 
+    pub fn new_list_expression(items: Vec<Expr>) -> Self {
+        Expr::ListExpression { items }
+    }
+
+    pub fn new_list_slice(list: Expr, start: Option<Expr>, end: Option<Expr>) -> Self {
+        Expr::ListSlice {
+            list: Box::new(list),
+            start: start.map(Box::new),
+            end: end.map(Box::new),
+        }
+    }
+
+    pub fn new_list_index(list: Expr, index: Expr) -> Self {
+        Expr::ListIndex {
+            list: Box::new(list),
+            index: Box::new(index),
+        }
+    }
+
     pub fn new_unary(op: UnaryOperator, oprand: Expr) -> Self {
         Expr::Unary {
             op,
@@ -119,8 +150,23 @@ impl std::fmt::Display for Expr {
                         .join(", ")
                 )
             }
-            Expr::Parameter { name } => write!(f, "${name}"),
             Expr::PropertyAccess { map, key } => write!(f, "{map}.{key}"),
+            Expr::ListExpression { items } => {
+                write!(
+                    f,
+                    "[{}]",
+                    items.iter().map(|item| item.to_string()).collect::<Vec<_>>().join(", ")
+                )
+            }
+            Expr::ListSlice { list, start, end } => {
+                let start = start.as_ref().map(|x| x.to_string()).unwrap_or_default();
+                let end = end.as_ref().map(|x| x.to_string()).unwrap_or_default();
+                write!(f, "{list}[{start}..{end}]")
+            }
+            Expr::ListIndex { list, index } => {
+                write!(f, "{list}[{index}]")
+            }
+            Expr::Parameter { name } => write!(f, "${name}"),
             Expr::Unary { op, oprand } => match op.associativity() {
                 Associativity::Prefix => write!(f, "{op}({oprand})"),
                 Associativity::Postfix => write!(f, "({oprand}){op}"),

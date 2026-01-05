@@ -6,24 +6,23 @@ use mojito_common::schema::Schema;
 
 use crate::error::PlanError;
 use crate::expr::FilterExprs;
-use crate::ir::horizon::{
-    AggregateProjection, DistinctProjection, Pagination, QueryHorizon, QueryProjection, RegularProjection,
-    UnwindProjection,
-};
 use crate::ir::order::SortItem;
+use crate::ir::query_project::{
+    AggregateProjection, DistinctProjection, Pagination, Projection, QueryProjection, RegularProjection, Unwind,
+};
 use crate::plan_node::{Filter, FilterInner, PaginationInner, PlanExpr, Project, ProjectInner, Sort, SortInner};
 use crate::planner::PlannerContext;
 
-pub fn plan_horizon(
+pub fn plan_query_projection(
     ctx: &mut PlannerContext,
     root: Box<PlanExpr>,
-    horizon: &QueryHorizon,
+    query_project: &QueryProjection,
 ) -> Result<Box<PlanExpr>, PlanError> {
-    match horizon {
-        QueryHorizon::Unwind(unwind) => plan_unwind(ctx, root, unwind),
-        QueryHorizon::Project(QueryProjection::Regular(reg)) => plan_project(ctx, root, reg),
-        QueryHorizon::Project(QueryProjection::Aggregate(agg)) => plan_aggregate(ctx, root, agg),
-        QueryHorizon::Project(QueryProjection::Distinct(dist)) => plan_distinct(ctx, root, dist),
+    match query_project {
+        QueryProjection::Unwind(unwind) => plan_unwind(ctx, root, unwind),
+        QueryProjection::Project(Projection::Regular(reg)) => plan_project(ctx, root, reg),
+        QueryProjection::Project(Projection::Aggregate(agg)) => plan_aggregate(ctx, root, agg),
+        QueryProjection::Project(Projection::Distinct(dist)) => plan_distinct(ctx, root, dist),
     }
 }
 
@@ -88,7 +87,7 @@ fn plan_distinct(
 fn plan_unwind(
     _ctx: &mut PlannerContext,
     _root: Box<PlanExpr>,
-    _unwind @ UnwindProjection { variable, expr }: &UnwindProjection,
+    _unwind @ Unwind { variable, expr }: &Unwind,
 ) -> Result<Box<PlanExpr>, PlanError> {
     Err(PlanError::not_supported("unwind clause not implemented yet."))
 }

@@ -547,6 +547,14 @@ peg::parser! {
             // postfix
             // property_access
             left:(@) "." key:ident() { Expr::new_property_access(left, key.to_string()) }
+            // list_slice
+            left:(@) "[" _? start:expr()? _? ".." _? end:expr()? _? "]" {
+                Expr::new_list_slice(left, start, end)
+            }
+            // list_index
+            left:(@) "[" _? index:expr() _? "]" {
+                Expr::new_list_index(left, index)
+            }
             --
             // atom
             a:atom() { a }
@@ -556,6 +564,8 @@ peg::parser! {
         = l:literal() { l }
         / "$" v:ident() { Expr::new_parameter(v.to_string()) }
         / "(" _? e:expr() _? ")" { e }
+        / m:map_expr() { m }
+        / l:list_expr() { l }
         / f:function_call() { f }
         / v:variable() { v }
 
@@ -600,6 +610,10 @@ peg::parser! {
     rule map_expr_item() -> (String, Expr)
         = key:ident() _? ":" _? value:expr() { (key.to_string(), value) }
 
+    rule list_expr() -> Expr
+        = "[" _? items:(expr() ** comma_separator()) _? "]" {
+            Expr::new_list_expression(items)
+        }
 
     /// ---------------------
     /// Label Expression

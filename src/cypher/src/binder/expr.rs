@@ -14,7 +14,7 @@ use crate::binder::BindContext;
 use crate::binder::scope::Scope;
 use crate::error::{PlanError, SemanticError};
 use crate::expr::value::Constant;
-use crate::expr::{AggCall, Expr, ExprNode, FilterExprs, FuncCall, PropertyAccess, VariableRef};
+use crate::expr::{AggCall, CreateList, Expr, ExprNode, FilterExprs, FuncCall, PropertyAccess, VariableRef};
 use crate::not_supported;
 
 #[derive(Clone)]
@@ -77,6 +77,9 @@ pub fn bind_expr(ectx: &ExprContext, outer_scope: &[Scope], expr: &ast::Expr) ->
         ast::Expr::Unary { op, oprand } => bind_unary(ectx, outer_scope, op, oprand),
         ast::Expr::Binary { left, op, right } => bind_binary(ectx, outer_scope, left, op, right),
         ast::Expr::FunctionCall { name, distinct, args } => bind_func_call(ectx, outer_scope, name, *distinct, args),
+        ast::Expr::ListExpression { items } => bind_list_expression(ectx, outer_scope, items),
+        ast::Expr::ListSlice { .. } => not_supported!("list slice"),
+        ast::Expr::ListIndex { .. } => not_supported!("list index"),
     }
 }
 
@@ -162,6 +165,40 @@ fn bind_binary(
 
     let func_call = FuncCall::new_unchecked(func_name.to_string(), func_impl.func_id, args, typ);
     Ok(func_call.into())
+}
+
+fn bind_list_expression(ectx: &ExprContext, outer_scope: &[Scope], items: &[ast::Expr]) -> Result<Expr, PlanError> {
+    // Bind all element expressions
+    let elements = items
+        .iter()
+        .map(|x| bind_expr(ectx, outer_scope, x))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    // Infer the element type
+    let elem_type = if elements.is_empty() {
+        // Empty list defaults to Any type
+        DataType::Any
+    } else {
+        // Find common type among all elements
+        // For now, use the first non-Any element type, or Any if all are Any
+        let mut common_type = DataType::Any;
+        for elem in &elements {
+            let elem_typ = elem.typ();
+            if elem_typ != DataType::Any {
+                if common_type == DataType::Any {
+                    common_type = elem_typ;
+                } else if common_type != elem_typ {
+                    // Type mismatch - for now, fallback to Any
+                    // TODO: implement proper type coercion
+                    common_type = DataType::Any;
+                    break;
+                }
+            }
+        }
+        common_type
+    };
+
+    Ok(CreateList::new(elements, elem_type).into())
 }
 
 fn bind_func_call(

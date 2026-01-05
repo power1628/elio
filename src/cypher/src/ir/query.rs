@@ -2,8 +2,8 @@ use indexmap::IndexMap;
 use mojito_common::variable::VariableName;
 use pretty_xmlish::{Pretty, PrettyConfig, XmlNode};
 
-use crate::ir::horizon::QueryHorizon;
 use crate::ir::query_graph::QueryGraph;
+use crate::ir::query_project::QueryProjection;
 
 pub struct IrQueryRoot {
     pub inner: IrQuery,
@@ -62,7 +62,7 @@ impl IrQuery {
 pub struct IrSingleQuery {
     pub parts: Vec<IrSingleQueryPart>,
     // pub query_graph: QueryGraph,
-    // pub horizon: QueryHorizon,
+    // pub query_project: QueryProjection,
     // pub tail: Option<Box<IrSingleQuery>>,
     // TODO(pgao): the interesting_order may be derived here.
     // pub interesting_order: OrderingChoice,
@@ -91,7 +91,7 @@ impl IrSingleQuery {
 pub struct IrSingleQueryPart {
     pub query_graph: QueryGraph,
     // for update and create clause, there may be no projection at the end
-    pub horizon: Option<QueryHorizon>,
+    pub query_project: Option<QueryProjection>,
 }
 
 impl IrSingleQueryPart {
@@ -99,15 +99,15 @@ impl IrSingleQueryPart {
         Self::default()
     }
 
-    pub fn with_projection(&mut self, proj: QueryHorizon) {
-        self.horizon = Some(proj);
+    pub fn with_projection(&mut self, proj: QueryProjection) {
+        self.query_project = Some(proj);
     }
 
     pub fn update_projection<F>(&mut self, f: F)
     where
-        F: FnOnce(&mut QueryHorizon),
+        F: FnOnce(&mut QueryProjection),
     {
-        if let Some(proj) = &mut self.horizon {
+        if let Some(proj) = &mut self.query_project {
             f(proj);
         }
     }
@@ -115,7 +115,7 @@ impl IrSingleQueryPart {
     pub fn xmlnode(&self) -> XmlNode<'_> {
         let mut children = vec![];
         children.push(Pretty::Record(self.query_graph.xmlnode()));
-        if let Some(proj) = &self.horizon {
+        if let Some(proj) = &self.query_project {
             children.push(Pretty::Record(proj.xmlnode()));
         }
         XmlNode::simple_record("IrSingleQueryPart", vec![], children)

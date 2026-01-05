@@ -1,0 +1,73 @@
+# Test create_list expression
+
+# Basic list creation with integers
+query A
+return [1, 2, 3]
+----
+[1, 2, 3]
+
+# Empty list
+query A
+return []
+----
+[]
+
+# List with single element
+query A
+return [42]
+----
+[42]
+
+# List with strings
+query A
+return ['a', 'b', 'c']
+----
+['a', 'b', 'c']
+
+# List with floats
+query A
+return [1.5, 2.5, 3.5]
+----
+[1.5, 2.5, 3.5]
+
+# List with booleans
+query A
+return [true, false, true]
+----
+[true, false, true]
+
+# List with null element
+query A
+return [1, null, 3]
+----
+[1, null, 3]
+
+# List with all nulls
+query A
+return [null, null]
+----
+[null, null]
+
+# Nested expressions in list
+query A
+return [1 + 1, 2 * 3, 10 - 5]
+----
+[2, 6, 5]
+
+# List with string concatenation
+query A
+return ['hello' + ' ' + 'world']
+----
+['hello world']
+
+# List in MATCH context
+query A
+CREATE (a:Person{name: 'Alex', age: 30})
+----
+{id: 1, labels: [Person], props: {name: 'Alex', age: 30}}
+
+query A
+MATCH (n:Person) RETURN [n.name, n.age]
+----
+['Alex', 30]
+

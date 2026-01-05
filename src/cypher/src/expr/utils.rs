@@ -25,6 +25,9 @@ impl Expr {
             Expr::CreateStruct(CreateStruct { properties, .. }) => {
                 vars.extend(properties.iter().flat_map(|(_, expr)| expr.collect_variables()));
             }
+            Expr::CreateList(CreateList { elements, .. }) => {
+                vars.extend(elements.iter().flat_map(|expr| expr.collect_variables()));
+            }
             Expr::ProjectPath(project_path) => vars.extend(project_path.used_variable()),
         }
         vars
