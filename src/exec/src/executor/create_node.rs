@@ -1,8 +1,8 @@
 use async_stream::try_stream;
+use elio_common::IrToken;
+use elio_common::schema::Variable;
+use elio_expr::impl_::BoxedExpression;
 use futures::StreamExt;
-use mojito_common::IrToken;
-use mojito_common::schema::Variable;
-use mojito_expr::impl_::BoxedExpression;
 
 use super::constraint::{check_unique_constraints, fetch_constraints_for_labels, update_unique_indexes};
 use super::*;

@@ -1,8 +1,8 @@
 use std::ops::Range;
 
 use derive_more::Display;
+use elio_common::SemanticDirection;
 use itertools::{self, Itertools};
-use mojito_common::SemanticDirection;
 
 use crate::ast::{Expr, LabelExpr};
 

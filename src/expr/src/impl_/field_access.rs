@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use mojito_common::IrToken;
-use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::{AnyArray, AnyArrayBuilder, Array, ArrayImpl, ArrayRef, PhysicalType, StructArray};
-use mojito_common::data_type::DataType;
-use mojito_common::scalar::StructValueRef;
+use elio_common::IrToken;
+use elio_common::array::chunk::DataChunk;
+use elio_common::array::{AnyArray, AnyArrayBuilder, Array, ArrayImpl, ArrayRef, PhysicalType, StructArray};
+use elio_common::data_type::DataType;
+use elio_common::scalar::StructValueRef;
 
 use crate::error::EvalError;
 use crate::impl_::{BoxedExpression, EvalCtx, Expression};

@@ -1,4 +1,4 @@
-use mojito_common::data_type::DataType;
+use elio_common::data_type::DataType;
 
 use crate::expr::{Expr, ExprNode, IrToken};
 
@@ -21,7 +21,7 @@ impl PropertyAccess {
 }
 
 impl ExprNode for PropertyAccess {
-    fn typ(&self) -> mojito_common::data_type::DataType {
+    fn typ(&self) -> elio_common::data_type::DataType {
         self.typ.clone()
     }
 }

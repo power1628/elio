@@ -2,7 +2,7 @@
 //! sqlplannertest-rs/naivedb/src/bin/apply.rs
 //! Copyright to sqlplannertest-rs authors.
 //!
-//! and modified to work with mojito.
+//! and modified to work with elio.
 
 use std::path::Path;
 

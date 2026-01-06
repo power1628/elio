@@ -3,14 +3,14 @@ use std::sync::{Arc, Mutex};
 
 use anyhow::Error;
 use async_trait::async_trait;
+use elio_catalog::FunctionCatalog;
+use elio_catalog::error::CatalogError;
+use elio_common::{LabelId, PropertyKeyId, TokenId, TokenKind};
+use elio_cypher::plan_context::PlanContext;
+use elio_cypher::session::{IndexHint, PlannerSession};
+use elio_expr::func::FUNCTION_REGISTRY;
+use elio_parser::ast;
 use itertools::Itertools;
-use mojito_catalog::FunctionCatalog;
-use mojito_catalog::error::CatalogError;
-use mojito_common::{LabelId, PropertyKeyId, TokenId, TokenKind};
-use mojito_cypher::plan_context::PlanContext;
-use mojito_cypher::session::{IndexHint, PlannerSession};
-use mojito_expr::func::FUNCTION_REGISTRY;
-use mojito_parser::ast;
 use sqlplannertest::ParsedTestCase;
 
 #[derive(Hash, Debug, PartialEq, Eq)]
@@ -94,17 +94,17 @@ pub struct MockPlannerSession {
 
 impl MockPlannerSession {
     pub fn parse(self: &Arc<Self>, cypher: &str) -> anyhow::Result<ast::Statement> {
-        let ast = mojito_cypher::session::parse_statement(cypher)?;
+        let ast = elio_cypher::session::parse_statement(cypher)?;
         Ok(ast)
     }
 
     pub fn bind_query(self: &Arc<Self>, ast: &ast::RegularQuery) -> anyhow::Result<String> {
-        let ir = mojito_cypher::session::bind_query(self.clone(), ast)?;
+        let ir = elio_cypher::session::bind_query(self.clone(), ast)?;
         Ok(ir.explain())
     }
 
     pub fn plan_query(self: &Arc<Self>, ast: &ast::RegularQuery) -> anyhow::Result<String> {
-        let plan = mojito_cypher::session::plan_query(self.clone(), ast)?;
+        let plan = elio_cypher::session::plan_query(self.clone(), ast)?;
         Ok(plan.explain())
     }
 

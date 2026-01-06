@@ -1,4 +1,4 @@
-use mojito_common::variable::VariableName;
+use elio_common::variable::VariableName;
 
 use crate::expr::FilterExprs;
 use crate::ir::node_connection::{ExhaustiveNodeConnection, RelPattern};

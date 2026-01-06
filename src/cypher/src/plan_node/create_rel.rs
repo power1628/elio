@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use mojito_common::IrToken;
-use mojito_common::schema::{Schema, Variable};
+use elio_common::IrToken;
+use elio_common::schema::{Schema, Variable};
 
 use super::*;
 use crate::expr::BoxedExpr;

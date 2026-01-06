@@ -7,12 +7,12 @@ edition.workspace = true
 anyhow = { workspace = true }
 async-trait = { workspace = true }
 clap = { workspace = true, features = ["derive", "cargo"] }
+elio_catalog = { workspace = true }
+elio_common = { workspace = true }
+elio_cypher = { workspace = true }
+elio_expr = { workspace = true }
+elio_parser = { workspace = true }
 itertools = { workspace = true }
-mojito_catalog = { workspace = true }
-mojito_common = { workspace = true }
-mojito_cypher = { workspace = true }
-mojito_expr = { workspace = true }
-mojito_parser = { workspace = true }
 sqlplannertest = { workspace = true }
 tokio = { workspace = true }
 

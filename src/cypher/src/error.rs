@@ -1,7 +1,7 @@
 use std::backtrace::Backtrace;
 
-use mojito_common::data_type::DataType;
-use mojito_storage::error::GraphStoreError;
+use elio_common::data_type::DataType;
+use elio_storage::error::GraphStoreError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

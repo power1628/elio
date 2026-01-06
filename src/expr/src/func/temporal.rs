@@ -43,9 +43,9 @@
 //! Duration Functions:
 
 use bitvec::prelude::*;
+use elio_common::array::*;
+use elio_common::scalar::*;
 use expr_macros::cypher_func;
-use mojito_common::array::*;
-use mojito_common::scalar::*;
 
 use crate::define_function;
 use crate::error::EvalError;

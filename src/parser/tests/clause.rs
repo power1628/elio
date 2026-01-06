@@ -1,5 +1,5 @@
+use elio_parser::parser::cypher_parser;
 use insta::assert_snapshot;
-use mojito_parser::parser::cypher_parser;
 
 macro_rules! clause {
     ($input:expr) => {

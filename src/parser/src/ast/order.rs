@@ -1,5 +1,5 @@
 use derive_more::Display;
-use mojito_common::order::SortDirection;
+use elio_common::order::SortDirection;
 
 use crate::ast::Expr;
 

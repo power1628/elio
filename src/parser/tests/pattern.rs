@@ -1,5 +1,5 @@
+use elio_parser::parser::cypher_parser::{self};
 use insta::assert_snapshot;
-use mojito_parser::parser::cypher_parser::{self};
 
 macro_rules! pattern_part {
     ($query:expr) => {

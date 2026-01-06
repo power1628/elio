@@ -1,4 +1,4 @@
-use mojito_expr::func::sig::FuncDef;
+use elio_expr::func::sig::FuncDef;
 
 #[derive(Clone, Debug)]
 pub struct FunctionCatalog {

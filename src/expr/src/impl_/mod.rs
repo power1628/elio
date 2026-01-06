@@ -1,8 +1,8 @@
 use bitvec::vec::BitVec;
-use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::{ArrayRef, NodeArray, VirtualNodeArray};
-use mojito_common::data_type::DataType;
-use mojito_common::{TokenId, TokenKind};
+use elio_common::array::chunk::DataChunk;
+use elio_common::array::{ArrayRef, NodeArray, VirtualNodeArray};
+use elio_common::data_type::DataType;
+use elio_common::{TokenId, TokenKind};
 
 use crate::error::EvalError;
 

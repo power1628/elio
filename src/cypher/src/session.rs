@@ -1,11 +1,11 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use mojito_catalog::FunctionCatalog;
-use mojito_catalog::error::CatalogError;
-use mojito_common::{LabelId, PropertyKeyId, TokenId, TokenKind};
-use mojito_parser::ast;
-use mojito_parser::parser::cypher_parser;
+use elio_catalog::FunctionCatalog;
+use elio_catalog::error::CatalogError;
+use elio_common::{LabelId, PropertyKeyId, TokenId, TokenKind};
+use elio_parser::ast;
+use elio_parser::parser::cypher_parser;
 
 use crate::binder::query::bind_root_query;
 use crate::error::PlanError;

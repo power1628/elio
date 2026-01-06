@@ -1,5 +1,5 @@
 [package]
-name = "mojito_parser"
+name = "elio_parser"
 version = { workspace = true }
 edition = { workspace = true }
 
@@ -8,8 +8,8 @@ derive_more = { workspace = true, features = ["display"] }
 peg = "0.8.5"
 # workspace
 either = { workspace = true }
+elio_common = { workspace = true }
 itertools = { workspace = true }
-mojito_common = { workspace = true }
 
 [dev-dependencies]
 insta = { workspace = true, features = ["yaml"] }

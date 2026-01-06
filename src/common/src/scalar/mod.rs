@@ -8,7 +8,7 @@
 //! This crate contains two reciprocal traits -- Scalar and ScalarRef. As it is named, Scalar is an
 //! owned value of ScalarRef, and ScalarRef is a reference to Scalar. We associate Scalar and
 //! ScalarRef with Array types, and present examples on how to use these traits.
-//! This file is copied from type-exercise-in-rust and modified to fit the needs of mojito.
+//! This file is copied from type-exercise-in-rust and modified to fit the needs of elio.
 
 use std::hash::Hash;
 use std::sync::Arc;

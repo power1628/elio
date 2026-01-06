@@ -4,11 +4,11 @@ version.workspace = true
 edition.workspace = true
 
 [[bin]]
-name = "mojito"
-path = "bin/mojito.rs"
+name = "elio"
+path = "bin/elio.rs"
 
 [dependencies]
 clap = { workspace = true, features = ["derive", "cargo"] }
+elio_core = { workspace = true }
 futures = { workspace = true }
-mojito_core = { workspace = true }
 tokio = { workspace = true }

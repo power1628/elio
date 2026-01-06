@@ -1,7 +1,7 @@
 use educe::{self, Educe};
+use elio_common::variable::{PathElement, VariableName};
+use elio_common::{IrToken, SemanticDirection};
 use indexmap::IndexSet;
-use mojito_common::variable::{PathElement, VariableName};
-use mojito_common::{IrToken, SemanticDirection};
 
 use crate::expr::FilterExprs;
 

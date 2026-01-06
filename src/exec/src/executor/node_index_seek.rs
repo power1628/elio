@@ -4,11 +4,11 @@ use std::sync::Arc;
 
 use async_stream::try_stream;
 use bitvec::vec::BitVec;
+use elio_common::array::chunk::DataChunk;
+use elio_common::array::{ArrayImpl, VirtualNodeArrayBuilder};
+use elio_common::schema::Schema;
+use elio_common::{LabelId, PropertyKeyId};
 use futures::StreamExt;
-use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::{ArrayImpl, VirtualNodeArrayBuilder};
-use mojito_common::schema::Schema;
-use mojito_common::{LabelId, PropertyKeyId};
 
 use super::*;
 use crate::error::ExecError;

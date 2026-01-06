@@ -3,11 +3,11 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use async_trait::async_trait;
+use elio_common::scalar::Row;
+use elio_core::db_env::{DbConfig, DbEnv};
+use elio_core::error::Error as GraphDBError;
+use elio_core::session::Session;
 use futures::stream::StreamExt;
-use mojito_common::scalar::Row;
-use mojito_core::db_env::{DbConfig, DbEnv};
-use mojito_core::error::Error as GraphDBError;
-use mojito_core::session::Session;
 use sqllogictest::{AsyncDB, ColumnType, DBOutput};
 use tempfile::TempDir;
 

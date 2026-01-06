@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
 use bitvec::vec::BitVec;
-use mojito_common::TokenKind;
-use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::{Array, ArrayImpl, NodeArray, NodeArrayBuilder, VirtualNodeArray, VirtualNodeArrayBuilder};
-use mojito_common::scalar::{NodeValueRef, StructValue};
+use elio_common::TokenKind;
+use elio_common::array::chunk::DataChunk;
+use elio_common::array::{Array, ArrayImpl, NodeArray, NodeArrayBuilder, VirtualNodeArray, VirtualNodeArrayBuilder};
+use elio_common::scalar::{NodeValueRef, StructValue};
 
 use crate::cf_property;
 use crate::codec::NodeFormat;

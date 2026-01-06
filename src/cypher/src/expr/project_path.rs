@@ -1,7 +1,7 @@
+use elio_common::SemanticDirection;
+use elio_common::data_type::DataType;
+use elio_common::variable::VariableName;
 use indexmap::IndexSet;
-use mojito_common::SemanticDirection;
-use mojito_common::data_type::DataType;
-use mojito_common::variable::VariableName;
 
 use crate::expr::{Expr, ExprNode, VariableRef};
 

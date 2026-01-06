@@ -1,4 +1,4 @@
-use mojito_storage::error::GraphStoreError;
+use elio_storage::error::GraphStoreError;
 use thiserror;
 
 #[derive(thiserror::Error, Debug)]

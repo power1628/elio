@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use std::sync::Arc;
 
-use mojito_expr::func::FUNCTION_REGISTRY;
-use mojito_storage::token::TokenStore;
+use elio_expr::func::FUNCTION_REGISTRY;
+use elio_storage::token::TokenStore;
 
 pub mod error;
 pub mod func;

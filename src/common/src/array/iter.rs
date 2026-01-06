@@ -1,5 +1,5 @@
 // Copyright 2022 Alex Chi. Licensed under Apache-2.0.
-// This file is derived from type-exercise-in-rust and motified by mojito.
+// This file is derived from type-exercise-in-rust and motified by elio.
 
 //! Implements `Arrayiterator`
 

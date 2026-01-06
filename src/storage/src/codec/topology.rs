@@ -6,8 +6,8 @@
 
 use bytemuck::{Pod, Zeroable};
 use bytes::{BufMut, Bytes, BytesMut};
-use mojito_common::store_types::RelDirection;
-use mojito_common::{NodeId, RelationshipId, RelationshipTypeId};
+use elio_common::store_types::RelDirection;
+use elio_common::{NodeId, RelationshipId, RelationshipTypeId};
 
 use crate::codec::TOPO_KEY_PREFIX;
 

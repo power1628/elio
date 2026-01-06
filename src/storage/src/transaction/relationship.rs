@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
 use bitvec::vec::BitVec;
-use mojito_common::array::{Array, NodeArray, RelArray, RelArrayBuilder, StructArray, VirtualNodeArray};
-use mojito_common::scalar::{RelValueRef, StructValue};
-use mojito_common::store_types::RelDirection;
-use mojito_common::{NodeId, RelationshipId, SemanticDirection, TokenId, TokenKind};
+use elio_common::array::{Array, NodeArray, RelArray, RelArrayBuilder, StructArray, VirtualNodeArray};
+use elio_common::scalar::{RelValueRef, StructValue};
+use elio_common::store_types::RelDirection;
+use elio_common::{NodeId, RelationshipId, SemanticDirection, TokenId, TokenKind};
 
 use crate::cf_topology;
 use crate::codec::RelFormat;

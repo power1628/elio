@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use educe::Educe;
-use mojito_common::schema::Schema;
+use elio_common::schema::Schema;
 
 use super::*;
 use crate::plan_context::PlanContext;

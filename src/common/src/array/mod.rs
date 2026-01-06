@@ -7,7 +7,7 @@
 //! ArrayBuilder to create an Array. ArrayBuilder and Array are reciprocal traits. We can associate
 //! an Array with an ArrayBuilder at compile time. This module also contains examples on how to use
 //! generics around the Array and ArrayBuilder.
-//! This file is derived from type-exercise-in-rust and modified by Mojito.
+//! This file is derived from type-exercise-in-rust and modified by elio.
 
 pub mod any;
 pub mod bool;

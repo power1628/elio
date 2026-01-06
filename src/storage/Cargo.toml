@@ -1,5 +1,5 @@
 [package]
-name = "mojito_storage"
+name = "elio_storage"
 version.workspace = true
 edition.workspace = true
 
@@ -8,8 +8,8 @@ edition.workspace = true
 async-trait = { workspace = true }
 bitvec = { workspace = true }
 bytes = { workspace = true }
+elio_common = { workspace = true }
 futures = { workspace = true }
-mojito_common = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 # local

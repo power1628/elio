@@ -6,9 +6,9 @@ edition.workspace = true
 [dependencies]
 async-trait = { workspace = true }
 datatest-stable = { workspace = true }
+elio_common = { workspace = true }
+elio_core = { workspace = true }
 futures = { workspace = true }
-mojito_common = { workspace = true }
-mojito_core = { workspace = true }
 sqllogictest = { workspace = true }
 tempfile = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "time"] }

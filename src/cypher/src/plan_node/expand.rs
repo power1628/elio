@@ -1,4 +1,4 @@
-use mojito_common::{IrToken, SemanticDirection};
+use elio_common::{IrToken, SemanticDirection};
 
 use super::*;
 

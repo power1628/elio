@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use bitvec::vec::BitVec;
-use mojito_common::IrToken;
-use mojito_common::array::{ArrayImpl, BoolArray, BoolArrayBuilder, EntityArray};
-use mojito_common::scalar::EntityScalarRef;
+use elio_common::IrToken;
+use elio_common::array::{ArrayImpl, BoolArray, BoolArrayBuilder, EntityArray};
+use elio_common::scalar::EntityScalarRef;
 
 use super::*;
 use crate::impl_::Expression;
@@ -56,7 +56,7 @@ impl Expression for HasLabelExpr {
 
 fn label_contains<E: EntityArray>(array: &E, valid: &BitVec, label: &IrToken) -> BoolArray
 where
-    for<'a> <E as mojito_common::array::Array>::RefItem<'a>: mojito_common::scalar::EntityScalarRef,
+    for<'a> <E as elio_common::array::Array>::RefItem<'a>: elio_common::scalar::EntityScalarRef,
 {
     let mut builder = BoolArrayBuilder::with_capacity(array.len());
     for i in 0..array.len() {

@@ -1,9 +1,9 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use mojito_catalog::Catalog;
-use mojito_exec::task::ExecContext;
-use mojito_storage::graph::GraphStore;
+use elio_catalog::Catalog;
+use elio_exec::task::ExecContext;
+use elio_storage::graph::GraphStore;
 
 use crate::error::Error;
 use crate::session::Session;

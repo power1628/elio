@@ -1,5 +1,5 @@
-use mojito_common::IrToken;
-use mojito_common::data_type::DataType;
+use elio_common::IrToken;
+use elio_common::data_type::DataType;
 
 use crate::expr::{Expr, ExprNode};
 

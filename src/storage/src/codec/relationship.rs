@@ -6,10 +6,10 @@
 //! RelationshipValue ::= <PropertyBlock>
 
 use bytes::{BufMut, Bytes, BytesMut};
-use mojito_common::mapb::{PropertyMapMut, PropertyMapRef};
-use mojito_common::scalar::StructValueRef;
-use mojito_common::store_types::RelDirection;
-use mojito_common::{NodeId, RelationshipId, SemanticDirection, TokenId};
+use elio_common::mapb::{PropertyMapMut, PropertyMapRef};
+use elio_common::scalar::StructValueRef;
+use elio_common::store_types::RelDirection;
+use elio_common::{NodeId, RelationshipId, SemanticDirection, TokenId};
 
 use crate::cf_topology;
 

@@ -3,8 +3,8 @@
 //! | inner_type | outer_type  |
 //! for nested type like list, the inner type should be encoded.
 
-use mojito_common::data_type::DataType;
-use mojito_common::store_types::StoreDataType;
+use elio_common::data_type::DataType;
+use elio_common::store_types::StoreDataType;
 
 const INNER_TYPE_SHIFT: u8 = 4;
 const OUTER_TYPE_MASK: u8 = 0x0F;

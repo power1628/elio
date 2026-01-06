@@ -1,5 +1,5 @@
+use elio_common::variable::VariableName;
 use indexmap::IndexMap;
-use mojito_common::variable::VariableName;
 use pretty_xmlish::{Pretty, PrettyConfig, XmlNode};
 
 use crate::ir::query_graph::QueryGraph;

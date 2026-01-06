@@ -1,11 +1,11 @@
 use std::collections::HashSet;
 
+use elio_catalog::FunctionCatalog;
+use elio_common::scalar::ScalarValue;
+use elio_common::schema::Variable;
+use elio_parser::ast::{self, ReturnItem};
 use indexmap::IndexMap;
 use itertools::Itertools;
-use mojito_catalog::FunctionCatalog;
-use mojito_common::scalar::ScalarValue;
-use mojito_common::schema::Variable;
-use mojito_parser::ast::{self, ReturnItem};
 
 use crate::binder::BindContext;
 use crate::binder::builder::IrSingleQueryBuilder;

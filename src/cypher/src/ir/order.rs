@@ -1,4 +1,4 @@
-use mojito_common::order::SortDirection;
+use elio_common::order::SortDirection;
 
 use crate::expr::Expr;
 

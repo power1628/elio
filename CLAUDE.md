@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Mojito is a graph database system written in Rust that processes Cypher query language (Neo4j's query language). It implements a full compiler/execution pipeline for graph queries.
+elio is a graph database system written in Rust that processes Cypher query language (Neo4j's query language). It implements a full compiler/execution pipeline for graph queries.
 
 ## Build Commands
 
@@ -45,17 +45,17 @@ Cypher Query → Parser → Binder → Planner → Executor → Storage (RocksDB
 
 ### Workspace Crates
 
-| Crate | Purpose |
-|-------|---------|
-| `mojito_parser` | PEG-based Cypher parser, produces AST |
-| `mojito_cypher` | Query binding and planning (binder, planner, plan nodes, expressions) |
-| `mojito_exec` | Physical execution engine with async task management |
-| `mojito_storage` | RocksDB-backed graph storage (nodes, relationships, properties) |
-| `mojito_expr` | Expression evaluation, function implementations (uses proc macros) |
-| `mojito_catalog` | Function registry and schema metadata |
-| `mojito_common` | Shared types, data types, value representations |
-| `mojito_core` | Top-level database engine, session handling |
-| `cmd` | CLI binary (`mojito`) |
+| Crate          | Purpose                                                               |
+| -------------- | --------------------------------------------------------------------- |
+| `elio_parser`  | PEG-based Cypher parser, produces AST                                 |
+| `elio_cypher`  | Query binding and planning (binder, planner, plan nodes, expressions) |
+| `elio_exec`    | Physical execution engine with async task management                  |
+| `elio_storage` | RocksDB-backed graph storage (nodes, relationships, properties)       |
+| `elio_expr`    | Expression evaluation, function implementations (uses proc macros)    |
+| `elio_catalog` | Function registry and schema metadata                                 |
+| `elio_common`  | Shared types, data types, value representations                       |
+| `elio_core`    | Top-level database engine, session handling                           |
+| `cmd`          | CLI binary (`elio`)                                                   |
 
 ### Test Frameworks
 

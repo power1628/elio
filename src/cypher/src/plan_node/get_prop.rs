@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use mojito_common::schema::Schema;
-use mojito_common::variable::VariableName;
+use elio_common::schema::Schema;
+use elio_common::variable::VariableName;
 
 use super::*;
 use crate::plan_node::plan_base::PlanBase;

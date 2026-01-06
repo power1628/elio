@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 
-use mojito_common::IrToken;
-use mojito_common::store_types::RelDirection;
-use mojito_common::variable::VariableName;
+use elio_common::IrToken;
+use elio_common::store_types::RelDirection;
+use elio_common::variable::VariableName;
 use pretty_xmlish::XmlNode;
 
 use crate::expr::{BoxedExpr, CreateStruct};

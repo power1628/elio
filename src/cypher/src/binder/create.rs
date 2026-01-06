@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 
-use mojito_common::data_type::DataType;
-use mojito_common::store_types::RelDirection;
-use mojito_common::{EntityKind, IrToken, SemanticDirection, TokenKind};
-use mojito_parser::ast::{self, NodePattern, RelationshipPattern, UpdatePattern};
+use elio_common::data_type::DataType;
+use elio_common::store_types::RelDirection;
+use elio_common::{EntityKind, IrToken, SemanticDirection, TokenKind};
+use elio_parser::ast::{self, NodePattern, RelationshipPattern, UpdatePattern};
 
 use crate::binder::BindContext;
 use crate::binder::builder::IrSingleQueryBuilder;

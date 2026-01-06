@@ -21,15 +21,15 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace.dependencies]
-mojito_catalog = { path = "src/catalog" }
-mojito_common = { path = "src/common" }
-mojito_core = { path = "src/core" }
-mojito_cypher = { path = "src/cypher" }
-mojito_exec = { path = "src/exec" }
-mojito_expr = { path = "src/expr" }
-mojito_parser = { path = "src/parser" }
-mojito_plannertest = { path = "src/plannertest" }
-mojito_storage = { path = "src/storage" }
+elio_catalog = { path = "src/catalog" }
+elio_common = { path = "src/common" }
+elio_core = { path = "src/core" }
+elio_cypher = { path = "src/cypher" }
+elio_exec = { path = "src/exec" }
+elio_expr = { path = "src/expr" }
+elio_parser = { path = "src/parser" }
+elio_plannertest = { path = "src/plannertest" }
+elio_storage = { path = "src/storage" }
 
 # other
 anyhow = "1.0"
