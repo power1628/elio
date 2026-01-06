@@ -13,5 +13,5 @@ pub use order::*;
 pub use pattern::*;
 pub use query::*;
 pub use return_item::*;
-pub use statement::*;
+pub use statement::*; // includes CreateConstraint, DropConstraint, ConstraintEntity, ConstraintType, PropertyRef
 pub use typ::*;

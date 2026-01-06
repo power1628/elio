@@ -14,8 +14,74 @@ peg::parser! {
     /// Statement
     /// ---------------------
     pub rule statement() -> Statement
-        // = _ s:(create_database()/ create_vertex_type() / create_edge_type()) _ {s}
-        = _? s:regular_query() _? {s}
+        = _? s:create_constraint_stmt() _? { s }
+        / _? s:drop_constraint_stmt() _? { s }
+        / _? s:regular_query() _? { s }
+
+    /// CREATE CONSTRAINT constraint_name [IF NOT EXISTS]
+    /// FOR (var:Label) REQUIRE prop IS UNIQUE
+    rule create_constraint_stmt() -> Statement
+        = CREATE() _ CONSTRAINT() _ name:ident()
+          not_exists:(_ IF() _ NOT() _ EXISTS())?
+          _ FOR() _ entity:constraint_entity()
+          _ REQUIRE() _ constraint:constraint_type() {
+            Statement::CreateConstraint(Box::new(CreateConstraint {
+                name: name.to_string(),
+                if_not_exists: not_exists.is_some(),
+                entity,
+                constraint_type: constraint,
+            }))
+        }
+
+    /// (var:Label) or ()-[var:REL_TYPE]-()
+    rule constraint_entity() -> ConstraintEntity
+        = "(" _? var:ident() _? ":" _? label:ident() _? ")" {
+            ConstraintEntity::Node {
+                variable: var.to_string(),
+                label: label.to_string(),
+            }
+        }
+        / "(" _? ")" _? "-" _? "[" _? var:ident() _? ":" _? rel_type:ident() _? "]" _? "-" _? "(" _? ")" {
+            ConstraintEntity::Relationship {
+                variable: var.to_string(),
+                rel_type: rel_type.to_string(),
+            }
+        }
+
+    /// IS UNIQUE | IS NODE KEY | IS NOT NULL
+    rule constraint_type() -> ConstraintType
+        = props:property_ref_list() _ IS() _ NODE() _ KEY() {
+            ConstraintType::NodeKey { properties: props }
+        }
+        / props:property_ref_list() _ IS() _ UNIQUE() {
+            ConstraintType::Unique { properties: props }
+        }
+        / prop:property_ref() _ IS() _ NOT() _ NULL() {
+            ConstraintType::NotNull { property: prop }
+        }
+
+    /// (p.a, p.b) or p.a
+    rule property_ref_list() -> Vec<PropertyRef>
+        = "(" _? props:(property_ref() ++ comma_separator()) _? ")" { props }
+        / prop:property_ref() { vec![prop] }
+
+    /// var.property
+    rule property_ref() -> PropertyRef
+        = var:ident() "." prop:ident() {
+            PropertyRef {
+                variable: var.to_string(),
+                property: prop.to_string(),
+            }
+        }
+
+    /// DROP CONSTRAINT constraint_name [IF EXISTS]
+    rule drop_constraint_stmt() -> Statement
+        = DROP() _ CONSTRAINT() _ name:ident() if_exists:(_ IF() _ EXISTS())? {
+            Statement::DropConstraint(Box::new(DropConstraint {
+                name: name.to_string(),
+                if_exists: if_exists.is_some(),
+            }))
+        }
 
     /// create database statement
     // pub rule create_database() -> Statement
@@ -650,7 +716,7 @@ peg::parser! {
         = first:$(['0'..='9']+) { first }
 
     rule ident() -> &'input str
-        = first:$(['a'..='z' | 'A'..='Z'] ['a'..='z' | 'A'..='Z' | '0'..='9']*) { first }
+        = first:$(['a'..='z' | 'A'..='Z' | '_'] ['a'..='z' | 'A'..='Z' | '0'..='9' | '_']*) { first }
 
     rule comma_separator() = _? "," _?
 
@@ -756,6 +822,21 @@ peg::parser! {
         = ['f' | 'F'] ['r' | 'R'] ['o' | 'O'] ['m' | 'M'] { "FROM" }
     rule TO() -> &'static str
         = ['t' | 'T'] ['o' | 'O'] { "TO" }
+
+    // Constraint keywords
+    rule CONSTRAINT() -> &'static str
+        = ['c' | 'C'] ['o' | 'O'] ['n' | 'N'] ['s' | 'S'] ['t' | 'T'] ['r' | 'R']
+          ['a' | 'A'] ['i' | 'I'] ['n' | 'N'] ['t' | 'T'] { "CONSTRAINT" }
+    rule FOR() -> &'static str
+        = ['f' | 'F'] ['o' | 'O'] ['r' | 'R'] { "FOR" }
+    rule REQUIRE() -> &'static str
+        = ['r' | 'R'] ['e' | 'E'] ['q' | 'Q'] ['u' | 'U'] ['i' | 'I'] ['r' | 'R'] ['e' | 'E'] { "REQUIRE" }
+    rule UNIQUE() -> &'static str
+        = ['u' | 'U'] ['n' | 'N'] ['i' | 'I'] ['q' | 'Q'] ['u' | 'U'] ['e' | 'E'] { "UNIQUE" }
+    rule NODE() -> &'static str
+        = ['n' | 'N'] ['o' | 'O'] ['d' | 'D'] ['e' | 'E'] { "NODE" }
+    rule DROP() -> &'static str
+        = ['d' | 'D'] ['r' | 'R'] ['o' | 'O'] ['p' | 'P'] { "DROP" }
 
     // operator
     rule OR() -> &'static str

@@ -18,3 +18,51 @@ fn test_query() {
     assert_snapshot!(stmt!("MATCH (a)-[]-(b) WITH a.x + b.x AS c RETURN c ORDER BY c"), @"MATCH (a)-[]-(b) WITH (a.x) + (b.x) AS c RETURN c ORDER BY c Asc");
     assert_snapshot!(stmt!("MATCH (a)-[]-(b) WITH a.x + b.x AS c WHERE c.y > 100 RETURN c ORDER BY c DESC SKIP 1 LIMIT 1"), @"MATCH (a)-[]-(b) WITH (a.x) + (b.x) AS c WHERE (c.y) > (100) RETURN c ORDER BY c Desc SKIP 1 LIMIT 1");
 }
+
+#[test]
+fn test_create_constraint() {
+    // Node unique constraint (single property)
+    assert_snapshot!(
+        stmt!("CREATE CONSTRAINT person_name_unique FOR (p:Person) REQUIRE p.name IS UNIQUE"),
+        @"CREATE CONSTRAINT person_name_unique FOR (p:Person) REQUIRE p.name IS UNIQUE"
+    );
+
+    // Node unique constraint with IF NOT EXISTS
+    assert_snapshot!(
+        stmt!("CREATE CONSTRAINT person_email_unique IF NOT EXISTS FOR (p:Person) REQUIRE p.email IS UNIQUE"),
+        @"CREATE CONSTRAINT person_email_unique IF NOT EXISTS FOR (p:Person) REQUIRE p.email IS UNIQUE"
+    );
+
+    // Node key constraint (composite key)
+    assert_snapshot!(
+        stmt!("CREATE CONSTRAINT person_key FOR (p:Person) REQUIRE (p.firstname, p.lastname) IS NODE KEY"),
+        @"CREATE CONSTRAINT person_key FOR (p:Person) REQUIRE (p.firstname, p.lastname) IS NODE KEY"
+    );
+
+    // Not null constraint
+    assert_snapshot!(
+        stmt!("CREATE CONSTRAINT person_name_not_null FOR (p:Person) REQUIRE p.name IS NOT NULL"),
+        @"CREATE CONSTRAINT person_name_not_null FOR (p:Person) REQUIRE p.name IS NOT NULL"
+    );
+
+    // Relationship unique constraint
+    assert_snapshot!(
+        stmt!("CREATE CONSTRAINT knows_since_unique FOR ()-[r:KNOWS]-() REQUIRE r.since IS UNIQUE"),
+        @"CREATE CONSTRAINT knows_since_unique FOR ()-[r:KNOWS]-() REQUIRE r.since IS UNIQUE"
+    );
+}
+
+#[test]
+fn test_drop_constraint() {
+    // Drop constraint
+    assert_snapshot!(
+        stmt!("DROP CONSTRAINT person_name_unique"),
+        @"DROP CONSTRAINT person_name_unique"
+    );
+
+    // Drop constraint with IF EXISTS
+    assert_snapshot!(
+        stmt!("DROP CONSTRAINT person_name_unique IF EXISTS"),
+        @"DROP CONSTRAINT person_name_unique IF EXISTS"
+    );
+}
