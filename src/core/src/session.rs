@@ -9,9 +9,9 @@ use mojito_catalog::Catalog;
 use mojito_catalog::error::CatalogError;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::scalar::{Row, ScalarValue};
-use mojito_common::{TokenId, TokenKind};
+use mojito_common::{LabelId, PropertyKeyId, TokenId, TokenKind};
 use mojito_cypher::plan_context::PlanContext;
-use mojito_cypher::session::{PlannerSession, parse_statement, plan_query};
+use mojito_cypher::session::{IndexHint, PlannerSession, parse_statement, plan_query};
 use mojito_exec::error::ExecError;
 use mojito_exec::task::{ExecContext, create_task};
 use mojito_parser::ast;
@@ -49,6 +49,35 @@ impl PlannerSession for Session {
 
     fn get_token_id(&self, token: &str, kind: TokenKind) -> Option<TokenId> {
         self.catalog.get_token_id(token, kind)
+    }
+
+    fn find_unique_index(&self, label_id: LabelId, property_key_ids: &[PropertyKeyId]) -> Option<IndexHint> {
+        // Query the constraint store to find a matching index
+        let store = self.exec_ctx.store();
+        let constraints = store.constraint_store().get_constraints_for_label(label_id).ok()?;
+
+        // Look for a UNIQUE or NODE KEY constraint that matches the property keys
+        for constraint in constraints {
+            use mojito_storage::constraint::ConstraintKind;
+            if matches!(
+                constraint.constraint_kind,
+                ConstraintKind::Unique | ConstraintKind::NodeKey
+            ) {
+                // Check if all constraint properties are in the requested set
+                // The constraint properties must be a subset of the filter properties
+                // and the filter must have all constraint properties
+                if constraint.property_key_ids.len() <= property_key_ids.len()
+                    && constraint.property_key_ids.iter().all(|p| property_key_ids.contains(p))
+                {
+                    return Some(IndexHint {
+                        constraint_name: constraint.name,
+                        label_id: constraint.label_id,
+                        property_key_ids: constraint.property_key_ids,
+                    });
+                }
+            }
+        }
+        None
     }
 
     fn send_notification(&self, _notification: String) {

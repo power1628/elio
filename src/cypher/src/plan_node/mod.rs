@@ -19,6 +19,7 @@ pub mod empty;
 pub mod expand;
 pub mod filter;
 pub mod get_prop;
+pub mod node_index_seek;
 pub mod pagination;
 pub mod plan_base;
 pub mod produce_result;
@@ -35,6 +36,7 @@ pub use empty::*;
 pub use expand::*;
 pub use filter::*;
 pub use get_prop::*;
+pub use node_index_seek::*;
 pub use pagination::*;
 pub use produce_result::*;
 pub use project::*;
@@ -53,6 +55,7 @@ pub enum PathMode {
 pub enum PlanExpr {
     // graph
     AllNodeScan(AllNodeScan),
+    NodeIndexSeek(NodeIndexSeek),
     GetProperty(GetProperty),
     Expand(Expand),
     VarExpand(VarExpand),
@@ -134,6 +137,7 @@ macro_rules! impl_plan_node_common {
 }
 
 impl_plan_node_common!(AllNodeScan, AllNodeScanInner);
+impl_plan_node_common!(NodeIndexSeek, NodeIndexSeekInner);
 impl_plan_node_common!(GetProperty, GetPropertyInner);
 impl_plan_node_common!(Expand, ExpandInner);
 impl_plan_node_common!(VarExpand, VarExpandInner);
@@ -187,6 +191,7 @@ macro_rules! impl_plan_expr_dispatch {
 
 impl_plan_expr_dispatch!(
     AllNodeScan,
+    NodeIndexSeek,
     GetProperty,
     Expand,
     VarExpand,

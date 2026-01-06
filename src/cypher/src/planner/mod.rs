@@ -14,6 +14,7 @@ use crate::session::PlannerSession;
 
 mod component;
 mod create;
+mod index_selection;
 mod match_;
 mod project;
 mod single_query;

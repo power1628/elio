@@ -1,0 +1,100 @@
+# Test NodeIndexSeek functionality
+# This tests that queries with property filters use the unique index
+# for O(1) lookup instead of scanning all nodes.
+
+# Create initial data
+query A
+CREATE (a:Person{email: 'alice@example.com', name: 'Alice'})
+----
+{id: 1, labels: [Person], props: {email: 'alice@example.com', name: 'Alice'}}
+
+query A
+CREATE (b:Person{email: 'bob@example.com', name: 'Bob'})
+----
+{id: 2, labels: [Person], props: {email: 'bob@example.com', name: 'Bob'}}
+
+query A
+CREATE (c:Person{email: 'charlie@example.com', name: 'Charlie'})
+----
+{id: 3, labels: [Person], props: {email: 'charlie@example.com', name: 'Charlie'}}
+
+# Create unique constraint on email - this creates the index
+statement ok
+CREATE CONSTRAINT person_email_unique FOR (p:Person) REQUIRE p.email IS UNIQUE
+
+# Query by email - should use index seek
+# This tests single property index lookup
+query A
+MATCH (p:Person {email: 'alice@example.com'}) RETURN p
+----
+{id: 1, labels: [Person], props: {email: 'alice@example.com', name: 'Alice'}}
+
+# Query by email for a different person
+query A
+MATCH (p:Person {email: 'bob@example.com'}) RETURN p
+----
+{id: 2, labels: [Person], props: {email: 'bob@example.com', name: 'Bob'}}
+
+# Query by email that doesn't exist - should return empty
+query A
+MATCH (p:Person {email: 'nonexistent@example.com'}) RETURN p
+----
+
+# Query with additional filter beyond index
+# This should use index seek for email + post-filter for name
+query A
+MATCH (p:Person {email: 'alice@example.com'}) WHERE p.name = 'Alice' RETURN p
+----
+{id: 1, labels: [Person], props: {email: 'alice@example.com', name: 'Alice'}}
+
+# Query that fails the post-filter
+query A
+MATCH (p:Person {email: 'alice@example.com'}) WHERE p.name = 'Wrong' RETURN p
+----
+
+# Test composite key index lookup
+query A
+CREATE (x:Item{category: 'Electronics', sku: 'E001', name: 'Phone'})
+----
+{id: 4, labels: [Item], props: {category: 'Electronics', sku: 'E001', name: 'Phone'}}
+
+query A
+CREATE (y:Item{category: 'Electronics', sku: 'E002', name: 'Laptop'})
+----
+{id: 5, labels: [Item], props: {category: 'Electronics', sku: 'E002', name: 'Laptop'}}
+
+query A
+CREATE (z:Item{category: 'Books', sku: 'B001', name: 'Novel'})
+----
+{id: 6, labels: [Item], props: {category: 'Books', sku: 'B001', name: 'Novel'}}
+
+statement ok
+CREATE CONSTRAINT item_key FOR (i:Item) REQUIRE (i.category, i.sku) IS NODE KEY
+
+# Composite key lookup - should use index
+query A
+MATCH (i:Item {category: 'Electronics', sku: 'E001'}) RETURN i
+----
+{id: 4, labels: [Item], props: {name: 'Phone', category: 'Electronics', sku: 'E001'}}
+
+# Different composite key
+query A
+MATCH (i:Item {category: 'Books', sku: 'B001'}) RETURN i
+----
+{id: 6, labels: [Item], props: {name: 'Novel', category: 'Books', sku: 'B001'}}
+
+# Non-existent composite key
+query A
+MATCH (i:Item {category: 'Electronics', sku: 'NOTEXIST'}) RETURN i
+----
+
+# Drop constraint and verify scan still works
+statement ok
+DROP CONSTRAINT person_email_unique
+
+# Query should still work (falls back to full scan)
+query A
+MATCH (p:Person {email: 'alice@example.com'}) RETURN p
+----
+{id: 1, labels: [Person], props: {email: 'alice@example.com', name: 'Alice'}}
+

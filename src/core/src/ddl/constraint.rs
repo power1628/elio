@@ -7,6 +7,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use mojito_common::array::Array;
+use mojito_common::mapb::IndexKeyCodec;
 use mojito_exec::error::ExecError;
 use mojito_parser::ast;
 use mojito_storage::constraint::{ConstraintKind, ConstraintMeta, EntityType};
@@ -171,9 +172,9 @@ fn extract_property_values(
             .find(|(k, _): &(&Arc<str>, _)| k.as_ref() == prop_name.as_str());
 
         if let Some((_, value)) = found {
-            // Serialize the value for comparison
-            let serialized = format!("{:?}", value);
-            prop_values.push(serialized.into_bytes());
+            // Encode the value using IndexKeyCodec
+            let encoded = IndexKeyCodec::encode_single(&value);
+            prop_values.push(encoded);
         } else {
             return None;
         }

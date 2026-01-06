@@ -16,6 +16,7 @@ pub mod create_node;
 pub mod create_rel;
 pub mod expand;
 pub mod filter;
+pub mod node_index_seek;
 pub mod produce_result;
 pub mod project;
 pub mod relscan;

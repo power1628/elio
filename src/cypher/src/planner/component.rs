@@ -7,13 +7,14 @@ use itertools::Itertools;
 use mojito_common::schema::Schema;
 use mojito_common::variable::VariableName;
 
+use super::index_selection::{find_index_candidates, remove_index_conditions};
 use super::*;
 use crate::expr::FilterExprs;
 use crate::ir::node_connection::RelPattern;
 use crate::ir::query_graph::QueryGraph;
 use crate::plan_node::{
     AllNodeScan, AllNodeScanInner, Argument, ArgumentInner, Expand, ExpandInner, ExpandKind, Filter, FilterInner,
-    PathMode, VarExpand, VarExpandInner,
+    NodeIndexSeek, NodeIndexSeekInner, PathMode, VarExpand, VarExpandInner,
 };
 
 // This is an simple implementation of planning an query graph.
@@ -24,14 +25,17 @@ pub(crate) fn plan_qg_simple(ctx: &mut PlannerContext, qg: &QueryGraph) -> Resul
         return Ok(PlanExpr::empty(Schema::empty(), ctx.ctx.clone()).boxed());
     }
 
-    let mut solver = TraversalSolver::new(ctx, qg);
+    // Try to find an index that can be used for the first node
+    let (solver, remaining_filter) = TraversalSolver::new_with_index_selection(ctx, qg);
+    let mut solver = solver;
     solver.solve()?;
     let mut root = solver.root;
-    // solve filter
-    if !qg.filter.is_true() {
+
+    // solve remaining filter (after index conditions removed)
+    if !remaining_filter.is_true() {
         root = Filter::new(FilterInner {
             input: root,
-            condition: qg.filter.clone(),
+            condition: remaining_filter,
         })
         .into();
     }
@@ -59,12 +63,14 @@ struct TraversalSolver<'a> {
 }
 
 impl<'a> TraversalSolver<'a> {
-    // initialize with generated leaf plan
-    fn new(ctx: &'a mut PlannerContext, qg: &'a QueryGraph) -> Self {
+    /// Create solver with index selection optimization
+    /// Returns (solver, remaining_filter) where remaining_filter has index conditions removed
+    fn new_with_index_selection(ctx: &'a mut PlannerContext, qg: &'a QueryGraph) -> (Self, FilterExprs) {
         assert!(!qg.nodes.is_empty() || !qg.imported().is_empty());
         let imported = qg.imported().iter().cloned().collect_vec();
         let mut solved = IndexSet::new();
         let mut stack = VecDeque::new();
+        let mut remaining_filter = qg.filter.clone();
 
         let mut qg_nodes = qg.nodes.iter();
 
@@ -93,30 +99,70 @@ impl<'a> TraversalSolver<'a> {
         };
 
         if stack.is_empty() && !qg.nodes.is_empty() {
-            // if argument does not have connections, select node and plan an node scan with argument
-            // SAFETY: the qg must have at least on node
+            // Try to find an index for the first node
             let first = qg_nodes.next().unwrap();
-            let inner = AllNodeScanInner {
-                variable: first.clone(),
-                arguments: imported,
-                ctx: ctx.ctx.clone(),
-            };
-            root = Some(AllNodeScan::new(inner).into());
+
+            // Check if we can use an index for this node
+            let (plan, filter) = Self::try_create_index_seek(ctx, first, &qg.filter, &imported).unwrap_or_else(|| {
+                // Fallback to AllNodeScan
+                let inner = AllNodeScanInner {
+                    variable: first.clone(),
+                    arguments: imported,
+                    ctx: ctx.ctx.clone(),
+                };
+                (AllNodeScan::new(inner).into(), qg.filter.clone())
+            });
+
+            root = Some(plan);
+            remaining_filter = filter;
             solved.insert(first.clone());
+
             // push connections on stack
             for conn in qg.connections(first).rev() {
                 stack.push_back(conn);
             }
         }
 
-        Self {
-            _ctx: ctx,
-            qg,
-            solved,
-            stack,
-            // SAFETY: imported.is_empty() and !stack.is_empty() won't happen at the same time.
-            root: root.unwrap().into(),
-        }
+        (
+            Self {
+                _ctx: ctx,
+                qg,
+                solved,
+                stack,
+                // SAFETY: imported.is_empty() and !stack.is_empty() won't happen at the same time.
+                root: root.unwrap().into(),
+            },
+            remaining_filter,
+        )
+    }
+
+    /// Try to create a NodeIndexSeek for the given node variable
+    /// Returns Some((plan, remaining_filter)) if an index can be used, None otherwise
+    fn try_create_index_seek(
+        ctx: &PlannerContext,
+        node_var: &VariableName,
+        filter: &FilterExprs,
+        _arguments: &[mojito_common::schema::Variable],
+    ) -> Option<(PlanExpr, FilterExprs)> {
+        // Find index candidates for this node
+        let candidate = find_index_candidates(&ctx.ctx, filter, node_var)?;
+
+        // Create NodeIndexSeek plan
+        let plan = NodeIndexSeek::new(NodeIndexSeekInner {
+            variable: candidate.variable.clone(),
+            label_name: candidate.label_name.clone(),
+            label_id: candidate.label_id,
+            constraint_name: candidate.index_hint.constraint_name.clone(),
+            property_names: candidate.property_names.clone(),
+            property_key_ids: candidate.property_key_ids.clone(),
+            property_values: candidate.property_values.clone(),
+            ctx: ctx.ctx.clone(),
+        });
+
+        // Remove conditions covered by the index from the filter
+        let remaining_filter = remove_index_conditions(filter, &candidate);
+
+        Some((plan.into(), remaining_filter))
     }
 
     // DFS traversal

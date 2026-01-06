@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 use mojito_common::TokenKind;
 use mojito_common::array::{Array, NodeArray, StructArray};
+use mojito_common::mapb::IndexKeyCodec;
 use mojito_storage::constraint::{ConstraintKind, ConstraintMeta};
 use mojito_storage::graph::GraphStore;
 use mojito_storage::transaction::TransactionImpl;
@@ -162,8 +163,8 @@ fn extract_property_values_with_null_check(
             Some((_, arr)) => match arr.get(row_idx) {
                 None => return PropertyExtractionResult::NullValue(prop_name.to_string()),
                 Some(val) => {
-                    let serialized = format!("{:?}", val);
-                    prop_values.push(serialized.into_bytes());
+                    let encoded = IndexKeyCodec::encode_single(&val);
+                    prop_values.push(encoded);
                 }
             },
         }
