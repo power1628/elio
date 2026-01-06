@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use mojito_common::LabelId;
+use elio_common::LabelId;
 use parking_lot::RwLock;
 use rocksdb;
 use rocksdb::{ColumnFamilyDescriptor, Options};

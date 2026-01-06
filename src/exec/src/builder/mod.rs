@@ -1,12 +1,12 @@
 use std::backtrace::Backtrace;
 use std::sync::Arc;
 
-use mojito_common::mapb::IndexKeyCodec;
-use mojito_common::scalar::ScalarValue;
-use mojito_common::schema::Name2ColumnMap;
-use mojito_common::variable::VariableName;
-use mojito_cypher::plan_node::{self, CreateNode, PlanExpr, PlanNode, Project};
-use mojito_cypher::planner::RootPlan;
+use elio_common::mapb::IndexKeyCodec;
+use elio_common::scalar::ScalarValue;
+use elio_common::schema::Name2ColumnMap;
+use elio_common::variable::VariableName;
+use elio_cypher::plan_node::{self, CreateNode, PlanExpr, PlanNode, Project};
+use elio_cypher::planner::RootPlan;
 
 use crate::builder::expression::{BuildExprContext, build_expression};
 use crate::executor::all_node_scan::AllNodeScanExectuor;
@@ -118,7 +118,7 @@ fn build_node_index_seek(
         .map(|expr| {
             // For index lookup, the expression must be a constant
             match expr {
-                mojito_cypher::expr::Expr::Constant(constant) => {
+                elio_cypher::expr::Expr::Constant(constant) => {
                     // Encode using IndexKeyCodec (same as index storage)
                     let encoded = match &constant.data {
                         Some(value) => IndexKeyCodec::encode_single(&value.as_scalar_ref()),
@@ -178,8 +178,8 @@ fn build_expand(
         .types
         .iter()
         .map(|x| match x {
-            mojito_common::IrToken::Resolved { token, .. } => Ok(*token),
-            mojito_common::IrToken::Unresolved(name) => Err(BuildError::unresolved_token(name.to_string())),
+            elio_common::IrToken::Resolved { token, .. } => Ok(*token),
+            elio_common::IrToken::Unresolved(name) => Err(BuildError::unresolved_token(name.to_string())),
         })
         .collect::<Result<Vec<_>, _>>()?;
 
@@ -237,8 +237,8 @@ fn build_var_expand(
         .types
         .iter()
         .map(|x| match x {
-            mojito_common::IrToken::Resolved { token, .. } => Ok(*token),
-            mojito_common::IrToken::Unresolved(name) => Err(BuildError::unresolved_token(name.to_string())),
+            elio_common::IrToken::Resolved { token, .. } => Ok(*token),
+            elio_common::IrToken::Unresolved(name) => Err(BuildError::unresolved_token(name.to_string())),
         })
         .collect::<Result<Vec<_>, _>>()?;
 
@@ -464,7 +464,7 @@ fn build_filter(
 
     // TODO(pgao): special handle and optimize
     let expr = {
-        let expr: mojito_cypher::expr::Expr = node.inner().condition.clone().into();
+        let expr: elio_cypher::expr::Expr = node.inner().condition.clone().into();
         build_expression(&ectx, &expr)?
     };
 

@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use mojito_common::variable::VariableName;
+use elio_common::variable::VariableName;
 
 #[derive(Debug, Clone)]
 pub struct FuncDepSet {

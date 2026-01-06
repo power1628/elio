@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use educe;
 use educe::Educe;
-use mojito_common::schema::Schema;
+use elio_common::schema::Schema;
 
 use crate::plan_context::PlanContext;
 use crate::props::order::Ordering;

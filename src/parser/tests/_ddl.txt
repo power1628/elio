@@ -1,4 +1,4 @@
-use mojito_parser::parser::cypher_parser;
+use elio_parser::parser::cypher_parser;
 
 macro_rules! test_statement {
     ($name:ident, $input:expr, $expected:expr) => {

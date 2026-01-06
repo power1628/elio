@@ -1,4 +1,4 @@
-use mojito_common::schema::Variable;
+use elio_common::schema::Variable;
 
 use crate::expr::Expr;
 

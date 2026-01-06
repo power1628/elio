@@ -1,19 +1,19 @@
 [package]
-name = "mojito_cypher"
+name = "elio_cypher"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
 derive_more = { workspace = true }
 educe = { workspace = true, features = ["full"] }
+elio_catalog = { workspace = true }
+elio_common = { workspace = true }
+elio_expr = { workspace = true }
+elio_parser = { workspace = true }
+elio_storage = { workspace = true }
 enum-as-inner = { workspace = true }
 indexmap = { workspace = true }
 itertools = { workspace = true }
-mojito_catalog = { workspace = true }
-mojito_common = { workspace = true }
-mojito_expr = { workspace = true }
-mojito_parser = { workspace = true }
-mojito_storage = { workspace = true }
 ordered-float = { workspace = true }
 paste = { workspace = true }
 pretty-xmlish = { workspace = true }

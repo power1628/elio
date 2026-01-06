@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::{ArrayRef, PhysicalType};
-use mojito_common::data_type::DataType;
-use mojito_common::scalar::{ListValue, ScalarVTable};
+use elio_common::array::chunk::DataChunk;
+use elio_common::array::{ArrayRef, PhysicalType};
+use elio_common::data_type::DataType;
+use elio_common::scalar::{ListValue, ScalarVTable};
 
 use crate::error::EvalError;
 use crate::impl_::{BoxedExpression, EvalCtx, Expression};

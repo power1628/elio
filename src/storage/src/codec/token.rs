@@ -1,4 +1,4 @@
-use mojito_common::TokenKind;
+use elio_common::TokenKind;
 
 use crate::cf_meta::{LABEL_KEY_PREFIX, PROPERTY_KEY_PREFIX, RELTYPE_KEY_PREFIX};
 

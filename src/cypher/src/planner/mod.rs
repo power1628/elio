@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
+use elio_common::variable::VariableName;
 use indexmap::IndexMap;
 use itertools::Itertools;
-use mojito_common::variable::VariableName;
 use pretty_xmlish::{Pretty, PrettyConfig};
 
 use crate::error::PlanError;

@@ -7,7 +7,7 @@
 use std::sync::Arc;
 
 use bytes::{BufMut, Bytes, BytesMut};
-use mojito_common::{LabelId, NodeId, PropertyKeyId};
+use elio_common::{LabelId, NodeId, PropertyKeyId};
 
 use crate::cf_constraint;
 use crate::error::GraphStoreError;

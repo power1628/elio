@@ -3,9 +3,9 @@ use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use bitvec::vec::BitVec;
-use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::{ArrayImpl, NodeArray, RelArray, StructArray, VirtualNodeArray};
-use mojito_common::{LabelId, NodeId, PropertyKeyId, SemanticDirection, TokenId};
+use elio_common::array::chunk::DataChunk;
+use elio_common::array::{ArrayImpl, NodeArray, RelArray, StructArray, VirtualNodeArray};
+use elio_common::{LabelId, NodeId, PropertyKeyId, SemanticDirection, TokenId};
 
 use crate::cf_constraint;
 use crate::constraint::{ConstraintCodec, ConstraintMeta, UniqueIndexCodec};

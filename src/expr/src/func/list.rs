@@ -4,9 +4,9 @@
 //! - list_slice: Get a slice of list
 
 use bitvec::vec::BitVec;
-use mojito_common::array::*;
-use mojito_common::data_type::DataType;
-use mojito_common::scalar::{ListValueRef, ScalarRef, ScalarRefVTable, ScalarVTable};
+use elio_common::array::*;
+use elio_common::data_type::DataType;
+use elio_common::scalar::{ListValueRef, ScalarRef, ScalarRefVTable, ScalarVTable};
 
 use crate::error::EvalError;
 use crate::func::FunctionRegistry;
@@ -137,7 +137,7 @@ pub fn list_slice_batch(args: &[ArrayRef], vis: &BitVec, len: usize) -> Result<A
                     .map(|e| e.to_owned_scalar())
                     .collect();
 
-                let list_value = mojito_common::scalar::ListValue::new(slice);
+                let list_value = elio_common::scalar::ListValue::new(slice);
                 builder.push(Some(list_value.as_scalar_ref()));
             }
         } else {

@@ -1,18 +1,18 @@
 [package]
-name = "mojito_core"
+name = "elio_core"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
 # workspace
 async-stream = { workspace = true }
+elio_catalog = { workspace = true }
+elio_common = { workspace = true }
+elio_cypher = { workspace = true }
+elio_exec = { workspace = true }
+elio_parser = { workspace = true }
+elio_storage = { workspace = true }
 futures = { workspace = true }
-mojito_catalog = { workspace = true }
-mojito_common = { workspace = true }
-mojito_cypher = { workspace = true }
-mojito_exec = { workspace = true }
-mojito_parser = { workspace = true }
-mojito_storage = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 # other

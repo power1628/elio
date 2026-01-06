@@ -38,8 +38,8 @@
 //! For variable size value, we store the value in the value_data
 
 use bytes::{BufMut, BytesMut};
-use mojito_common::PropertyKeyId;
-use mojito_common::store_types::PropertyValue;
+use elio_common::PropertyKeyId;
+use elio_common::store_types::PropertyValue;
 
 use crate::codec::DataTypeCodec;
 

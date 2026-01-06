@@ -1,12 +1,12 @@
 use std::collections::HashSet;
 use std::ops::Range;
 
+use elio_common::data_type::DataType;
+use elio_common::schema::Variable;
+use elio_common::variable::VariableName;
+use elio_common::{IrToken, TokenKind};
+use elio_parser::ast::{self, NodePattern, RelationshipPattern};
 use indexmap::IndexSet;
-use mojito_common::data_type::DataType;
-use mojito_common::schema::Variable;
-use mojito_common::variable::VariableName;
-use mojito_common::{IrToken, TokenKind};
-use mojito_parser::ast::{self, NodePattern, RelationshipPattern};
 
 use crate::binder::BindContext;
 use crate::binder::expr::{ExprContext, bind_expr};

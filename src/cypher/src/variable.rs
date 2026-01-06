@@ -1,6 +1,6 @@
 use std::sync::atomic::AtomicUsize;
 
-use mojito_common::variable::VariableName;
+use elio_common::variable::VariableName;
 
 #[derive(Debug, Default)]
 pub struct VariableGenerator {

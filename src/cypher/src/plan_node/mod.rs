@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
+use elio_common::data_type::DataType;
+use elio_common::schema::{Schema, Variable};
+use elio_common::variable::VariableName;
 use itertools::Itertools;
-use mojito_common::data_type::DataType;
-use mojito_common::schema::{Schema, Variable};
-use mojito_common::variable::VariableName;
 use pretty_xmlish::{Pretty, XmlNode};
 
 use crate::expr::{Expr, ExprNode};

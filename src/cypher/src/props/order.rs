@@ -1,4 +1,4 @@
-use mojito_common::order::ColumnOrder;
+use elio_common::order::ColumnOrder;
 
 #[derive(Debug, Clone)]
 pub struct Ordering {

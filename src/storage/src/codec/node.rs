@@ -7,9 +7,9 @@
 //! LabelBlock ::= <LabelId>{NumLabels}
 
 use bytes::{BufMut, Bytes, BytesMut};
-use mojito_common::mapb::{PropertyMapMut, PropertyMapRef};
-use mojito_common::scalar::StructValueRef;
-use mojito_common::{LabelId, NodeId, TokenId};
+use elio_common::mapb::{PropertyMapMut, PropertyMapRef};
+use elio_common::scalar::StructValueRef;
+use elio_common::{LabelId, NodeId, TokenId};
 
 pub struct NodeFormat;
 

@@ -1,5 +1,5 @@
+use elio_common::variable::VariableName;
 use indexmap::IndexSet;
-use mojito_common::variable::VariableName;
 
 pub use super::*;
 

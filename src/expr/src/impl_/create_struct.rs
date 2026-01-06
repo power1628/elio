@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use bitvec::vec::BitVec;
-use mojito_common::array::chunk::DataChunk;
-use mojito_common::array::{ArrayRef, PhysicalType, StructArray};
-use mojito_common::data_type::DataType;
+use elio_common::array::chunk::DataChunk;
+use elio_common::array::{ArrayRef, PhysicalType, StructArray};
+use elio_common::data_type::DataType;
 
 use crate::error::EvalError;
 use crate::impl_::{BoxedExpression, EvalCtx, Expression};

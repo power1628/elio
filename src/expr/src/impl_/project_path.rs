@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
 use bitvec::vec::BitVec;
-use mojito_common::NodeId;
-use mojito_common::array::{
+use elio_common::NodeId;
+use elio_common::array::{
     Array, ArrayImpl, ListArrayBuilder, RelArrayBuilder, VirtualNodeArrayBuilder, VirtualPathArray,
 };
-use mojito_common::scalar::RelValueRef;
+use elio_common::scalar::RelValueRef;
 
 use super::*;
 

@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
+use elio_common::variable::VariableName;
+use elio_parser::ast;
 use indexmap::IndexMap;
-use mojito_common::variable::VariableName;
-use mojito_parser::ast;
 
 use crate::binder::BindContext;
 use crate::binder::builder::IrSingleQueryBuilder;

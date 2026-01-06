@@ -1,5 +1,5 @@
 [package]
-name = "mojito_exec"
+name = "elio_exec"
 version.workspace = true
 edition.workspace = true
 
@@ -8,14 +8,14 @@ edition.workspace = true
 async-stream = { workspace = true }
 bitvec = { workspace = true }
 educe = { workspace = true }
+elio_catalog = { workspace = true }
+elio_common = { workspace = true }
+elio_cypher = { workspace = true }
+elio_expr = { workspace = true }
+elio_storage = { workspace = true }
 futures = { workspace = true }
 indexmap = { workspace = true }
 itertools = { workspace = true }
-mojito_catalog = { workspace = true }
-mojito_common = { workspace = true }
-mojito_cypher = { workspace = true }
-mojito_expr = { workspace = true }
-mojito_storage = { workspace = true }
 roaring = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

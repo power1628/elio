@@ -1,7 +1,7 @@
 use std::backtrace::Backtrace;
 
-use mojito_cypher::error::PlanError;
-use mojito_exec::error::ExecError;
+use elio_cypher::error::PlanError;
+use elio_exec::error::ExecError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -9,7 +9,7 @@ pub enum Error {
     #[error("open db failed")]
     OpenDbFailed {
         #[from]
-        source: mojito_storage::error::GraphStoreError,
+        source: elio_storage::error::GraphStoreError,
     },
 
     #[error("{0}")]

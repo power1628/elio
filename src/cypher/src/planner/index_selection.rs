@@ -5,9 +5,9 @@
 
 use std::sync::Arc;
 
+use elio_common::variable::VariableName;
+use elio_common::{IrToken, LabelId, PropertyKeyId};
 use indexmap::IndexMap;
-use mojito_common::variable::VariableName;
-use mojito_common::{IrToken, LabelId, PropertyKeyId};
 
 use crate::expr::{Expr, FilterExprs, HasLabel};
 use crate::plan_context::PlanContext;

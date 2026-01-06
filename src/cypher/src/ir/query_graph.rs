@@ -1,10 +1,10 @@
 use std::collections::VecDeque;
 
+use elio_common::data_type::DataType;
+use elio_common::schema::Variable;
+use elio_common::variable::VariableName;
 use indexmap::IndexSet;
 use itertools::Itertools;
-use mojito_common::data_type::DataType;
-use mojito_common::schema::Variable;
-use mojito_common::variable::VariableName;
 use pretty_xmlish::{Pretty, XmlNode};
 
 use crate::binder::pattern::PathPatternWithExtra;

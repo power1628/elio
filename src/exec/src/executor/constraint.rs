@@ -7,12 +7,12 @@
 use std::backtrace::Backtrace;
 use std::sync::Arc;
 
-use mojito_common::TokenKind;
-use mojito_common::array::{Array, NodeArray, StructArray};
-use mojito_common::mapb::IndexKeyCodec;
-use mojito_storage::constraint::{ConstraintKind, ConstraintMeta};
-use mojito_storage::graph::GraphStore;
-use mojito_storage::transaction::TransactionImpl;
+use elio_common::TokenKind;
+use elio_common::array::{Array, NodeArray, StructArray};
+use elio_common::mapb::IndexKeyCodec;
+use elio_storage::constraint::{ConstraintKind, ConstraintMeta};
+use elio_storage::graph::GraphStore;
+use elio_storage::transaction::TransactionImpl;
 
 use crate::error::ExecError;
 

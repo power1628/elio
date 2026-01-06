@@ -10,7 +10,7 @@
 //! This implementation follows 3 value logic.
 
 use bitvec::prelude::*;
-use mojito_common::array::*;
+use elio_common::array::*;
 
 use crate::define_function;
 use crate::error::EvalError;

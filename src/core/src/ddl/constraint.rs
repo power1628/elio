@@ -6,13 +6,13 @@ use std::backtrace::Backtrace;
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use mojito_common::array::Array;
-use mojito_common::mapb::IndexKeyCodec;
-use mojito_exec::error::ExecError;
-use mojito_parser::ast;
-use mojito_storage::constraint::{ConstraintKind, ConstraintMeta, EntityType};
-use mojito_storage::graph::GraphStore;
-use mojito_storage::transaction::NodeScanOptions;
+use elio_common::array::Array;
+use elio_common::mapb::IndexKeyCodec;
+use elio_exec::error::ExecError;
+use elio_parser::ast;
+use elio_storage::constraint::{ConstraintKind, ConstraintMeta, EntityType};
+use elio_storage::graph::GraphStore;
+use elio_storage::transaction::NodeScanOptions;
 
 use crate::error::Error;
 
@@ -98,7 +98,7 @@ pub fn create_constraint(store: &Arc<GraphStore>, constraint: &ast::CreateConstr
 /// and builds the unique index.
 fn backfill_unique_index(
     _store: &Arc<GraphStore>,
-    tx: &Arc<mojito_storage::transaction::TransactionImpl>,
+    tx: &Arc<elio_storage::transaction::TransactionImpl>,
     label_name: &str,
     label_id: u16,
     properties: &[String],
@@ -161,7 +161,7 @@ fn backfill_unique_index(
 
 /// Extract property values from a node's properties
 fn extract_property_values(
-    props: &mojito_common::scalar::StructValueRef<'_>,
+    props: &elio_common::scalar::StructValueRef<'_>,
     property_names: &[String],
 ) -> Option<Vec<Vec<u8>>> {
     let mut prop_values: Vec<Vec<u8>> = Vec::new();

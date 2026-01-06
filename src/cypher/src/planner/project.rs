@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 
+use elio_common::order::ColumnOrder;
+use elio_common::schema::Schema;
 use itertools::Itertools;
-use mojito_common::order::ColumnOrder;
-use mojito_common::schema::Schema;
 
 use crate::error::PlanError;
 use crate::expr::FilterExprs;

@@ -2,10 +2,10 @@
 
 use std::collections::VecDeque;
 
+use elio_common::schema::Schema;
+use elio_common::variable::VariableName;
 use indexmap::IndexSet;
 use itertools::Itertools;
-use mojito_common::schema::Schema;
-use mojito_common::variable::VariableName;
 
 use super::index_selection::{find_index_candidates, remove_index_conditions};
 use super::*;
@@ -142,7 +142,7 @@ impl<'a> TraversalSolver<'a> {
         ctx: &PlannerContext,
         node_var: &VariableName,
         filter: &FilterExprs,
-        _arguments: &[mojito_common::schema::Variable],
+        _arguments: &[elio_common::schema::Variable],
     ) -> Option<(PlanExpr, FilterExprs)> {
         // Find index candidates for this node
         let candidate = find_index_candidates(&ctx.ctx, filter, node_var)?;

@@ -6,9 +6,9 @@ mod return_item;
 mod statement;
 mod typ;
 
+pub(crate) use elio_common::SemanticDirection;
+pub(crate) use elio_common::order::SortDirection;
 pub use expr::*;
-pub(crate) use mojito_common::SemanticDirection;
-pub(crate) use mojito_common::order::SortDirection;
 pub use order::*;
 pub use pattern::*;
 pub use query::*;

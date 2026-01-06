@@ -3,18 +3,18 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use async_stream::stream;
+use elio_catalog::Catalog;
+use elio_catalog::error::CatalogError;
+use elio_common::array::chunk::DataChunk;
+use elio_common::scalar::{Row, ScalarValue};
+use elio_common::{LabelId, PropertyKeyId, TokenId, TokenKind};
+use elio_cypher::plan_context::PlanContext;
+use elio_cypher::session::{IndexHint, PlannerSession, parse_statement, plan_query};
+use elio_exec::error::ExecError;
+use elio_exec::task::{ExecContext, create_task};
+use elio_parser::ast;
 use futures::Stream;
 use futures::stream::BoxStream;
-use mojito_catalog::Catalog;
-use mojito_catalog::error::CatalogError;
-use mojito_common::array::chunk::DataChunk;
-use mojito_common::scalar::{Row, ScalarValue};
-use mojito_common::{LabelId, PropertyKeyId, TokenId, TokenKind};
-use mojito_cypher::plan_context::PlanContext;
-use mojito_cypher::session::{IndexHint, PlannerSession, parse_statement, plan_query};
-use mojito_exec::error::ExecError;
-use mojito_exec::task::{ExecContext, create_task};
-use mojito_parser::ast;
 use tokio::sync::mpsc::UnboundedReceiver;
 
 use crate::ddl;
@@ -43,7 +43,7 @@ impl PlannerSession for Session {
         Ok(self.catalog.get_or_create_token(token, kind)?)
     }
 
-    fn get_function_by_name(&self, name: &str) -> Option<&mojito_catalog::FunctionCatalog> {
+    fn get_function_by_name(&self, name: &str) -> Option<&elio_catalog::FunctionCatalog> {
         self.catalog.get_function_by_name(name)
     }
 
@@ -58,7 +58,7 @@ impl PlannerSession for Session {
 
         // Look for a UNIQUE or NODE KEY constraint that matches the property keys
         for constraint in constraints {
-            use mojito_storage::constraint::ConstraintKind;
+            use elio_storage::constraint::ConstraintKind;
             if matches!(
                 constraint.constraint_kind,
                 ConstraintKind::Unique | ConstraintKind::NodeKey

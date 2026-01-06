@@ -1,11 +1,11 @@
 use async_stream::try_stream;
 use educe::Educe;
+use elio_common::array::chunk::DataChunkBuilder;
+use elio_common::scalar::{RelValueRef, ScalarRef, StructValue};
+use elio_common::store_types::RelDirection;
+use elio_common::{SemanticDirection, TokenId, TokenKind};
+use elio_storage::codec::RelFormat;
 use futures::StreamExt;
-use mojito_common::array::chunk::DataChunkBuilder;
-use mojito_common::scalar::{RelValueRef, ScalarRef, StructValue};
-use mojito_common::store_types::RelDirection;
-use mojito_common::{SemanticDirection, TokenId, TokenKind};
-use mojito_storage::codec::RelFormat;
 
 use super::*;
 use crate::executor::var_expand::ExpandKindStrategy;

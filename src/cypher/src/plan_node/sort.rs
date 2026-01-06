@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use mojito_common::order::ColumnOrder;
-use mojito_common::schema::Schema;
+use elio_common::order::ColumnOrder;
+use elio_common::schema::Schema;
 
 use super::*;
 use crate::plan_node::plan_base::PlanBase;

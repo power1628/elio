@@ -1,7 +1,7 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
-use mojito_common::{NodeId, RelationshipId};
+use elio_common::{NodeId, RelationshipId};
 
 use crate::cf_meta;
 use crate::error::GraphStoreError;

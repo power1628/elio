@@ -4,8 +4,8 @@
 
 use std::collections::HashMap;
 
-use mojito_common::array::ArrayImpl;
-use mojito_common::array::chunk::DataChunk;
+use elio_common::array::ArrayImpl;
+use elio_common::array::chunk::DataChunk;
 
 use crate::define_function;
 use crate::error::EvalError;

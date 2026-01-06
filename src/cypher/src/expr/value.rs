@@ -1,5 +1,5 @@
-use mojito_common::data_type::{DataType, F64};
-use mojito_common::scalar::ScalarValue;
+use elio_common::data_type::{DataType, F64};
+use elio_common::scalar::ScalarValue;
 
 use crate::expr::{Expr, ExprNode};
 

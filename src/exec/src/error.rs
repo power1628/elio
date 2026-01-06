@@ -1,8 +1,8 @@
 use std::backtrace::Backtrace;
 
-use mojito_common::array::PhysicalType;
-use mojito_expr::error::EvalError;
-use mojito_storage::error::GraphStoreError;
+use elio_common::array::PhysicalType;
+use elio_expr::error::EvalError;
+use elio_storage::error::GraphStoreError;
 
 use crate::builder::BuildError;
 

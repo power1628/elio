@@ -1,6 +1,6 @@
+use elio_common::schema::Variable;
+use elio_common::variable::VariableName;
 use indexmap::IndexMap;
-use mojito_common::schema::Variable;
-use mojito_common::variable::VariableName;
 use pretty_xmlish::{Pretty, XmlNode};
 
 use crate::expr::{Expr, FilterExprs};

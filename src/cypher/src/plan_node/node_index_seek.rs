@@ -5,11 +5,11 @@
 
 use std::sync::Arc;
 
+use elio_common::data_type::DataType;
+use elio_common::schema::{Schema, Variable};
+use elio_common::variable::VariableName;
+use elio_common::{LabelId, PropertyKeyId};
 use itertools::Itertools;
-use mojito_common::data_type::DataType;
-use mojito_common::schema::{Schema, Variable};
-use mojito_common::variable::VariableName;
-use mojito_common::{LabelId, PropertyKeyId};
 use pretty_xmlish::{Pretty, XmlNode};
 
 use super::*;

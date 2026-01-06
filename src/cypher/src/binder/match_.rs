@@ -1,4 +1,4 @@
-use mojito_parser::ast;
+use elio_parser::ast;
 
 use crate::binder::BindContext;
 use crate::binder::builder::IrSingleQueryBuilder;

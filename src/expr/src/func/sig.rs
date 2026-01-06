@@ -1,4 +1,4 @@
-use mojito_common::data_type::DataType;
+use elio_common::data_type::DataType;
 
 use crate::impl_::func_call::FunctionImpl;
 
@@ -222,7 +222,7 @@ macro_rules! define_function {
             impls: vec![
                 $({
                     use $crate::func::sig::{FuncImplReturn};
-                    use mojito_common::data_type::DataType;
+                    use elio_common::data_type::DataType;
 
                     $crate::func::sig::FuncImpl::new(
                         $name,
