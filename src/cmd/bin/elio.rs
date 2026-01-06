@@ -1,45 +1,186 @@
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Instant;
 
 use clap::Parser;
 use elio_core::db_env::{DbConfig, DbEnv};
 use elio_core::session::Session;
 use futures::stream::StreamExt;
+use rustyline::error::ReadlineError;
+use rustyline::DefaultEditor;
+use tabled::settings::Style;
 
 #[derive(Debug, Parser)]
-#[command(author, version, about, long_about = None)]
+#[command(author, version, about = "Elio - An embedded graph database", long_about = None)]
 struct Args {
-    #[arg(short, long, help = "db path", default_value = ".db")]
+    #[arg(short, long, help = "Database path", default_value = ".db")]
     db_path: String,
 }
 
-async fn execute_cypher(sess: &Arc<Session>, cypher: &str) {
-    println!("execute {}", cypher);
-    let mut stream = sess.execute(cypher.to_string(), HashMap::new()).await.unwrap();
-    while let Some(row) = stream.next().await {
-        println!("{:?}", row);
+fn print_help() {
+    println!("Available commands:");
+    println!("  .help       Show this help message");
+    println!("  .quit       Exit the CLI");
+    println!("  .exit       Exit the CLI");
+    println!();
+    println!("Enter Cypher queries to execute them.");
+}
+
+async fn execute_query(sess: &Arc<Session>, query: &str) {
+    let start = Instant::now();
+
+    match sess.execute(query.to_string(), HashMap::new()).await {
+        Ok(mut result) => {
+            let columns = result.columns().to_vec();
+            let mut rows: Vec<Vec<String>> = Vec::new();
+
+            while let Some(row_result) = result.next().await {
+                match row_result {
+                    Ok(row) => {
+                        let formatted_row: Vec<String> = row
+                            .iter()
+                            .map(|v| match v {
+                                Some(val) => val.to_string(),
+                                None => "NULL".to_string(),
+                            })
+                            .collect();
+                        rows.push(formatted_row);
+                    }
+                    Err(e) => {
+                        eprintln!("Error reading row: {}", e);
+                        return;
+                    }
+                }
+            }
+
+            let elapsed = start.elapsed();
+
+            if columns.is_empty() {
+                println!("Query executed successfully.");
+            } else {
+                print_table(&columns, &rows);
+                println!("{} row(s)", rows.len());
+            }
+
+            println!("Executed in {:.3}s", elapsed.as_secs_f64());
+        }
+        Err(e) => {
+            eprintln!("Error: {}", e);
+        }
+    }
+}
+
+fn print_table(columns: &[String], rows: &[Vec<String>]) {
+    if rows.is_empty() {
+        // Print header only
+        println!(
+            "{}",
+            columns
+                .iter()
+                .map(|c| c.as_str())
+                .collect::<Vec<_>>()
+                .join(" | ")
+        );
+        return;
+    }
+
+    // Build table using tabled
+    // Create a builder for dynamic columns
+    let mut builder = tabled::builder::Builder::new();
+
+    // Add header
+    builder.push_record(columns.iter().map(|s| s.as_str()));
+
+    // Add rows
+    for row in rows {
+        builder.push_record(row.iter().map(|s| s.as_str()));
+    }
+
+    let table = builder.build().with(Style::rounded()).to_string();
+    println!("{}", table);
+}
+
+async fn run_repl(sess: Arc<Session>) {
+    let mut rl = match DefaultEditor::new() {
+        Ok(editor) => editor,
+        Err(e) => {
+            eprintln!("Failed to initialize readline: {}", e);
+            return;
+        }
+    };
+
+    // Load history
+    let history_path = dirs::home_dir()
+        .map(|p| p.join(".elio_history"))
+        .unwrap_or_else(|| ".elio_history".into());
+
+    let _ = rl.load_history(&history_path);
+
+    println!("Elio - An embedded graph database");
+    println!("Type .help for available commands, .quit to exit");
+    println!();
+
+    loop {
+        match rl.readline("elio> ") {
+            Ok(line) => {
+                let trimmed = line.trim();
+
+                if trimmed.is_empty() {
+                    continue;
+                }
+
+                let _ = rl.add_history_entry(&line);
+
+                match trimmed.to_lowercase().as_str() {
+                    ".help" => print_help(),
+                    ".quit" | ".exit" => {
+                        println!("Goodbye!");
+                        break;
+                    }
+                    _ => {
+                        if trimmed.starts_with('.') {
+                            eprintln!("Unknown command: {}", trimmed);
+                            println!("Type .help for available commands");
+                        } else {
+                            execute_query(&sess, trimmed).await;
+                        }
+                    }
+                }
+            }
+            Err(ReadlineError::Interrupted) => {
+                println!("^C");
+                continue;
+            }
+            Err(ReadlineError::Eof) => {
+                println!("Goodbye!");
+                break;
+            }
+            Err(e) => {
+                eprintln!("Error: {}", e);
+                break;
+            }
+        }
+    }
+
+    // Save history
+    if let Err(e) = rl.save_history(&history_path) {
+        eprintln!("Failed to save history: {}", e);
     }
 }
 
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
-    let db_config = DbConfig::with_db_path(args.db_path);
+    let db_config = DbConfig::with_db_path(&args.db_path);
 
-    let db = DbEnv::open(&db_config).unwrap();
+    let db = match DbEnv::open(&db_config) {
+        Ok(db) => db,
+        Err(e) => {
+            eprintln!("Failed to open database: {}", e);
+            std::process::exit(1);
+        }
+    };
 
     let sess = db.new_session();
-
-    let q1 = "CREATE (n:Person {name: 'Alice', age: 30}) RETURN *";
-    let q2 = "MATCH (n) RETURN n";
-    let q3 = "CREATE (a:Person {name: 'Alice', age: 30}), (b:Person {name: 'Bob', age: 31}), (a)-[r:KNOWS]->(b)";
-    let q4 = "MATCH (a)-[r:KNOWS]-(b) RETURN *";
-
-    execute_cypher(&sess, q1).await;
-    println!("---");
-    execute_cypher(&sess, q2).await;
-    println!("---");
-    execute_cypher(&sess, q3).await;
-    println!("---");
-    execute_cypher(&sess, q4).await;
+    run_repl(sess).await;
 }

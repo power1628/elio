@@ -9,6 +9,9 @@ path = "bin/elio.rs"
 
 [dependencies]
 clap = { workspace = true, features = ["derive", "cargo"] }
+dirs = "5"
 elio_core = { workspace = true }
 futures = { workspace = true }
+rustyline = "14"
+tabled = "0.17"
 tokio = { workspace = true }
