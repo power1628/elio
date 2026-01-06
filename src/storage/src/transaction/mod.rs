@@ -5,8 +5,10 @@ use async_trait::async_trait;
 use bitvec::vec::BitVec;
 use mojito_common::array::chunk::DataChunk;
 use mojito_common::array::{ArrayImpl, NodeArray, RelArray, StructArray, VirtualNodeArray};
-use mojito_common::{NodeId, SemanticDirection, TokenId};
+use mojito_common::{LabelId, NodeId, PropertyKeyId, SemanticDirection, TokenId};
 
+use crate::cf_constraint;
+use crate::constraint::{ConstraintCodec, ConstraintMeta, UniqueIndexCodec};
 use crate::dict::IdStore;
 use crate::error::GraphStoreError;
 use crate::token::TokenStore;
@@ -113,6 +115,160 @@ impl TransactionImpl {
     pub fn abort(&self) -> Result<(), GraphStoreError> {
         let mut state = self.write_state.lock().unwrap();
         state.batch.clear();
+        Ok(())
+    }
+
+    // ==================== Constraint Operations ====================
+
+    /// Check if a constraint exists (reads from snapshot)
+    pub fn constraint_exists(&self, name: &str) -> Result<bool, GraphStoreError> {
+        let cf = self.inner._db.cf_handle(cf_constraint::CF_NAME).unwrap();
+        let key = ConstraintCodec::encode_meta_key(name);
+        Ok(self.inner.snapshot.get_cf(&cf, &key)?.is_some())
+    }
+
+    /// Get constraint metadata by name (reads from snapshot)
+    pub fn get_constraint(&self, name: &str) -> Result<Option<ConstraintMeta>, GraphStoreError> {
+        let cf = self.inner._db.cf_handle(cf_constraint::CF_NAME).unwrap();
+        let key = ConstraintCodec::encode_meta_key(name);
+        match self.inner.snapshot.get_cf(&cf, &key)? {
+            Some(value) => Ok(ConstraintCodec::decode_meta_value(name.to_string(), &value)),
+            None => Ok(None),
+        }
+    }
+
+    /// Get all constraints for a label (reads from snapshot)
+    pub fn get_constraints_for_label(&self, label_id: LabelId) -> Result<Vec<ConstraintMeta>, GraphStoreError> {
+        let cf = self.inner._db.cf_handle(cf_constraint::CF_NAME).unwrap();
+        let prefix = ConstraintCodec::encode_label_constraint_prefix(label_id);
+
+        let mut constraints = Vec::new();
+        let mut readopts = rocksdb::ReadOptions::default();
+        readopts.set_prefix_same_as_start(true);
+        let mode = rocksdb::IteratorMode::From(&prefix, rocksdb::Direction::Forward);
+        let iter = self.inner.snapshot.iterator_cf_opt(&cf, readopts, mode);
+
+        for item in iter {
+            let (key, _) = item?;
+            if !key.starts_with(&prefix) {
+                break;
+            }
+
+            // Extract constraint name from the key
+            let name_len_offset = 3; // prefix (1) + label_id (2)
+            if key.len() < name_len_offset + 2 {
+                continue;
+            }
+            let name_len = u16::from_le_bytes([key[name_len_offset], key[name_len_offset + 1]]) as usize;
+            if key.len() < name_len_offset + 2 + name_len {
+                continue;
+            }
+            let name = String::from_utf8_lossy(&key[name_len_offset + 2..name_len_offset + 2 + name_len]).to_string();
+
+            // Get the full constraint metadata
+            if let Some(meta) = self.get_constraint(&name)? {
+                constraints.push(meta);
+            }
+        }
+
+        Ok(constraints)
+    }
+
+    /// Store a constraint (buffered in write batch)
+    pub fn put_constraint(&self, meta: &ConstraintMeta) -> Result<(), GraphStoreError> {
+        let cf = self.inner._db.cf_handle(cf_constraint::CF_NAME).unwrap();
+        let mut guard = self.write_state.lock().unwrap();
+
+        // Store metadata
+        let meta_key = ConstraintCodec::encode_meta_key(&meta.name);
+        let meta_value = ConstraintCodec::encode_meta_value(meta);
+        guard.batch.put_cf(&cf, &meta_key, &meta_value);
+
+        // Store label-to-constraint mapping
+        let label_key = ConstraintCodec::encode_label_constraint_key(meta.label_id, &meta.name);
+        guard.batch.put_cf(&cf, &label_key, []);
+
+        Ok(())
+    }
+
+    /// Delete a constraint (buffered in write batch)
+    pub fn delete_constraint(&self, name: &str) -> Result<(), GraphStoreError> {
+        let cf = self.inner._db.cf_handle(cf_constraint::CF_NAME).unwrap();
+
+        // Get the constraint first to find the label_id
+        if let Some(meta) = self.get_constraint(name)? {
+            let mut guard = self.write_state.lock().unwrap();
+
+            // Delete label-to-constraint mapping
+            let label_key = ConstraintCodec::encode_label_constraint_key(meta.label_id, name);
+            guard.batch.delete_cf(&cf, &label_key);
+
+            // Delete metadata
+            let meta_key = ConstraintCodec::encode_meta_key(name);
+            guard.batch.delete_cf(&cf, &meta_key);
+        }
+
+        Ok(())
+    }
+
+    // ==================== Unique Index Operations ====================
+
+    /// Check if a unique index entry exists (reads from snapshot)
+    pub fn unique_index_exists(
+        &self,
+        label_id: LabelId,
+        prop_key_ids: &[PropertyKeyId],
+        prop_values: &[&[u8]],
+    ) -> Result<bool, GraphStoreError> {
+        let cf = self.inner._db.cf_handle(cf_constraint::CF_NAME).unwrap();
+        let key = UniqueIndexCodec::encode_key(label_id, prop_key_ids, prop_values);
+        Ok(self.inner.snapshot.get_cf(&cf, &key)?.is_some())
+    }
+
+    /// Get node_id from unique index (reads from snapshot)
+    pub fn get_unique_index(
+        &self,
+        label_id: LabelId,
+        prop_key_ids: &[PropertyKeyId],
+        prop_values: &[&[u8]],
+    ) -> Result<Option<NodeId>, GraphStoreError> {
+        let cf = self.inner._db.cf_handle(cf_constraint::CF_NAME).unwrap();
+        let key = UniqueIndexCodec::encode_key(label_id, prop_key_ids, prop_values);
+        match self.inner.snapshot.get_cf(&cf, &key)? {
+            Some(value) => Ok(UniqueIndexCodec::decode_value(&value)),
+            None => Ok(None),
+        }
+    }
+
+    /// Put unique index entry (buffered in write batch)
+    pub fn put_unique_index(
+        &self,
+        label_id: LabelId,
+        prop_key_ids: &[PropertyKeyId],
+        prop_values: &[&[u8]],
+        node_id: NodeId,
+    ) -> Result<(), GraphStoreError> {
+        let cf = self.inner._db.cf_handle(cf_constraint::CF_NAME).unwrap();
+        let key = UniqueIndexCodec::encode_key(label_id, prop_key_ids, prop_values);
+        let value = UniqueIndexCodec::encode_value(node_id);
+
+        let mut guard = self.write_state.lock().unwrap();
+        guard.batch.put_cf(&cf, &key, &value);
+        Ok(())
+    }
+
+    /// Delete unique index entry (buffered in write batch)
+    pub fn delete_unique_index(
+        &self,
+        label_id: LabelId,
+        prop_key_ids: &[PropertyKeyId],
+        prop_values: &[&[u8]],
+    ) -> Result<(), GraphStoreError> {
+        let cf = self.inner._db.cf_handle(cf_constraint::CF_NAME).unwrap();
+        let key = UniqueIndexCodec::encode_key(label_id, prop_key_ids, prop_values);
+
+        let mut guard = self.write_state.lock().unwrap();
+        guard.batch.delete_cf(&cf, &key);
         Ok(())
     }
 }

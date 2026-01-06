@@ -1,6 +1,8 @@
 use std::backtrace::Backtrace;
 use std::sync::Arc;
 
+use mojito_common::mapb::IndexKeyCodec;
+use mojito_common::scalar::ScalarValue;
 use mojito_common::schema::Name2ColumnMap;
 use mojito_common::variable::VariableName;
 use mojito_cypher::plan_node::{self, CreateNode, PlanExpr, PlanNode, Project};
@@ -12,6 +14,7 @@ use crate::executor::create_node::{CreateNodeExectuor, CreateNodeItem};
 use crate::executor::create_rel::{CreateRelExectuor, CreateRelItem};
 use crate::executor::expand::ExpandExecutor;
 use crate::executor::filter::FilterExecutor;
+use crate::executor::node_index_seek::NodeIndexSeekExecutor;
 use crate::executor::produce_result::ProduceResultExecutor;
 use crate::executor::project::ProjectExecutor;
 use crate::executor::unit::UnitExecutor;
@@ -29,6 +32,8 @@ pub enum BuildError {
     VariableNotFound(VariableName, #[backtrace] Backtrace),
     #[error("token {0} not resolved")]
     UnresolvedToken(String, #[backtrace] Backtrace),
+    #[error("malformed plan: {0}")]
+    MalformedPlan(String, #[backtrace] Backtrace),
 }
 
 impl BuildError {
@@ -67,6 +72,7 @@ fn build_node(ctx: &mut ExecutorBuildContext, node: &PlanExpr) -> Result<BoxedEx
 
     match node {
         PlanExpr::AllNodeScan(all_node_scan) => build_all_node_scan(ctx, all_node_scan, inputs),
+        PlanExpr::NodeIndexSeek(node_index_seek) => build_node_index_seek(ctx, node_index_seek, inputs),
         PlanExpr::GetProperty(_get_property) => todo!(),
         PlanExpr::Expand(expand) => build_expand(ctx, expand, inputs),
         PlanExpr::VarExpand(var_expand) => build_var_expand(ctx, var_expand, inputs),
@@ -92,6 +98,53 @@ fn build_all_node_scan(
     assert_eq!(inputs.len(), 0);
     let schema = all_node_scan.schema();
     Ok(AllNodeScanExectuor::new(schema).boxed())
+}
+
+fn build_node_index_seek(
+    _ctx: &mut ExecutorBuildContext,
+    node_index_seek: &plan_node::NodeIndexSeek,
+    inputs: Vec<BoxedExecutor>,
+) -> Result<BoxedExecutor, BuildError> {
+    assert_eq!(inputs.len(), 0);
+
+    let schema = node_index_seek.schema();
+
+    // Extract constant values and encode them for index lookup
+    // The encoding must match how values are stored in the index (using IndexKeyCodec)
+    let property_values: Vec<Vec<u8>> = node_index_seek
+        .inner()
+        .property_values
+        .iter()
+        .map(|expr| {
+            // For index lookup, the expression must be a constant
+            match expr {
+                mojito_cypher::expr::Expr::Constant(constant) => {
+                    // Encode using IndexKeyCodec (same as index storage)
+                    let encoded = match &constant.data {
+                        Some(value) => IndexKeyCodec::encode_single(&value.as_scalar_ref()),
+                        None => IndexKeyCodec::encode_single(&ScalarValue::Unknown.as_scalar_ref()),
+                    };
+                    Ok(encoded)
+                }
+                _ => {
+                    // Non-constant expressions not supported for index seek
+                    // This shouldn't happen in practice, but handle gracefully
+                    Err(BuildError::MalformedPlan(
+                        format!("NodeIndexSeek requires constant property values, got: {:?}", expr),
+                        Backtrace::capture(),
+                    ))
+                }
+            }
+        })
+        .collect::<Result<Vec<_>, BuildError>>()?;
+
+    Ok(NodeIndexSeekExecutor::new(
+        schema,
+        node_index_seek.inner().label_id,
+        node_index_seek.inner().property_key_ids.clone(),
+        property_values,
+    )
+    .boxed())
 }
 
 fn build_expand(

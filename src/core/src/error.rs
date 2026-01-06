@@ -16,4 +16,11 @@ pub enum Error {
     PlanError(#[from] PlanError, #[backtrace] Backtrace),
     #[error("{0}")]
     ExecError(#[from] ExecError, #[backtrace] Backtrace),
+
+    // DDL errors
+    #[error("constraint '{0}' already exists")]
+    ConstraintAlreadyExists(String),
+
+    #[error("constraint '{0}' not found")]
+    ConstraintNotFound(String),
 }

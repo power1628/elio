@@ -1,0 +1,29 @@
+# Test index seek plan generation
+
+# First, test without any index - should use AllNodeScan + Filter
+- sql: |
+    MATCH (n:User {id: '123'}) RETURN n
+  desc: match without index - uses AllNodeScan + Filter
+  tasks:
+    - plan
+
+# Setup index via DDL (state persists for subsequent tests)
+- sql: |
+    CREATE CONSTRAINT person_email_unique FOR (p:Person) REQUIRE p.email IS UNIQUE
+  desc: create unique constraint
+  tasks:
+    - ddl
+
+# Now test with index - should use NodeIndexSeek
+- sql: |
+    MATCH (p:Person {email: 'alice@example.com'}) RETURN p
+  desc: match with index - uses NodeIndexSeek
+  tasks:
+    - plan
+
+# Multiple filters with partial index coverage - NodeIndexSeek + Filter
+- sql: |
+    MATCH (p:Person {email: 'alice@example.com', name: 'Alice'}) RETURN p
+  desc: match with partial index coverage - NodeIndexSeek + Filter for remaining
+  tasks:
+    - plan

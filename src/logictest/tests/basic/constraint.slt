@@ -1,0 +1,119 @@
+# Test CREATE CONSTRAINT functionality
+
+# Create initial data
+query A
+CREATE (a:User{email: 'alice@example.com', name: 'Alice'})
+----
+{id: 1, labels: [User], props: {email: 'alice@example.com', name: 'Alice'}}
+
+query A
+CREATE (b:User{email: 'bob@example.com', name: 'Bob'})
+----
+{id: 2, labels: [User], props: {email: 'bob@example.com', name: 'Bob'}}
+
+# Create unique constraint on email
+statement ok
+CREATE CONSTRAINT user_email_unique FOR (u:User) REQUIRE u.email IS UNIQUE
+
+# Try to create a user with duplicate email - should fail
+statement error
+CREATE (c:User{email: 'alice@example.com', name: 'Charlie'})
+
+# Create a user with a new unique email - should succeed
+query A
+CREATE (d:User{email: 'david@example.com', name: 'David'})
+----
+{id: 3, labels: [User], props: {email: 'david@example.com', name: 'David'}}
+
+# Verify all users
+query A
+MATCH (u:User) RETURN u
+----
+{id: 1, labels: [User], props: {email: 'alice@example.com', name: 'Alice'}}
+{id: 2, labels: [User], props: {email: 'bob@example.com', name: 'Bob'}}
+{id: 3, labels: [User], props: {email: 'david@example.com', name: 'David'}}
+
+# Test IF NOT EXISTS - should not error even if constraint exists
+statement ok
+CREATE CONSTRAINT user_email_unique IF NOT EXISTS FOR (u:User) REQUIRE u.email IS UNIQUE
+
+# Test DROP CONSTRAINT
+statement ok
+DROP CONSTRAINT user_email_unique
+
+# After dropping constraint, we can create duplicate email
+query A
+CREATE (e:User{email: 'alice@example.com', name: 'Eve'})
+----
+{id: 4, labels: [User], props: {email: 'alice@example.com', name: 'Eve'}}
+
+# Test DROP CONSTRAINT IF EXISTS on non-existent constraint
+statement ok
+DROP CONSTRAINT non_existent_constraint IF EXISTS
+
+# Test NODE KEY constraint (composite unique)
+query A
+CREATE (p:Product{category: 'Electronics', sku: 'SKU001', name: 'Phone'})
+----
+{id: 5, labels: [Product], props: {category: 'Electronics', sku: 'SKU001', name: 'Phone'}}
+
+query A
+CREATE (p:Product{category: 'Electronics', sku: 'SKU002', name: 'Laptop'})
+----
+{id: 6, labels: [Product], props: {category: 'Electronics', sku: 'SKU002', name: 'Laptop'}}
+
+statement ok
+CREATE CONSTRAINT product_key FOR (p:Product) REQUIRE (p.category, p.sku) IS NODE KEY
+
+# Try to create product with duplicate composite key - should fail
+statement error
+CREATE (p:Product{category: 'Electronics', sku: 'SKU001', name: 'Tablet'})
+
+# Create product with different composite key - should succeed
+query A
+CREATE (p:Product{category: 'Clothing', sku: 'SKU001', name: 'Shirt'})
+----
+{id: 7, labels: [Product], props: {category: 'Clothing', sku: 'SKU001', name: 'Shirt'}}
+
+# NODE KEY requires all properties to be present - missing property should fail
+statement error
+CREATE (p:Product{category: 'Books', name: 'Novel'})
+
+# NODE KEY with all properties present - should succeed
+query A
+CREATE (p:Product{category: 'Books', sku: 'BOOK001', name: 'Novel'})
+----
+{id: 8, labels: [Product], props: {category: 'Books', sku: 'BOOK001', name: 'Novel'}}
+
+# Test UNIQUE allows missing property (contrast with NODE KEY)
+statement ok
+DROP CONSTRAINT product_key
+
+query A
+CREATE (t:Tag{name: 'test'})
+----
+{id: 9, labels: [Tag], props: {name: 'test'}}
+
+statement ok
+CREATE CONSTRAINT tag_code_unique FOR (t:Tag) REQUIRE t.code IS UNIQUE
+
+# UNIQUE allows missing property (this is the key difference from NODE KEY)
+query A
+CREATE (t:Tag{name: 'no_code_tag1'})
+----
+{id: 10, labels: [Tag], props: {name: 'no_code_tag1'}}
+
+# Multiple tags without the constrained property are allowed
+query A
+CREATE (t:Tag{name: 'no_code_tag2'})
+----
+{id: 11, labels: [Tag], props: {name: 'no_code_tag2'}}
+
+# But duplicate non-null values still fail
+query A
+CREATE (t:Tag{name: 'with_code', code: 'ABC'})
+----
+{id: 12, labels: [Tag], props: {name: 'with_code', code: 'ABC'}}
+
+statement error
+CREATE (t:Tag{name: 'dup_code', code: 'ABC'})
