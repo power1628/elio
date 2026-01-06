@@ -17,6 +17,7 @@ use mojito_exec::task::{ExecContext, create_task};
 use mojito_parser::ast;
 use tokio::sync::mpsc::UnboundedReceiver;
 
+use crate::ddl;
 use crate::error::Error;
 use crate::result::ResultHandle;
 
@@ -64,6 +65,8 @@ impl Session {
         let ast = parse_statement(&query)?;
         match ast {
             ast::Statement::Query(regular_query) => self.handle_query(&regular_query).await,
+            ast::Statement::CreateConstraint(constraint) => self.handle_create_constraint(&constraint).await,
+            ast::Statement::DropConstraint(constraint) => self.handle_drop_constraint(&constraint).await,
         }
     }
 
@@ -74,6 +77,22 @@ impl Session {
         let handle = create_task(&self.exec_ctx, query_id, plan).await?;
         let bridge = TaskHandleBridge::new(handle.columns.clone(), handle.recv);
         Ok(Box::pin(bridge))
+    }
+
+    async fn handle_create_constraint(
+        self: &Arc<Self>,
+        constraint: &ast::CreateConstraint,
+    ) -> Result<Pin<Box<dyn ResultHandle>>, Error> {
+        ddl::create_constraint(self.exec_ctx.store(), constraint)?;
+        Ok(Box::pin(EmptyResultHandle::new(vec!["result".to_string()])))
+    }
+
+    async fn handle_drop_constraint(
+        self: &Arc<Self>,
+        constraint: &ast::DropConstraint,
+    ) -> Result<Pin<Box<dyn ResultHandle>>, Error> {
+        ddl::drop_constraint(self.exec_ctx.store(), constraint)?;
+        Ok(Box::pin(EmptyResultHandle::new(vec!["result".to_string()])))
     }
 }
 
@@ -117,6 +136,42 @@ impl Stream for TaskHandleBridge {
 }
 
 impl ResultHandle for TaskHandleBridge {
+    fn columns(&self) -> &[String] {
+        &self.columns
+    }
+}
+
+/// Empty result handle for DDL statements
+pub struct EmptyResultHandle {
+    columns: Vec<String>,
+    done: bool,
+}
+
+impl EmptyResultHandle {
+    pub fn new(columns: Vec<String>) -> Self {
+        Self { columns, done: false }
+    }
+}
+
+impl Stream for EmptyResultHandle {
+    type Item = Result<Row, Error>;
+
+    fn poll_next(
+        mut self: std::pin::Pin<&mut Self>,
+        _cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Option<Self::Item>> {
+        if self.done {
+            std::task::Poll::Ready(None)
+        } else {
+            self.done = true;
+            // Return a single row with "OK" message
+            let row = vec![Some(ScalarValue::String("Constraint created/dropped".into()))];
+            std::task::Poll::Ready(Some(Ok(row)))
+        }
+    }
+}
+
+impl ResultHandle for EmptyResultHandle {
     fn columns(&self) -> &[String] {
         &self.columns
     }

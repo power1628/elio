@@ -21,6 +21,13 @@ pub enum ExecError {
         actual: PhysicalType,
         trace: Backtrace,
     },
+    #[error("constraint violation: {constraint} - {reason}")]
+    ConstraintViolation {
+        constraint: String,
+        reason: String,
+        #[backtrace]
+        trace: Backtrace,
+    },
 }
 
 impl ExecError {

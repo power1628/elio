@@ -11,6 +11,7 @@ use crate::error::ExecError;
 use crate::task::TaskExecContext;
 
 pub mod all_node_scan;
+pub mod constraint;
 pub mod create_node;
 pub mod create_rel;
 pub mod expand;

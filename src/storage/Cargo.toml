@@ -14,6 +14,7 @@ thiserror = { workspace = true }
 tracing = { workspace = true }
 # local
 bytemuck = { version = "1.24.0", features = ["derive"] }
+parking_lot = "0.12"
 rocksdb = { version = "0.24.0", features = ["multi-threaded-cf"] }
 
 [dev-dependencies]
