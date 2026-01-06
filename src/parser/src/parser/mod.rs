@@ -14,9 +14,9 @@ peg::parser! {
     /// Statement
     /// ---------------------
     pub rule statement() -> Statement
-        = _? s:create_constraint_stmt() _? { s }
-        / _? s:drop_constraint_stmt() _? { s }
-        / _? s:regular_query() _? { s }
+        = _? s:create_constraint_stmt() _? (";" _?)? { s }
+        / _? s:drop_constraint_stmt() _? (";" _?)? { s }
+        / _? s:regular_query() _? (";" _?)? { s }
 
     /// CREATE CONSTRAINT constraint_name [IF NOT EXISTS]
     /// FOR (var:Label) REQUIRE prop IS UNIQUE

@@ -182,7 +182,7 @@ mod tests {
 
     #[test]
     fn test_encode_float() {
-        let value = ScalarValue::Float(F64::from(3.14));
+        let value = ScalarValue::Float(F64::from(3.333));
         let encoded = IndexKeyCodec::encode_single(&value.as_scalar_ref());
         assert_eq!(encoded[0], FLOAT_TAG);
         assert_eq!(encoded.len(), 9); // 1 tag + 8 bytes
