@@ -8,6 +8,7 @@ use crate::binder::BindContext;
 use crate::binder::builder::IrSingleQueryBuilder;
 use crate::binder::create::bind_create;
 use crate::binder::expr::bind_where;
+use crate::binder::load::bind_load;
 use crate::binder::match_::bind_match;
 use crate::binder::project_body::{bind_order_by, bind_pagination, bind_return_items};
 use crate::binder::scope::Scope;
@@ -79,7 +80,7 @@ fn bind_single_query(bctx: &BindContext, query: &ast::SingleQuery) -> Result<(Ir
     let mut in_scope = Scope::empty();
     for clause in clauses.iter() {
         in_scope = match clause {
-            ast::Clause::Load(_) => todo!("not implemented"),
+            ast::Clause::Load(load_clause) => bind_load(bctx, &mut builder, in_scope, load_clause)?,
             ast::Clause::Create(create_clause) => bind_create(bctx, &mut builder, in_scope, create_clause)?,
             ast::Clause::Match(match_clause) => bind_match(bctx, &mut builder, in_scope, match_clause)?,
             ast::Clause::With(with_clause) => bind_with(bctx, &mut builder, in_scope, with_clause)?,

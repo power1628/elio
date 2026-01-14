@@ -136,6 +136,39 @@ impl SemanticError {
     }
 }
 
+// LOAD clause semantics
+impl SemanticError {
+    pub fn load_must_be_first(ctx: &str) -> Self {
+        let msg = format!("LOAD clause must be the first clause in a query: {}", ctx);
+        Self::new(msg)
+    }
+
+    pub fn variable_already_defined(name: &str, ctx: &str) -> Self {
+        let msg = format!("Variable '{}' is already defined in {}", name, ctx);
+        Self::new(msg)
+    }
+
+    pub fn unsupported_load_format(format: &str, ctx: &str) -> Self {
+        let msg = format!("Unsupported LOAD format '{}' in {}", format, ctx);
+        Self::new(msg)
+    }
+
+    pub fn invalid_option_type(option: &str, expected: &str, ctx: &str) -> Self {
+        let msg = format!("Option '{}' must be a {} in {}", option, expected, ctx);
+        Self::new(msg)
+    }
+
+    pub fn invalid_option_value(option: &str, expected: &str, ctx: &str) -> Self {
+        let msg = format!("Option '{}' must be a {} in {}", option, expected, ctx);
+        Self::new(msg)
+    }
+
+    pub fn unknown_load_option(option: &str, ctx: &str) -> Self {
+        let msg = format!("Unknown LOAD option '{}' in {}", option, ctx);
+        Self::new(msg)
+    }
+}
+
 #[macro_export]
 macro_rules! not_supported {
     ($msg:expr) => {
