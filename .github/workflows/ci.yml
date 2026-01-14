@@ -20,6 +20,12 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+  RUSTFLAGS: "-C debuginfo=1"
+  CMAKE_BUILD_PARALLEL_LEVEL: "2"
+  NINJAFLAGS: "-j2"
+  RUST_BACKTRACE: "full"
+
 
 jobs:
   test:

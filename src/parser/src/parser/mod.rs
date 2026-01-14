@@ -199,7 +199,10 @@ peg::parser! {
     /// ---------------------
 
     pub rule clause() -> Clause
-        = create:create_clause() {
+        = load:load_clause() {
+            Clause::Load(load)
+        }
+        / create:create_clause() {
             Clause::Create(create)
         }
         / match_:match_clause() {
@@ -269,6 +272,33 @@ peg::parser! {
                 variable: alias.to_string(),
             }
         }
+
+    /// LOAD <format> FROM <source> OPTIONS {key: value, ...} AS <alias>
+    rule load_clause() -> LoadClause
+        = LOAD() _ fmt:ident() _ FROM() _ src:string_literal()
+          opts:(_ OPTIONS() _ "{" _? opts:load_options() _? "}" { opts })?
+          _ AS() _ var:ident() {
+            LoadClause {
+                format: fmt.to_string(),
+                source: src.to_string(),
+                options: opts.unwrap_or_default(),
+                variable: var.to_string(),
+            }
+        }
+
+    rule load_options() -> Vec<LoadOption>
+        = opts:(load_option() ** comma_separator()) { opts }
+
+    rule load_option() -> LoadOption
+        = key:ident() _? ":" _? val:literal_value() {
+            LoadOption { key: key.to_string(), value: val }
+        }
+
+    rule literal_value() -> Literal
+        = b:(TRUE() / FALSE()) { Literal::Boolean(b == "TRUE") }
+        / f:float_literal() { Literal::Float(f.to_string()) }
+        / i:integer_literal() { Literal::Integer(i.to_string()) }
+        / s:string_literal() { Literal::String(s.to_string()) }
 
     /// ---------------------
     /// Pattern
@@ -803,6 +833,10 @@ peg::parser! {
         = ['r' | 'R'] ['e' | 'E'] ['t' | 'T'] ['u' | 'U'] ['r' | 'R'] ['n' | 'N'] { "RETURN" }
     rule UNWIND() -> &'static str
         = ['u' | 'U'] ['n' | 'N'] ['w' | 'W'] ['i' | 'I'] ['n' | 'N'] ['d' | 'D'] { "UNWIND" }
+    rule LOAD() -> &'static str
+        = ['l' | 'L'] ['o' | 'O'] ['a' | 'A'] ['d' | 'D'] { "LOAD" }
+    rule OPTIONS() -> &'static str
+        = ['o' | 'O'] ['p' | 'P'] ['t' | 'T'] ['i' | 'I'] ['o' | 'O'] ['n' | 'N'] ['s' | 'S'] { "OPTIONS" }
 
     rule INTEGER() -> &'static str
         = ['i' | 'I'] ['n' | 'N'] ['t' | 'T'] ['e' | 'E'] ['g' | 'G'] ['e' | 'E'] ['r' | 'R'] { "INTEGER" }

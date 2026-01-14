@@ -6,8 +6,8 @@ use clap::Parser;
 use elio_core::db_env::{DbConfig, DbEnv};
 use elio_core::session::Session;
 use futures::stream::StreamExt;
-use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
+use rustyline::error::ReadlineError;
 use tabled::settings::Style;
 
 #[derive(Debug, Parser)]
@@ -73,14 +73,7 @@ async fn execute_query(sess: &Arc<Session>, query: &str) {
 fn print_table(columns: &[String], rows: &[Vec<String>]) {
     if rows.is_empty() {
         // Print header only
-        println!(
-            "{}",
-            columns
-                .iter()
-                .map(|c| c.as_str())
-                .collect::<Vec<_>>()
-                .join(" | ")
-        );
+        println!("{}", columns.iter().map(|c| c.as_str()).collect::<Vec<_>>().join(" | "));
         return;
     }
 

@@ -1,5 +1,8 @@
+use std::sync::Arc;
+
 use elio_common::schema::Variable;
 use elio_common::variable::VariableName;
+use enum_as_inner::EnumAsInner;
 use indexmap::IndexMap;
 use pretty_xmlish::{Pretty, XmlNode};
 
@@ -11,6 +14,7 @@ use crate::pretty_utils::{pretty_order_items, pretty_project_items};
 pub enum QueryProjection {
     Unwind(Unwind),
     Project(Projection),
+    Load(Load),
 }
 
 impl QueryProjection {
@@ -18,6 +22,7 @@ impl QueryProjection {
         match self {
             QueryProjection::Unwind(u) => u.xmlnode(),
             QueryProjection::Project(p) => p.xmlnode(),
+            QueryProjection::Load(l) => l.xmlnode(),
         }
     }
 }
@@ -27,6 +32,7 @@ impl QueryProjection {
         match self {
             QueryProjection::Unwind(_) => unreachable!(),
             QueryProjection::Project(q) => q.set_order_by(order_by),
+            QueryProjection::Load(_l) => unreachable!(),
         }
     }
 
@@ -34,6 +40,7 @@ impl QueryProjection {
         match self {
             QueryProjection::Unwind(_) => unreachable!(),
             QueryProjection::Project(q) => q.set_pagination(pagination),
+            QueryProjection::Load(_) => unreachable!(),
         }
     }
 
@@ -41,6 +48,7 @@ impl QueryProjection {
         match self {
             QueryProjection::Unwind(_) => unreachable!(),
             QueryProjection::Project(q) => q.set_filter(filter),
+            QueryProjection::Load(_) => unreachable!(),
         }
     }
 }
@@ -222,5 +230,59 @@ fn add_common_projection_fields<'a>(
     }
     if !filter.is_true() {
         fields.push(("filter", Pretty::display(&filter.pretty())));
+    }
+}
+
+// Load <format> FROM <source> OPTIONS {key: value, ...} AS <variable>
+pub struct Load {
+    pub(crate) variable: VariableName,
+    pub(crate) source_url: Arc<str>,
+    pub(crate) format: LoadFormat,
+}
+
+impl Load {
+    pub fn xmlnode(&self) -> XmlNode<'_> {
+        XmlNode::simple_record(
+            "Load",
+            vec![
+                ("variable", Pretty::display(&self.variable)),
+                ("source_url", Pretty::from(self.source_url.as_ref())),
+                ("format", Pretty::Record(self.format.xmlnode())),
+            ],
+            vec![],
+        )
+    }
+}
+
+#[derive(EnumAsInner, Debug, Clone)]
+pub enum LoadFormat {
+    Csv(CsvLoadFormat),
+    // other kind of formats...
+}
+
+impl LoadFormat {
+    pub fn xmlnode(&self) -> XmlNode<'_> {
+        match self {
+            LoadFormat::Csv(f) => f.xmlnode(),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct CsvLoadFormat {
+    pub(crate) header: bool,
+    pub(crate) delimiter: char,
+}
+
+impl CsvLoadFormat {
+    pub fn xmlnode(&self) -> XmlNode<'_> {
+        XmlNode::simple_record(
+            "CsvLoadFormat",
+            vec![
+                ("header", Pretty::display(&self.header)),
+                ("delimiter", Pretty::display(&self.delimiter)),
+            ],
+            vec![],
+        )
     }
 }

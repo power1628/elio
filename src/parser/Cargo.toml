@@ -5,6 +5,7 @@ edition = { workspace = true }
 
 [dependencies]
 derive_more = { workspace = true, features = ["display"] }
+enum-as-inner = { workspace = true }
 peg = "0.8.5"
 # workspace
 either = { workspace = true }

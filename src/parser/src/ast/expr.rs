@@ -1,4 +1,7 @@
+#![allow(clippy::double_parens)] // this is because EnumAsInner will generate extra parens
+
 use derive_more::Display;
+use enum_as_inner::EnumAsInner;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Expr {
@@ -187,7 +190,7 @@ impl std::fmt::Display for Expr {
     }
 }
 
-#[derive(Debug, Clone, Display, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Display, PartialEq, Eq, Hash, EnumAsInner)]
 pub enum Literal {
     #[display("{}", if *_0 { "TRUE" } else { "FALSE" })]
     Boolean(bool),

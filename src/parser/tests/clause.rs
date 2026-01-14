@@ -58,3 +58,28 @@ fn test_return() {
 fn test_return_item() {
     assert_snapshot!(return_item!("n"), @"n");
 }
+
+#[test]
+fn test_load() {
+    // Basic load
+    assert_snapshot!(clause!("LOAD csv FROM '/path/to/file.csv' AS row"), 
+        @"LOAD csv FROM '/path/to/file.csv' AS row");
+
+    // Load with different formats
+    assert_snapshot!(clause!("LOAD parquet FROM '/data/users.parquet' AS r"), 
+        @"LOAD parquet FROM '/data/users.parquet' AS r");
+    assert_snapshot!(clause!("LOAD json FROM '/data/events.json' AS event"), 
+        @"LOAD json FROM '/data/events.json' AS event");
+
+    // Load with OPTIONS
+    assert_snapshot!(clause!("LOAD csv FROM '/path/to/file.csv' OPTIONS {header: true} AS row"), 
+        @"LOAD csv FROM '/path/to/file.csv' OPTIONS {header: TRUE} AS row");
+
+    // Load with multiple options
+    assert_snapshot!(clause!("LOAD csv FROM '/data/file.csv' OPTIONS {header: true, delimiter: ','} AS row"), 
+        @"LOAD csv FROM '/data/file.csv' OPTIONS {header: TRUE, delimiter: ','} AS row");
+
+    // Load with string, integer, and boolean options
+    assert_snapshot!(clause!("LOAD csv FROM '/data/file.csv' OPTIONS {header: false, skip: 1, nullif: 'NA'} AS row"), 
+        @"LOAD csv FROM '/data/file.csv' OPTIONS {header: FALSE, skip: 1, nullif: 'NA'} AS row");
+}

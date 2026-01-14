@@ -23,6 +23,11 @@ pub fn plan_query_projection(
         QueryProjection::Project(Projection::Regular(reg)) => plan_project(ctx, root, reg),
         QueryProjection::Project(Projection::Aggregate(agg)) => plan_aggregate(ctx, root, agg),
         QueryProjection::Project(Projection::Distinct(dist)) => plan_distinct(ctx, root, dist),
+        QueryProjection::Load(_load) => {
+            // Load is handled specially in plan_head, not through plan_query_projection
+            // This branch should not be reached
+            Err(PlanError::not_supported("Load should be planned separately"))
+        }
     }
 }
 

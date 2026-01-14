@@ -1,0 +1,7 @@
+- sql: |
+    LOAD CSV FROM 'https://example.com/data.csv' AS row 
+    CREATE (:Person {name: row.name, age: row.age})
+  desc: Load a CSV file and create nodes
+  tasks:
+    - bind
+    - plan
