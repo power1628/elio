@@ -32,7 +32,7 @@ impl QueryProjection {
         match self {
             QueryProjection::Unwind(_) => unreachable!(),
             QueryProjection::Project(q) => q.set_order_by(order_by),
-            QueryProjection::Load(l) => unreachable!(),
+            QueryProjection::Load(_l) => unreachable!(),
         }
     }
 
