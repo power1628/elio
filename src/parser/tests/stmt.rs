@@ -17,6 +17,9 @@ fn test_query() {
     assert_snapshot!(stmt!("MATCH (a)-[]-(b) WITH a.x + b.x AS c RETURN c"), @"MATCH (a)-[]-(b) WITH (a.x) + (b.x) AS c RETURN c");
     assert_snapshot!(stmt!("MATCH (a)-[]-(b) WITH a.x + b.x AS c RETURN c ORDER BY c"), @"MATCH (a)-[]-(b) WITH (a.x) + (b.x) AS c RETURN c ORDER BY c Asc");
     assert_snapshot!(stmt!("MATCH (a)-[]-(b) WITH a.x + b.x AS c WHERE c.y > 100 RETURN c ORDER BY c DESC SKIP 1 LIMIT 1"), @"MATCH (a)-[]-(b) WITH (a.x) + (b.x) AS c WHERE (c.y) > (100) RETURN c ORDER BY c Desc SKIP 1 LIMIT 1");
+    // test new line
+    assert_snapshot!(stmt!(r#"MATCH (n:Person) 
+    RETURN n.name"#), @"MATCH (n:Person) RETURN n.name");
 }
 
 #[test]
@@ -64,5 +67,24 @@ fn test_drop_constraint() {
     assert_snapshot!(
         stmt!("DROP CONSTRAINT person_name_unique IF EXISTS"),
         @"DROP CONSTRAINT person_name_unique IF EXISTS"
+    );
+}
+
+#[test]
+fn test_load() {
+    assert_snapshot!(
+        stmt!(r#"LOAD csv FROM 'https://example.com/data.csv' AS row
+        CREATE (:Person {name: row.name, age: row.age})"#),
+        @"LOAD csv FROM 'https://example.com/data.csv' AS row CREATE (:Person{name: row.name, age: row.age})"
+    );
+    assert_snapshot!(
+        stmt!("LOAD csv FROM 'https://example.com/data.csv' AS row
+        CREATE (:Person {name: row.name, age: row.age})"),
+        @"LOAD csv FROM 'https://example.com/data.csv' AS row CREATE (:Person{name: row.name, age: row.age})"
+    );
+    assert_snapshot!(
+        stmt!("LOAD csv FROM 'https://example.com/data.csv' AS row
+        CREATE (:Person {name: row.name, age: row.age})"),
+        @"LOAD csv FROM 'https://example.com/data.csv' AS row CREATE (:Person{name: row.name, age: row.age})"
     );
 }

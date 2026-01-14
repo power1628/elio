@@ -82,6 +82,7 @@ fn build_node(ctx: &mut ExecutorBuildContext, node: &PlanExpr) -> Result<BoxedEx
         PlanExpr::ProduceResult(produce_result) => build_produce_result(ctx, produce_result, inputs),
         PlanExpr::CreateNode(create_node) => build_create_node(ctx, create_node, inputs),
         PlanExpr::CreateRel(create_rel) => build_create_rel(ctx, create_rel, inputs),
+        PlanExpr::Load(_) => todo!("build load"),
         PlanExpr::Project(project) => build_project(ctx, project, inputs),
         PlanExpr::Sort(_sort) => todo!(),
         PlanExpr::Filter(filter) => build_filter(ctx, filter, inputs),

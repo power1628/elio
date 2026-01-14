@@ -254,7 +254,7 @@ impl Load {
     }
 }
 
-#[derive(EnumAsInner)]
+#[derive(EnumAsInner, Debug, Clone)]
 pub enum LoadFormat {
     Csv(CsvLoadFormat),
     // other kind of formats...
@@ -268,6 +268,7 @@ impl LoadFormat {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct CsvLoadFormat {
     pub(crate) header: bool,
     pub(crate) delimiter: char,

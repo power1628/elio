@@ -51,6 +51,9 @@ pub(crate) fn bind_load(
     let item = ScopeItem::new_variable(var_name, Some(&load.variable), DataType::Any);
     out_scope.add_item(item);
 
+    // create a new part
+    builder.new_part();
+
     Ok(out_scope)
 }
 

@@ -19,6 +19,7 @@ pub mod empty;
 pub mod expand;
 pub mod filter;
 pub mod get_prop;
+pub mod load;
 pub mod node_index_seek;
 pub mod pagination;
 pub mod plan_base;
@@ -36,6 +37,7 @@ pub use empty::*;
 pub use expand::*;
 pub use filter::*;
 pub use get_prop::*;
+pub use load::*;
 pub use node_index_seek::*;
 pub use pagination::*;
 pub use produce_result::*;
@@ -67,6 +69,7 @@ pub enum PlanExpr {
     CreateNode(CreateNode),
     CreateRel(CreateRel),
     // relational
+    Load(Load),
     Project(Project),
     Sort(Sort),
     Filter(Filter),
@@ -146,6 +149,7 @@ impl_plan_node_common!(Argument, ArgumentInner);
 impl_plan_node_common!(Unit, UnitInner);
 impl_plan_node_common!(CreateNode, CreateNodeInner);
 impl_plan_node_common!(CreateRel, CreateRelInner);
+impl_plan_node_common!(Load, LoadInner);
 impl_plan_node_common!(Project, ProjectInner);
 impl_plan_node_common!(Sort, SortInner);
 impl_plan_node_common!(Filter, FilterInner);
@@ -200,6 +204,7 @@ impl_plan_expr_dispatch!(
     Unit,
     CreateNode,
     CreateRel,
+    Load,
     Project,
     Sort,
     Filter,
