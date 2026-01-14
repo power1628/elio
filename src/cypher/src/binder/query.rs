@@ -79,6 +79,7 @@ fn bind_single_query(bctx: &BindContext, query: &ast::SingleQuery) -> Result<(Ir
     let mut in_scope = Scope::empty();
     for clause in clauses.iter() {
         in_scope = match clause {
+            ast::Clause::Load(_) => todo!("not implemented"),
             ast::Clause::Create(create_clause) => bind_create(bctx, &mut builder, in_scope, create_clause)?,
             ast::Clause::Match(match_clause) => bind_match(bctx, &mut builder, in_scope, match_clause)?,
             ast::Clause::With(with_clause) => bind_with(bctx, &mut builder, in_scope, with_clause)?,

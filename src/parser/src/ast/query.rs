@@ -2,7 +2,7 @@ use derive_more::Display;
 use itertools::{self, Itertools};
 
 use crate::ast::pattern::UpdatePattern;
-use crate::ast::{Expr, MatchPattern, OrderBy, ReturnItems};
+use crate::ast::{Expr, Literal, MatchPattern, OrderBy, ReturnItems};
 
 #[derive(Debug)]
 pub struct RegularQuery {
@@ -49,6 +49,8 @@ pub enum Clause {
     Return(ReturnClause),
     #[display("{}", _0)]
     Unwind(UnwindClause),
+    #[display("{}", _0)]
+    Load(LoadClause),
 }
 
 #[derive(Debug, Display)]
@@ -156,4 +158,38 @@ impl std::fmt::Display for ReturnClause {
 pub struct UnwindClause {
     pub expr: Box<Expr>,
     pub variable: String,
+}
+
+/// LOAD <format> FROM <source> OPTIONS {key: value, ...} AS <variable>
+#[derive(Debug)]
+pub struct LoadClause {
+    pub format: String,
+    pub source: String,
+    pub options: Vec<LoadOption>,
+    pub variable: String,
+}
+
+impl std::fmt::Display for LoadClause {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "LOAD {} FROM '{}'", self.format, self.source)?;
+        if !self.options.is_empty() {
+            write!(f, " OPTIONS {{")?;
+            let opts = self.options.iter().map(|o| o.to_string()).join(", ");
+            write!(f, "{}}}", opts)?;
+        }
+        write!(f, " AS {}", self.variable)
+    }
+}
+
+/// Key-value option for LOAD clause
+#[derive(Debug)]
+pub struct LoadOption {
+    pub key: String,
+    pub value: Literal,
+}
+
+impl std::fmt::Display for LoadOption {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}: {}", self.key, self.value)
+    }
 }
