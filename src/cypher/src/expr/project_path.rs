@@ -1,5 +1,6 @@
 use elio_common::SemanticDirection;
 use elio_common::data_type::DataType;
+use elio_common::schema::Variable;
 use elio_common::variable::VariableName;
 use indexmap::IndexSet;
 
@@ -42,19 +43,19 @@ pub enum PathStep {
 }
 
 impl PathStep {
-    pub fn used_variable(&self) -> IndexSet<VariableName> {
+    pub fn used_variable(&self) -> IndexSet<Variable> {
         let mut set = IndexSet::new();
         match self {
             Self::NodeStep(var) => {
-                set.insert(var.clone());
+                set.insert(Variable::new(var, &DataType::VirtualNode));
             }
             Self::SingleRelStep { rel, other, .. } => {
-                set.insert(rel.clone());
-                set.insert(other.clone());
+                set.insert(Variable::new(rel, &DataType::VirtualRel));
+                set.insert(Variable::new(other, &DataType::VirtualNode));
             }
             Self::MutliRelStep { rel, other, .. } => {
-                set.insert(rel.clone());
-                set.insert(other.clone());
+                set.insert(Variable::new(rel, &DataType::new_list(DataType::Rel)));
+                set.insert(Variable::new(other, &DataType::VirtualNode));
             }
         }
         set
@@ -86,7 +87,7 @@ impl ExprNode for ProjectPath {
 }
 
 impl ProjectPath {
-    pub fn used_variable(&self) -> IndexSet<VariableName> {
+    pub fn used_variable(&self) -> IndexSet<Variable> {
         let mut set = IndexSet::new();
         for step in &self.steps {
             set.extend(step.used_variable());

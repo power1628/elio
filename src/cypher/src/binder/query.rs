@@ -135,6 +135,8 @@ fn bind_with(
         builder.tail_mut().unwrap().update_projection(|p| p.set_filter(filter));
     }
     scope.remove_anonymous();
+    // start a new part
+    builder.new_tail(scope.items.iter().map(|item| item.as_variable()).collect());
     Ok(scope)
 }
 

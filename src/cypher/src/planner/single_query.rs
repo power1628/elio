@@ -79,6 +79,8 @@ fn plan_tail_part(
 ) -> Result<Box<PlanExpr>, PlanError> {
     // plan query graph with lhs
 
+    // plan apply
+
     // plan projection
     todo!()
 }

@@ -4,11 +4,11 @@ use indexmap::IndexSet;
 pub use super::*;
 
 impl Expr {
-    pub fn collect_variables(&self) -> IndexSet<VariableName> {
+    pub fn collect_variables(&self) -> IndexSet<Variable> {
         let mut vars = IndexSet::new();
         match self {
             Expr::VariableRef(variable_ref) => {
-                vars.insert(variable_ref.name.clone());
+                vars.insert(variable_ref.as_variable());
             }
             Expr::PropertyAccess(property_access) => vars.extend(property_access.expr.collect_variables()),
             Expr::Constant(_) => {}
@@ -34,6 +34,10 @@ impl Expr {
     }
 
     pub fn depend_only_on(&self, vars: &IndexSet<VariableName>) -> bool {
-        self.collect_variables().is_subset(vars)
+        self.collect_variables()
+            .into_iter()
+            .map(|x| x.name.clone())
+            .collect::<IndexSet<VariableName>>()
+            .is_subset(vars)
     }
 }

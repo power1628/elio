@@ -33,7 +33,7 @@ pub struct QueryGraph {
     // TODO(pgao): just use variable name?
     // when the datatype is needed?
     imported: IndexSet<Variable>,
-    // outer referenced variables,
+    // outer referenced variables, this is used in the context of subquery
     outer: IndexSet<VariableName>,
     // path projection
 }
@@ -161,6 +161,30 @@ impl QueryGraph {
         vars
     }
 
+    pub fn used_variables(&self) -> IndexSet<Variable> {
+        let mut vars = IndexSet::new();
+        // match pattern
+        for var in self.nodes.iter() {
+            vars.insert(Variable::new(var, &DataType::Node));
+        }
+        for rel in self.rels.iter() {
+            vars.insert(Variable::new(&rel.variable, &DataType::Rel));
+        }
+        // optional match pattern
+        for qg in self.optional_matches.iter() {
+            vars.extend(qg.used_variables());
+        }
+        // mutating pattern
+        for mp in self.mutating_patterns.iter() {
+            vars.extend(mp.used_variables());
+        }
+        // filter
+        for e in self.filter.iter() {
+            vars.extend(e.collect_variables());
+        }
+        vars
+    }
+
     pub fn contains_node_connection(&self, nc: &ExhaustiveNodeConnection) -> bool {
         match nc {
             ExhaustiveNodeConnection::RelPattern(rel_pattern) => self.rels.contains(rel_pattern),
@@ -251,7 +275,8 @@ impl QueryGraph {
                 // in either case, we should add argument to qg
                 if qg.imported.is_empty() && qg.match_pattern_variables().intersection(&imported).next().is_some()
                     || self.filter.iter().any(|e| {
-                        let used_vars = e.collect_variables();
+                        let used_vars: IndexSet<VariableName> =
+                            e.collect_variables().into_iter().map(|x| x.name.clone()).collect();
                         used_vars.contains(&nb) && used_vars.intersection(&imported).next().is_some()
                     })
                 {

@@ -5,7 +5,7 @@ CREATE (:Person {name: row.name, age: row.age})
 /*
 RootIR { names: [row] }
 └─IrSingleQueryPart
-  ├─QueryGraph
+  ├─QueryGraph { imported: [row@0] }
   │ └─mutating_pattern
   │   └─CreatePattern { nodes: [(anon@1):Person create_map{name: row@0.name, age: row@0.age}], rels: [] }
   └─IrSingleQueryPart
