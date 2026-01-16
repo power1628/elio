@@ -3,8 +3,10 @@
   desc: with clause with match clause
   tasks: 
     - bind
+    - plan
 - sql: |
     MATCH (a) WITH a, a.age + 1 AS b RETURN a,b
   desc: with clause with expression
   tasks: 
     - bind
+    - plan

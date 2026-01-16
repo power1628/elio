@@ -217,14 +217,18 @@ impl QueryGraph {
             // argument only filter and other filters may be solved by qg
             let arg = self.imported.first().unwrap();
             let mut qg = self.component_for_node(&arg.name, &mut visited);
-            qg.add_imported_set(&self.imported);
-            qg.add_filter(argument_only_filter);
-            let qg_vars = qg.match_pattern_variables();
-            let (solved, remaining): (Vec<_>, Vec<_>) =
-                other_filter.into_iter().partition(|e| e.depend_only_on(&qg_vars));
-            other_filter = FilterExprs::from_iter(remaining);
-            qg.add_filter(FilterExprs::from_iter(solved));
-            components.push(qg);
+            if !qg.rels.is_empty() {
+                // if there's no relaltionships, which means this is an empty qg, we do nothing
+                // since the planner will handle the case.
+                qg.add_imported_set(&self.imported);
+                qg.add_filter(argument_only_filter);
+                let qg_vars = qg.match_pattern_variables();
+                let (solved, remaining): (Vec<_>, Vec<_>) =
+                    other_filter.into_iter().partition(|e| e.depend_only_on(&qg_vars));
+                other_filter = FilterExprs::from_iter(remaining);
+                qg.add_filter(FilterExprs::from_iter(solved));
+                components.push(qg);
+            }
         }
 
         // solve rest
