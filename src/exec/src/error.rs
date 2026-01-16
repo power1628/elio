@@ -21,6 +21,8 @@ pub enum ExecError {
         actual: PhysicalType,
         trace: Backtrace,
     },
+    #[error("channel error: {0}")]
+    ChannelError(String, #[backtrace] Backtrace),
     #[error("constraint violation: {constraint} - {reason}")]
     ConstraintViolation {
         constraint: String,
@@ -28,6 +30,8 @@ pub enum ExecError {
         #[backtrace]
         trace: Backtrace,
     },
+    #[error("executor {0} is not resettable")]
+    NotResettable(&'static str),
 }
 
 impl ExecError {

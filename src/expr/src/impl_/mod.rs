@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use bitvec::vec::BitVec;
 use elio_common::array::chunk::DataChunk;
 use elio_common::array::{ArrayRef, NodeArray, VirtualNodeArray};
@@ -27,12 +29,12 @@ pub trait EvalCtx {
 pub trait Expression: Send + Sync + 'static + std::fmt::Debug {
     fn typ(&self) -> &DataType;
     fn eval_batch(&self, chunk: &DataChunk, ctx: &dyn EvalCtx) -> Result<ArrayRef, EvalError>;
-    fn boxed(self) -> BoxedExpression
+    fn into_shared(self) -> SharedExpression
     where
         Self: Sized,
     {
-        Box::new(self)
+        Arc::new(self)
     }
 }
 
-pub type BoxedExpression = Box<dyn Expression>;
+pub type SharedExpression = Arc<dyn Expression>;

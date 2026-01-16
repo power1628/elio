@@ -97,4 +97,3 @@ query A
 MATCH (p:Person {email: 'alice@example.com'}) RETURN p
 ----
 {id: 1, labels: [Person], props: {email: 'alice@example.com', name: 'Alice'}}
-

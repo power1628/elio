@@ -6,18 +6,18 @@ use elio_common::array::{ArrayRef, PhysicalType, StructArray};
 use elio_common::data_type::DataType;
 
 use crate::error::EvalError;
-use crate::impl_::{BoxedExpression, EvalCtx, Expression};
+use crate::impl_::{EvalCtx, Expression, SharedExpression};
 
 #[derive(Debug)]
 pub struct CreateStructExpr {
     // struct keys and values
-    pub fields: Vec<(Arc<str>, BoxedExpression)>,
+    pub fields: Vec<(Arc<str>, SharedExpression)>,
     pub typ: DataType,
     pub physical_type: PhysicalType,
 }
 
 impl CreateStructExpr {
-    pub fn new(fields: Vec<(Arc<str>, BoxedExpression)>, typ: DataType) -> Self {
+    pub fn new(fields: Vec<(Arc<str>, SharedExpression)>, typ: DataType) -> Self {
         let physical_type = typ.physical_type();
         Self {
             fields,

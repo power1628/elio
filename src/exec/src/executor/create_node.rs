@@ -1,7 +1,7 @@
 use async_stream::try_stream;
 use elio_common::IrToken;
 use elio_common::schema::Variable;
-use elio_expr::impl_::BoxedExpression;
+use elio_expr::impl_::SharedExpression;
 use futures::StreamExt;
 
 use super::constraint::{check_unique_constraints, fetch_constraints_for_labels, update_unique_indexes};
@@ -11,41 +11,30 @@ use super::*;
 // output: Schema + Node
 #[derive(Debug)]
 pub struct CreateNodeExectuor {
-    pub input: BoxedExecutor,
+    pub input: SharedExecutor,
     pub schema: Arc<Schema>,
     pub items: Vec<CreateNodeItem>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CreateNodeItem {
     pub labels: Vec<IrToken>,
     // the return type should be struct
-    pub properties: BoxedExpression,
+    pub properties: SharedExpression,
     pub variable: Variable,
 }
 
 impl Executor for CreateNodeExectuor {
-    fn build_stream(self: Box<Self>, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
-        self.execute(ctx)
-    }
+    fn open(&self, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
+        let items = self.items.clone();
+        let mut input_stream = self.input.open(ctx.clone())?;
 
-    fn schema(&self) -> &Schema {
-        &self.schema
-    }
-
-    fn name(&self) -> &'static str {
-        "CreateNode"
-    }
-}
-
-impl CreateNodeExectuor {
-    fn execute(self: Box<CreateNodeExectuor>, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
         let stream = try_stream! {
+
             let eval_ctx = ctx.derive_eval_ctx();
-            let mut input_stream = self.input.build_stream(ctx.clone())?;
 
             // Prepare labels for each item
-            let label_vec: Vec<Vec<Arc<str>>> = self.items
+            let label_vec: Vec<Vec<Arc<str>>> = items
                 .iter()
                 .map(|item| item.labels.iter().map(|label| label.name().clone()).collect())
                 .collect();
@@ -69,7 +58,7 @@ impl CreateNodeExectuor {
                 let mut chunk = chunk.compact();
 
                 // For each CREATE item, create nodes with constraint checking
-                for (i, item) in self.items.iter().enumerate() {
+                for (i, item) in items.iter().enumerate() {
                     let prop = item.properties.eval_batch(&chunk, &eval_ctx)?;
                     let prop_struct = prop.as_struct().ok_or_else(|| ExecError::type_mismatch(
                         "create_node",
@@ -94,5 +83,13 @@ impl CreateNodeExectuor {
         }
         .boxed();
         Ok(stream)
+    }
+
+    fn schema(&self) -> &Schema {
+        &self.schema
+    }
+
+    fn name(&self) -> &'static str {
+        "CreateNode"
     }
 }

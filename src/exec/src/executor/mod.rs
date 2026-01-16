@@ -3,7 +3,6 @@ use std::sync::Arc;
 
 use elio_common::array::chunk::DataChunk;
 use elio_common::schema::Schema;
-use elio_expr::impl_::BoxedExpression;
 use futures::Stream;
 use tracing;
 
@@ -11,6 +10,8 @@ use crate::error::ExecError;
 use crate::task::TaskExecContext;
 
 pub mod all_node_scan;
+pub mod apply;
+pub mod argument;
 pub mod constraint;
 pub mod create_node;
 pub mod create_rel;
@@ -29,19 +30,20 @@ pub type DataChunkStream = Pin<Box<dyn Stream<Item = Result<DataChunk, ExecError
 pub const CHUNK_SIZE: usize = 4096;
 
 pub trait Executor: Send + Sync + std::fmt::Debug {
-    /// Build the output data chunk stream
-    fn build_stream(self: Box<Self>, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError>;
+    fn open(&self, _ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
+        Err(ExecError::NotResettable(self.name()))
+    }
 
     fn schema(&self) -> &Schema;
 
-    fn boxed(self) -> BoxedExecutor
+    fn into_shared(self) -> SharedExecutor
     where
         Self: Sized + 'static,
     {
-        Box::new(self)
+        Arc::new(self)
     }
 
     fn name(&self) -> &'static str;
 }
 
-pub type BoxedExecutor = Box<dyn Executor>;
+pub type SharedExecutor = Arc<dyn Executor>;

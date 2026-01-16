@@ -41,15 +41,19 @@ impl NodeIndexSeekExecutor {
 }
 
 impl Executor for NodeIndexSeekExecutor {
-    fn build_stream(self: Box<Self>, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
+    fn open(&self, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
+        let label_id = self.label_id;
+        let property_key_ids = self.property_key_ids.clone();
+        let property_values = self.property_values.clone();
+
         let stream = try_stream! {
             let tx = ctx.tx();
-            let prop_value_refs: Vec<&[u8]> = self.property_values.iter().map(|v| v.as_slice()).collect();
+            let prop_value_refs: Vec<&[u8]> = property_values.iter().map(|v| v.as_slice()).collect();
 
             // Perform single index lookup
             let node_id = tx.get_unique_index(
-                self.label_id,
-                &self.property_key_ids,
+                label_id,
+                &property_key_ids,
                 &prop_value_refs,
             )?;
 

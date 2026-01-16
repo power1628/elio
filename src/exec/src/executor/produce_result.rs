@@ -11,7 +11,7 @@ use super::*;
 // change output column order
 #[derive(Debug)]
 pub struct ProduceResultExecutor {
-    pub input: BoxedExecutor,
+    pub input: SharedExecutor,
     // return_columns[i] = j means
     // the i-th column of the output is the j-th column of the input
     pub return_columns: Vec<usize>,
@@ -19,18 +19,19 @@ pub struct ProduceResultExecutor {
 }
 
 impl Executor for ProduceResultExecutor {
-    fn build_stream(self: Box<Self>, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
+    fn open(&self, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
+        let return_columns = self.return_columns.clone();
+
+        let input_stream = self.input.open(ctx.clone())?;
+
         let stream = try_stream! {
-
-            let input_stream = self.input.build_stream(ctx.clone())?;
-
             for await input in input_stream {
                 let input = input?;
                 let input = input.compact();
                 let vis = input.visibility();
 
                 let mut out_cols = vec![];
-                for col_idx in self.return_columns.iter(){
+                for col_idx in return_columns.iter(){
                     let col = input.column(*col_idx);
                     // if col is type of virtual node, materialize it
                     if let Some(virtual_col) = col.as_virtual_node(){

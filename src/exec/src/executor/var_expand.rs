@@ -7,7 +7,7 @@ use elio_common::array::{ArrayImpl, DataChunkBuilder, RelArrayBuilder};
 use elio_common::scalar::{ListValueRef, RelValue, ScalarRef, ScalarVTable, StructValue};
 use elio_common::store_types::RelDirection;
 use elio_common::{NodeId, SemanticDirection, TokenId, TokenKind};
-use elio_expr::impl_::BoxedExpression;
+use elio_expr::impl_::SharedExpression;
 use elio_storage::codec::RelFormat;
 use futures::StreamExt;
 use indexmap::IndexSet;
@@ -18,14 +18,14 @@ use super::*;
 #[derive(Educe)]
 #[educe(Debug)]
 pub struct VarExpandExecutor<PATHMODE: PathContainer, EXPANDKIND: ExpandKindStrategy> {
-    pub input: BoxedExecutor,
+    pub input: SharedExecutor,
     pub from: usize,
     pub dir: SemanticDirection, // expansion direction
     pub rel_types: Arc<[TokenId]>,
     pub len_min: usize,
     pub len_max: usize,
-    pub node_filter: Option<BoxedExpression>,
-    pub rel_filter: Option<BoxedExpression>,
+    pub node_filter: Option<SharedExpression>,
+    pub rel_filter: Option<SharedExpression>,
     #[educe(Debug(ignore))]
     pub path_container_factory: &'static PathContainerFactory<PATHMODE>,
     #[educe(Debug(ignore))]
@@ -34,34 +34,44 @@ pub struct VarExpandExecutor<PATHMODE: PathContainer, EXPANDKIND: ExpandKindStra
 }
 
 impl<PATHMODE: PathContainer, EXPANDKIND: ExpandKindStrategy> Executor for VarExpandExecutor<PATHMODE, EXPANDKIND> {
-    fn build_stream(self: Box<Self>, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
-        let stream = try_stream! {
+    fn open(&self, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
+        let input_stream = self.input.open(ctx.clone())?;
+        let schema = self.schema.clone();
+        let from = self.from;
+        let dir = self.dir;
+        let rel_types = self.rel_types.clone();
+        let len_min = self.len_min;
+        let len_max = self.len_max;
+        let _node_filter = self.node_filter.clone();
+        let _rel_filter = self.rel_filter.clone();
+        let path_container_factory = self.path_container_factory;
+        let expand_kind_filter = self.expand_kind_filter.clone();
 
-            let input_stream = self.input.build_stream(ctx.clone())?;
-            let mut out_builder = DataChunkBuilder::new(self.schema.columns().iter().map(|col| col.typ.physical_type()), CHUNK_SIZE);
+        let stream = try_stream! {
+            let mut out_builder = DataChunkBuilder::new(schema.columns().iter().map(|col| col.typ.physical_type()), CHUNK_SIZE);
             for await chunk in input_stream{
                 let outer = chunk?;
                 let outer = outer.compact();
                 for row in outer.iter() {
                     // if from is null, then remove this row
-                    let from_id = match row[self.from].and_then(|id| id.get_node_id()){
+                    let from_id = match row[from].and_then(|id| id.get_node_id()){
                         Some(id) => id,
                         None => continue, // if from is null, then skip this row
                     };
                     let path_iter = VarExpandIter::<PATHMODE> {
-                        stack: VecDeque::from([(from_id, (self.path_container_factory)())]),
+                        stack: VecDeque::from([(from_id, (path_container_factory)())]),
                         ctx: ctx.clone(),
-                        dir: self.dir,
-                        rel_types: self.rel_types.clone(),
-                        min_len: self.len_min,
-                        max_len: self.len_max,
+                        dir,
+                        rel_types: rel_types.clone(),
+                        min_len: len_min,
+                        max_len: len_max,
                         // path_mode: (self.path_mode_factory)(),
                     };
 
                     for item in path_iter {
                         let (to_node, path) = item?;
                         let mut row = row.clone();
-                        if path.len() >= self.len_min && self.expand_kind_filter.is_valid(&row, to_node) {
+                        if path.len() >= len_min && expand_kind_filter.is_valid(&row, to_node) {
                             // push path rels list
                             let mut rel_array = RelArrayBuilder::with_capacity(path.len());
                             path.iter().for_each(|rel|
@@ -199,13 +209,14 @@ pub trait PathContainer: 'static + Sync + Send + Clone {
     fn len(&self) -> usize;
 }
 
-pub trait ExpandKindStrategy: 'static + Sync + Send {
+pub trait ExpandKindStrategy: 'static + Sync + Send + Clone {
     // True on the step is valid to expand
     fn is_valid(&self, row: &[Option<ScalarRef>], actual_to_id: NodeId) -> bool;
     // append to node id to the row
     fn append_other_node(row: &mut Vec<Option<ScalarRef>>, node_id: NodeId);
 }
 
+#[derive(Clone, Copy)]
 pub struct ExpandIntoImpl {
     pub(crate) to_idx: usize,
 }
@@ -222,6 +233,7 @@ impl ExpandKindStrategy for ExpandIntoImpl {
     fn append_other_node(_row: &mut Vec<Option<ScalarRef>>, _node_id: NodeId) {}
 }
 
+#[derive(Clone, Copy)]
 pub struct ExpandAllImpl;
 
 impl ExpandKindStrategy for ExpandAllImpl {

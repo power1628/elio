@@ -10,3 +10,15 @@
   tasks: 
     - bind
     - plan
+- sql: |
+    MATCH (a)-[]-(b) WITH a MATCH (b)-[]-(c) RETURN a,b,c
+  desc: with clause with match clause, SHOULD GENERATE CROSS PRODUCT PLAN
+  tasks: 
+    - bind
+    - plan
+- sql: |
+    MATCH (a)-[]-(b) WITH a, b MATCH (b)-[]-(c) RETURN a,b,c
+  desc: with clause with match clause, should generate apply plan
+  tasks: 
+    - bind
+    - plan

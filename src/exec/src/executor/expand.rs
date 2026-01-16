@@ -16,7 +16,7 @@ use crate::executor::var_expand::ExpandKindStrategy;
 #[derive(Educe)]
 #[educe(Debug)]
 pub struct ExpandExecutor<EXPANDKIND: ExpandKindStrategy> {
-    pub input: BoxedExecutor,
+    pub input: SharedExecutor,
     pub from: usize,
     pub dir: SemanticDirection,
     // optimizer will remove invalid tokens and empty tokens
@@ -32,21 +32,28 @@ pub struct ExpandExecutor<EXPANDKIND: ExpandKindStrategy> {
 ///        construct row = input_row + rel + to
 ///        append row to output chunk
 ///        if output chunk full, then yield output chunk
-impl<EXPANDKIND: ExpandKindStrategy> Executor for ExpandExecutor<EXPANDKIND> {
-    fn build_stream(self: Box<Self>, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
+impl<EXPANDKIND: ExpandKindStrategy + Clone> Executor for ExpandExecutor<EXPANDKIND> {
+    fn open(&self, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
+        let from = self.from;
+        let dir = self.dir;
+        let rtype = self.rtype.clone();
+        let schema = self.schema.clone();
+        let expand_kind_filter = self.expand_kind_filter.clone();
+
+        let input_stream = self.input.open(ctx.clone())?;
+
         let stream = try_stream! {
-            let input_stream = self.input.build_stream(ctx.clone())?;
-            let mut out_builder = DataChunkBuilder::new(self.schema.columns().iter().map(|col| col.typ.physical_type()), CHUNK_SIZE);
+            let mut out_builder = DataChunkBuilder::new(schema.columns().iter().map(|col| col.typ.physical_type()), CHUNK_SIZE);
             for await chunk in input_stream {
                 let outer = chunk?;
                 let outer = outer.compact();
                 for row in outer.iter(){
                     // if from is null, then remove this row
-                    let from_id = match row[self.from].and_then(|id| id.get_node_id()){
+                    let from_id = match row[from].and_then(|id| id.get_node_id()){
                         Some(id) => id,
                         None => continue, // if from is null, then skip this row
                     };
-                    let rel_iter = ctx.tx().rel_iter_for_node(from_id, self.dir, &self.rtype)?;
+                    let rel_iter = ctx.tx().rel_iter_for_node(from_id, dir, &rtype)?;
                     for rel_kv in rel_iter {
                         let (from_id, rel_dir, token_id, to_id, rel_id, value) = rel_kv?;
                         let mut row = row.clone();
@@ -79,7 +86,7 @@ impl<EXPANDKIND: ExpandKindStrategy> Executor for ExpandExecutor<EXPANDKIND> {
                             end_id,
                             props: struct_value.as_scalar_ref(),
                         };
-                        if self.expand_kind_filter.is_valid(&row, to_id) {
+                        if expand_kind_filter.is_valid(&row, to_id) {
                             row.push(Some(ScalarRef::Rel(rel_ref)));
                             // add to node to row
                             EXPANDKIND::append_other_node(&mut row, to_id);

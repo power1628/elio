@@ -22,7 +22,7 @@ impl AllNodeScanExectuor {
 }
 
 impl Executor for AllNodeScanExectuor {
-    fn build_stream(self: Box<Self>, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
+    fn open(&self, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
         let (tx, mut rx) = mpsc::channel::<Result<DataChunk, ExecError>>(CHANNEL_BUFFER_SIZE);
         let txn = ctx.tx().clone();
         // io task

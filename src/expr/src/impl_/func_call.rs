@@ -4,14 +4,14 @@ use elio_common::array::{ArrayImpl, ArrayRef};
 use elio_common::data_type::DataType;
 
 use crate::error::EvalError;
-use crate::impl_::{EvalCtx, Expression};
+use crate::impl_::{EvalCtx, Expression, SharedExpression};
 
 // used to invoke the function call
 pub type FunctionImpl = fn(&[ArrayRef], vis: &BitVec, len: usize) -> Result<ArrayImpl, EvalError>;
 
 #[derive(Debug)]
 pub struct FuncCallExpr {
-    pub inputs: Vec<Box<dyn Expression>>,
+    pub inputs: Vec<SharedExpression>,
     pub func: FunctionImpl,
     pub typ: DataType,
 }
