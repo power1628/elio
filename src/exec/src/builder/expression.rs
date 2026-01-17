@@ -1,4 +1,3 @@
-use elio_common::IrToken;
 use elio_common::data_type::DataType;
 use elio_common::schema::{Name2ColumnMap, Schema};
 use elio_cypher::expr;
@@ -58,12 +57,6 @@ fn build_property_access(
     property_access @ PropertyAccess { expr, property, .. }: &PropertyAccess,
 ) -> Result<SharedExpression, BuildError> {
     let input = build_expression(ctx, expr)?;
-    let _token = match property {
-        IrToken::Resolved { name: _, token } => token,
-        IrToken::Unresolved(key) => {
-            return Err(BuildError::unresolved_token((*key).to_string()));
-        }
-    };
     let expr = FieldAccessExpr::new(input, property.clone(), property_access.typ());
     Ok(expr.into_shared())
 }

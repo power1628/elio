@@ -14,6 +14,8 @@ pub enum ExecError {
     StoreError(#[from] GraphStoreError, #[backtrace] Backtrace),
     #[error("Eval error: {0}")]
     EvalError(#[from] EvalError, #[backtrace] Backtrace),
+    #[error("IO error: {0}")]
+    IoError(String, #[backtrace] Backtrace),
     #[error("type mismatch in {}, expected {:?}, actual {:?}", 0, 1, 2)]
     TypeMismatch {
         context: String,
@@ -40,5 +42,9 @@ impl ExecError {
             actual,
             trace: Backtrace::capture(),
         }
+    }
+
+    pub fn io_error<T: ToString>(msg: T) -> Self {
+        Self::IoError(msg.to_string(), Backtrace::capture())
     }
 }

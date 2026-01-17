@@ -5,6 +5,7 @@ use elio_common::mapb::IndexKeyCodec;
 use elio_common::scalar::ScalarValue;
 use elio_common::schema::Name2ColumnMap;
 use elio_common::variable::VariableName;
+use elio_cypher::ir::query_project::LoadFormat;
 use elio_cypher::plan_node::{self, CreateNode, PlanExpr, PlanNode, Project};
 use elio_cypher::planner::RootPlan;
 use elio_expr::impl_::SharedExpression;
@@ -17,6 +18,7 @@ use crate::executor::create_node::{CreateNodeExectuor, CreateNodeItem};
 use crate::executor::create_rel::{CreateRelExectuor, CreateRelItem};
 use crate::executor::expand::ExpandExecutor;
 use crate::executor::filter::FilterExecutor;
+use crate::executor::load_csv::LoadCsvExecutor;
 use crate::executor::node_index_seek::NodeIndexSeekExecutor;
 use crate::executor::produce_result::ProduceResultExecutor;
 use crate::executor::project::ProjectExecutor;
@@ -100,7 +102,7 @@ fn build_node(ctx: &mut ExecutorBuildContext, node: &PlanExpr) -> Result<SharedE
         PlanExpr::ProduceResult(produce_result) => build_produce_result(ctx, produce_result, inputs),
         PlanExpr::CreateNode(create_node) => build_create_node(ctx, create_node, inputs),
         PlanExpr::CreateRel(create_rel) => build_create_rel(ctx, create_rel, inputs),
-        PlanExpr::Load(_) => todo!("build load"),
+        PlanExpr::Load(load) => build_load(ctx, load, inputs),
         PlanExpr::Project(project) => build_project(ctx, project, inputs),
         PlanExpr::Sort(_sort) => todo!(),
         PlanExpr::Filter(filter) => build_filter(ctx, filter, inputs),
@@ -596,6 +598,24 @@ fn build_filter(
         input,
         filter: expr,
         schema: node.schema().clone(),
+    }
+    .into_shared())
+}
+
+fn build_load(
+    _ctx: &mut ExecutorBuildContext,
+    load: &plan_node::Load,
+    inputs: Vec<SharedExecutor>,
+) -> Result<SharedExecutor, BuildError> {
+    assert_eq!(inputs.len(), 0); // Load is a leaf node
+
+    let inner = load.inner();
+    let LoadFormat::Csv(csv_format) = &inner.format;
+
+    Ok(LoadCsvExecutor {
+        source_url: inner.source_url.clone().into(),
+        format: csv_format.clone(),
+        schema: load.schema(),
     }
     .into_shared())
 }

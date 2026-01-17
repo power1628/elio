@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use elio_common::data_type::DataType;
 use elio_common::schema::Variable;
 use elio_common::variable::VariableName;
 use enum_as_inner::EnumAsInner;
@@ -261,6 +262,12 @@ pub enum LoadFormat {
 }
 
 impl LoadFormat {
+    pub fn output_type(&self) -> DataType {
+        match self {
+            LoadFormat::Csv(f) => f.output_type(),
+        }
+    }
+
     pub fn xmlnode(&self) -> XmlNode<'_> {
         match self {
             LoadFormat::Csv(f) => f.xmlnode(),
@@ -275,6 +282,28 @@ pub struct CsvLoadFormat {
 }
 
 impl CsvLoadFormat {
+    pub fn new(header: bool, delimiter: char) -> Self {
+        Self { header, delimiter }
+    }
+
+    pub fn header(&self) -> bool {
+        self.header
+    }
+
+    pub fn delimiter(&self) -> char {
+        self.delimiter
+    }
+
+    pub fn output_type(&self) -> DataType {
+        if self.header {
+            // we do not know the struct fields, so put an any here.
+            DataType::Any
+        } else {
+            // we assume the list fields are string
+            DataType::new_list(DataType::String)
+        }
+    }
+
     pub fn xmlnode(&self) -> XmlNode<'_> {
         XmlNode::simple_record(
             "CsvLoadFormat",

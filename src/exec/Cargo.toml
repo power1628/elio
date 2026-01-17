@@ -21,4 +21,5 @@ thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 
-# extra
+# extra, for reading from local files
+csv = "1.3"

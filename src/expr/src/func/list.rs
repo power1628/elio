@@ -6,7 +6,7 @@
 use bitvec::vec::BitVec;
 use elio_common::array::*;
 use elio_common::data_type::DataType;
-use elio_common::scalar::{ListValueRef, ScalarRef, ScalarRefVTable, ScalarVTable};
+use elio_common::scalar::{ListValueRef, ScalarRef, ScalarVTable};
 
 use crate::error::EvalError;
 use crate::func::FunctionRegistry;
@@ -16,7 +16,9 @@ use crate::func::sig::{FuncDef, FuncImpl, FuncImplArg, FuncImplReturn};
 /// Returns the element at the given index (0-based).
 /// Negative indices count from the end (-1 is the last element).
 pub fn list_index_batch(args: &[ArrayRef], vis: &BitVec, len: usize) -> Result<ArrayImpl, EvalError> {
-    let list_arr = args[0].as_list().expect("expected list array");
+    let list_arr = args[0]
+        .as_list()
+        .unwrap_or_else(|| panic!("expected list array got {:?} array", args[0].physical_type()));
     let idx_arr = args[1].as_any().expect("expected any array for index");
 
     // Output is element type, use AnyArrayBuilder since element type is dynamic

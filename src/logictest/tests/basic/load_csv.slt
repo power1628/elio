@@ -1,0 +1,34 @@
+# LOAD CSV with header (returns Struct)
+query A
+LOAD CSV FROM 'tests/testdata/with_header.csv' OPTIONS {header: true} AS row
+RETURN row
+----
+{name: 'Alice', age: '30', city: 'Beijing'}
+{name: 'Bob', age: '25', city: 'Shanghai'}
+
+query A
+LOAD CSV FROM 'tests/testdata/with_header.csv' OPTIONS {header: true} AS row
+RETURN row.name
+----
+'Alice'
+'Bob'
+
+# LOAD CSV without header (returns List)
+query A
+LOAD CSV FROM 'tests/testdata/without_header.csv' OPTIONS {header: false} AS row
+RETURN row
+----
+['Alice', '30', 'Beijing']
+['Bob', '25', 'Shanghai']
+
+
+query A
+LOAD CSV FROM 'tests/testdata/without_header.csv' OPTIONS {header: false} AS row
+RETURN row[0]
+----
+'Alice'
+'Bob'
+
+#query error Unknown function toInteger in \(:Person\{name: row\.name, age: toInteger\(row\.age\), city: row\.city\}\)
+#LOAD CSV FROM 'tests/testdata/with_header.csv' OPTIONS {header: true} AS row
+#CREATE (:Person{name: row.name, age: toInteger(row.age), city: row.city})

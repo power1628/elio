@@ -4,7 +4,7 @@ use elio_common::IrToken;
 use elio_common::array::chunk::DataChunk;
 use elio_common::array::{AnyArray, AnyArrayBuilder, Array, ArrayImpl, ArrayRef, PhysicalType, StructArray};
 use elio_common::data_type::DataType;
-use elio_common::scalar::StructValueRef;
+use elio_common::scalar::{ScalarRef, StructValueRef};
 
 use crate::error::EvalError;
 use crate::impl_::{EvalCtx, Expression, SharedExpression};
@@ -78,6 +78,12 @@ impl Expression for FieldAccessExpr {
             return Ok(Arc::new(output.into()));
         }
 
+        // any. When load from csv, the input is Any Array.
+        if let ArrayImpl::Any(input) = input.as_ref() {
+            let output = access_properties_from_any(input.iter(), input.len(), key)?;
+            return Ok(Arc::new(output.into()));
+        }
+
         Err(EvalError::type_error(
             "FieldAccess expected to have input of VirtualNode/Node/Rel/Struct",
         ))
@@ -101,4 +107,28 @@ fn access_properties<'a>(
         builder.push(props.and_then(|p| p.field_at(key)));
     });
     builder.finish()
+}
+
+fn access_properties_from_any<'a>(
+    input: impl Iterator<Item = Option<ScalarRef<'a>>>,
+    len: usize,
+    key: &str,
+) -> Result<AnyArray, EvalError> {
+    let mut builder = AnyArrayBuilder::with_capacity(len);
+    for item in input {
+        match item {
+            Some(value) => {
+                builder.push(
+                    value
+                        .as_struct()
+                        .ok_or_else(|| EvalError::type_error("field access requires struct".to_string()))?
+                        .field_at(key),
+                );
+            }
+            None => {
+                builder.push(None);
+            }
+        }
+    }
+    Ok(builder.finish())
 }
