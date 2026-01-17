@@ -7,7 +7,7 @@ use elio_common::data_type::DataType;
 use elio_common::scalar::StructValueRef;
 
 use crate::error::EvalError;
-use crate::impl_::{BoxedExpression, EvalCtx, Expression};
+use crate::impl_::{EvalCtx, Expression, SharedExpression};
 
 // Property Access or Field Access
 // Expected input to be type of Struct
@@ -18,14 +18,14 @@ use crate::impl_::{BoxedExpression, EvalCtx, Expression};
 // if input is struct type, will access sub fields via key.name
 #[derive(Debug)]
 pub struct FieldAccessExpr {
-    pub input: BoxedExpression,
+    pub input: SharedExpression,
     key: IrToken,
     pub typ: DataType,
     physical_type: PhysicalType,
 }
 
 impl FieldAccessExpr {
-    pub fn new(input: BoxedExpression, key: IrToken, typ: DataType) -> Self {
+    pub fn new(input: SharedExpression, key: IrToken, typ: DataType) -> Self {
         let physical_type = typ.physical_type();
         Self {
             input,

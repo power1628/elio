@@ -1,6 +1,6 @@
 use async_stream::try_stream;
 use elio_common::array::ArrayImpl;
-use elio_expr::impl_::BoxedExpression;
+use elio_expr::impl_::SharedExpression;
 use futures::StreamExt;
 
 use super::*;
@@ -9,25 +9,27 @@ use super::*;
 // output: Schema + Node
 #[derive(Debug)]
 pub struct CreateRelExectuor {
-    pub input: BoxedExecutor,
+    pub input: SharedExecutor,
     pub schema: Arc<Schema>,
     pub items: Vec<CreateRelItem>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CreateRelItem {
     pub rtype: Arc<str>,
     pub start: usize, // index of start node
     pub end: usize,   // index of end node
     // the return type should be struct
-    pub properties: BoxedExpression,
+    pub properties: SharedExpression,
 }
 
 impl Executor for CreateRelExectuor {
-    fn build_stream(self: Box<Self>, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
+    fn open(&self, ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
+        let items = self.items.clone();
+        let input_stream = self.input.open(ctx.clone())?;
+
         let stream = try_stream! {
             let eval_ctx = ctx.derive_eval_ctx();
-            let input_stream = self.input.build_stream(ctx.clone())?;
 
             // execute the stream
             for await chunk in input_stream {
@@ -35,7 +37,7 @@ impl Executor for CreateRelExectuor {
                 // TODO(pgao): do not eager compact the chunk
                 let mut chunk = chunk.compact();
                 // for each variable execute create node
-                for (i, item) in self.items.iter().enumerate() {
+                for (i, item) in items.iter().enumerate() {
                     let prop = item.properties.eval_batch(&chunk, &eval_ctx)?;
                     let prop = prop.as_ref().as_struct().ok_or_else(||
                         ExecError::type_mismatch(

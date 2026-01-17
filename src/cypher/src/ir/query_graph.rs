@@ -33,7 +33,7 @@ pub struct QueryGraph {
     // TODO(pgao): just use variable name?
     // when the datatype is needed?
     imported: IndexSet<Variable>,
-    // outer referenced variables,
+    // outer referenced variables, this is used in the context of subquery
     outer: IndexSet<VariableName>,
     // path projection
 }
@@ -137,7 +137,7 @@ impl QueryGraph {
             vars.insert(v.clone());
         });
         self.nodes.iter().for_each(|n| {
-            vars.insert(Variable::new(n, &DataType::Node));
+            vars.insert(Variable::new(n, &DataType::VirtualNode));
         });
         self.rels.iter().for_each(|v| {
             vars.insert(Variable::new(&v.variable, &DataType::Rel));
@@ -158,6 +158,30 @@ impl QueryGraph {
         });
         // including imported variables
         vars.extend(self.imported.iter().map(|v| v.name.clone()));
+        vars
+    }
+
+    pub fn used_variables(&self) -> IndexSet<Variable> {
+        let mut vars = IndexSet::new();
+        // match pattern
+        for var in self.nodes.iter() {
+            vars.insert(Variable::new(var, &DataType::VirtualNode));
+        }
+        for rel in self.rels.iter() {
+            vars.insert(Variable::new(&rel.variable, &DataType::Rel));
+        }
+        // optional match pattern
+        for qg in self.optional_matches.iter() {
+            vars.extend(qg.used_variables());
+        }
+        // mutating pattern
+        for mp in self.mutating_patterns.iter() {
+            vars.extend(mp.used_variables());
+        }
+        // filter
+        for e in self.filter.iter() {
+            vars.extend(e.collect_variables());
+        }
         vars
     }
 
@@ -193,14 +217,18 @@ impl QueryGraph {
             // argument only filter and other filters may be solved by qg
             let arg = self.imported.first().unwrap();
             let mut qg = self.component_for_node(&arg.name, &mut visited);
-            qg.add_imported_set(&self.imported);
-            qg.add_filter(argument_only_filter);
-            let qg_vars = qg.match_pattern_variables();
-            let (solved, remaining): (Vec<_>, Vec<_>) =
-                other_filter.into_iter().partition(|e| e.depend_only_on(&qg_vars));
-            other_filter = FilterExprs::from_iter(remaining);
-            qg.add_filter(FilterExprs::from_iter(solved));
-            components.push(qg);
+            if !qg.rels.is_empty() {
+                // if there's no relaltionships, which means this is an empty qg, we do nothing
+                // since the planner will handle the case.
+                qg.add_imported_set(&self.imported);
+                qg.add_filter(argument_only_filter);
+                let qg_vars = qg.match_pattern_variables();
+                let (solved, remaining): (Vec<_>, Vec<_>) =
+                    other_filter.into_iter().partition(|e| e.depend_only_on(&qg_vars));
+                other_filter = FilterExprs::from_iter(remaining);
+                qg.add_filter(FilterExprs::from_iter(solved));
+                components.push(qg);
+            }
         }
 
         // solve rest
@@ -251,7 +279,8 @@ impl QueryGraph {
                 // in either case, we should add argument to qg
                 if qg.imported.is_empty() && qg.match_pattern_variables().intersection(&imported).next().is_some()
                     || self.filter.iter().any(|e| {
-                        let used_vars = e.collect_variables();
+                        let used_vars: IndexSet<VariableName> =
+                            e.collect_variables().into_iter().map(|x| x.name.clone()).collect();
                         used_vars.contains(&nb) && used_vars.intersection(&imported).next().is_some()
                     })
                 {

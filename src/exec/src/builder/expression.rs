@@ -12,7 +12,7 @@ use elio_expr::impl_::func_call::FuncCallExpr;
 use elio_expr::impl_::label::HasLabelExpr;
 use elio_expr::impl_::project_path::ProjectPathExpr;
 use elio_expr::impl_::variable_ref::VariableRefExpr;
-use elio_expr::impl_::{BoxedExpression, Expression};
+use elio_expr::impl_::{Expression, SharedExpression};
 
 use crate::builder::{BuildError, ExecutorBuildContext};
 
@@ -29,7 +29,7 @@ impl<'a> BuildExprContext<'a> {
     }
 }
 
-pub(crate) fn build_expression(ctx: &BuildExprContext<'_>, expr: &Expr) -> Result<BoxedExpression, BuildError> {
+pub(crate) fn build_expression(ctx: &BuildExprContext<'_>, expr: &Expr) -> Result<SharedExpression, BuildError> {
     match expr {
         Expr::VariableRef(variable_ref) => build_variable(ctx, variable_ref),
         Expr::PropertyAccess(property_access) => build_property_access(ctx, property_access),
@@ -44,19 +44,19 @@ pub(crate) fn build_expression(ctx: &BuildExprContext<'_>, expr: &Expr) -> Resul
     }
 }
 
-fn build_variable(ctx: &BuildExprContext<'_>, variable_ref: &VariableRef) -> Result<BoxedExpression, BuildError> {
+fn build_variable(ctx: &BuildExprContext<'_>, variable_ref: &VariableRef) -> Result<SharedExpression, BuildError> {
     let col = ctx
         .name2col
         .get(&variable_ref.name)
         .ok_or_else(|| BuildError::variable_not_found(variable_ref.name.clone()))?;
     let typ = ctx.schema.column(*col).typ.clone();
-    Ok(VariableRefExpr::new(*col, typ).boxed())
+    Ok(VariableRefExpr::new(*col, typ).into_shared())
 }
 
 fn build_property_access(
     ctx: &BuildExprContext<'_>,
     property_access @ PropertyAccess { expr, property, .. }: &PropertyAccess,
-) -> Result<BoxedExpression, BuildError> {
+) -> Result<SharedExpression, BuildError> {
     let input = build_expression(ctx, expr)?;
     let _token = match property {
         IrToken::Resolved { name: _, token } => token,
@@ -65,20 +65,20 @@ fn build_property_access(
         }
     };
     let expr = FieldAccessExpr::new(input, property.clone(), property_access.typ());
-    Ok(expr.boxed())
+    Ok(expr.into_shared())
 }
 
-fn build_constant(_ctx: &BuildExprContext<'_>, constant: &Constant) -> Result<BoxedExpression, BuildError> {
+fn build_constant(_ctx: &BuildExprContext<'_>, constant: &Constant) -> Result<SharedExpression, BuildError> {
     Ok(ConstantExpr {
         value: constant.data.clone(),
         // After null coercion in binder, all constants should have a type.
         // If not, fall back to Any type for runtime handling.
         typ: constant.typ.clone().unwrap_or(DataType::Any),
     }
-    .boxed())
+    .into_shared())
 }
 
-fn build_func_call(ctx: &BuildExprContext<'_>, func_call: &expr::FuncCall) -> Result<BoxedExpression, BuildError> {
+fn build_func_call(ctx: &BuildExprContext<'_>, func_call: &expr::FuncCall) -> Result<SharedExpression, BuildError> {
     let args = func_call
         .args
         .iter()
@@ -92,19 +92,19 @@ fn build_func_call(ctx: &BuildExprContext<'_>, func_call: &expr::FuncCall) -> Re
         func: func_impl.func,
         typ: func_call.typ(),
     }
-    .boxed())
+    .into_shared())
 }
 
-fn build_has_label(ctx: &BuildExprContext<'_>, has_label: &expr::HasLabel) -> Result<BoxedExpression, BuildError> {
+fn build_has_label(ctx: &BuildExprContext<'_>, has_label: &expr::HasLabel) -> Result<SharedExpression, BuildError> {
     let entity = build_expression(ctx, &has_label.entity)?;
     Ok(HasLabelExpr {
         entity,
         label: has_label.label_or_rel.clone(),
     }
-    .boxed())
+    .into_shared())
 }
 
-fn build_create_map(ctx: &BuildExprContext<'_>, create_map: &CreateStruct) -> Result<BoxedExpression, BuildError> {
+fn build_create_map(ctx: &BuildExprContext<'_>, create_map: &CreateStruct) -> Result<SharedExpression, BuildError> {
     let properties = create_map
         .properties
         .iter()
@@ -116,23 +116,23 @@ fn build_create_map(ctx: &BuildExprContext<'_>, create_map: &CreateStruct) -> Re
         typ: create_map.typ().clone(),
         physical_type: create_map.typ().physical_type(),
     }
-    .boxed())
+    .into_shared())
 }
 
-fn build_create_list(ctx: &BuildExprContext<'_>, create_list: &CreateList) -> Result<BoxedExpression, BuildError> {
+fn build_create_list(ctx: &BuildExprContext<'_>, create_list: &CreateList) -> Result<SharedExpression, BuildError> {
     let elements = create_list
         .elements
         .iter()
         .map(|expr| build_expression(ctx, expr))
         .collect::<Result<Vec<_>, _>>()?;
 
-    Ok(CreateListExpr::new(elements, create_list.typ()).boxed())
+    Ok(CreateListExpr::new(elements, create_list.typ()).into_shared())
 }
 
 fn build_project_path(
     ctx: &BuildExprContext<'_>,
     project_path: &expr::ProjectPath,
-) -> Result<BoxedExpression, BuildError> {
+) -> Result<SharedExpression, BuildError> {
     let inputs = project_path
         .step_variables()
         .into_iter()
@@ -142,5 +142,5 @@ fn build_project_path(
         inputs,
         typ: project_path.typ(),
     }
-    .boxed())
+    .into_shared())
 }

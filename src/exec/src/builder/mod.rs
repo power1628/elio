@@ -7,9 +7,12 @@ use elio_common::schema::Name2ColumnMap;
 use elio_common::variable::VariableName;
 use elio_cypher::plan_node::{self, CreateNode, PlanExpr, PlanNode, Project};
 use elio_cypher::planner::RootPlan;
+use elio_expr::impl_::SharedExpression;
 
 use crate::builder::expression::{BuildExprContext, build_expression};
 use crate::executor::all_node_scan::AllNodeScanExectuor;
+use crate::executor::apply::{ApplyExecutor, ArgumentContext, OutputColumnSource};
+use crate::executor::argument::ArgumentExecutor;
 use crate::executor::create_node::{CreateNodeExectuor, CreateNodeItem};
 use crate::executor::create_rel::{CreateRelExectuor, CreateRelItem};
 use crate::executor::expand::ExpandExecutor;
@@ -21,7 +24,7 @@ use crate::executor::unit::UnitExecutor;
 use crate::executor::var_expand::{
     ExpandAllImpl, ExpandIntoImpl, TRAIL_PATH_MODE_FACTORY, VarExpandExecutor, WALK_PATH_MODE_FACTORY,
 };
-use crate::executor::{BoxedExecutor, Executor};
+use crate::executor::{Executor, SharedExecutor};
 use crate::task::TaskExecContext;
 
 pub mod expression;
@@ -48,22 +51,37 @@ impl BuildError {
 
 pub struct ExecutorBuildContext {
     pub ctx: Arc<TaskExecContext>,
+    pub argument_ctx: Option<ArgumentContext>,
 }
 
 impl ExecutorBuildContext {
     pub fn new(ctx: Arc<TaskExecContext>) -> Self {
-        Self { ctx }
+        Self {
+            ctx,
+            argument_ctx: None,
+        }
     }
 }
 
 pub fn build_executor(
     ctx: &mut ExecutorBuildContext,
     _root @ RootPlan { plan, .. }: &RootPlan,
-) -> Result<BoxedExecutor, BuildError> {
+) -> Result<SharedExecutor, BuildError> {
     build_node(ctx, plan)
 }
 
-fn build_node(ctx: &mut ExecutorBuildContext, node: &PlanExpr) -> Result<BoxedExecutor, BuildError> {
+fn build_node(ctx: &mut ExecutorBuildContext, node: &PlanExpr) -> Result<SharedExecutor, BuildError> {
+    // Handle Apply specially - don't pre-build right child
+    if let PlanExpr::Apply(apply) = node {
+        return build_apply(ctx, apply);
+    }
+
+    // Handle Argument specially - it uses the shared ArgumentContext
+    if let PlanExpr::Argument(argument) = node {
+        return build_argument(ctx, argument);
+    }
+
+    // For all other nodes, build children first
     let inputs = node
         .inputs()
         .iter()
@@ -76,9 +94,9 @@ fn build_node(ctx: &mut ExecutorBuildContext, node: &PlanExpr) -> Result<BoxedEx
         PlanExpr::GetProperty(_get_property) => todo!(),
         PlanExpr::Expand(expand) => build_expand(ctx, expand, inputs),
         PlanExpr::VarExpand(var_expand) => build_var_expand(ctx, var_expand, inputs),
-        PlanExpr::Apply(_apply) => todo!(),
-        PlanExpr::Argument(_argument) => todo!(),
-        PlanExpr::Unit(_unit) => Ok(UnitExecutor::default().boxed()),
+        PlanExpr::Apply(_) => unreachable!("Apply is handled above"),
+        PlanExpr::Argument(_) => unreachable!("Argument is handled above"),
+        PlanExpr::Unit(_unit) => Ok(UnitExecutor::default().into_shared()),
         PlanExpr::ProduceResult(produce_result) => build_produce_result(ctx, produce_result, inputs),
         PlanExpr::CreateNode(create_node) => build_create_node(ctx, create_node, inputs),
         PlanExpr::CreateRel(create_rel) => build_create_rel(ctx, create_rel, inputs),
@@ -94,18 +112,18 @@ fn build_node(ctx: &mut ExecutorBuildContext, node: &PlanExpr) -> Result<BoxedEx
 fn build_all_node_scan(
     _ctx: &mut ExecutorBuildContext,
     all_node_scan: &plan_node::AllNodeScan,
-    inputs: Vec<BoxedExecutor>,
-) -> Result<BoxedExecutor, BuildError> {
+    inputs: Vec<SharedExecutor>,
+) -> Result<SharedExecutor, BuildError> {
     assert_eq!(inputs.len(), 0);
     let schema = all_node_scan.schema();
-    Ok(AllNodeScanExectuor::new(schema).boxed())
+    Ok(AllNodeScanExectuor::new(schema).into_shared())
 }
 
 fn build_node_index_seek(
     _ctx: &mut ExecutorBuildContext,
     node_index_seek: &plan_node::NodeIndexSeek,
-    inputs: Vec<BoxedExecutor>,
-) -> Result<BoxedExecutor, BuildError> {
+    inputs: Vec<SharedExecutor>,
+) -> Result<SharedExecutor, BuildError> {
     assert_eq!(inputs.len(), 0);
 
     let schema = node_index_seek.schema();
@@ -145,16 +163,16 @@ fn build_node_index_seek(
         node_index_seek.inner().property_key_ids.clone(),
         property_values,
     )
-    .boxed())
+    .into_shared())
 }
 
 fn build_expand(
     _ctx: &mut ExecutorBuildContext,
     expand: &plan_node::Expand,
-    inputs: Vec<BoxedExecutor>,
-) -> Result<BoxedExecutor, BuildError> {
+    inputs: Vec<SharedExecutor>,
+) -> Result<SharedExecutor, BuildError> {
     assert_eq!(inputs.len(), 1);
-    let [input]: [BoxedExecutor; 1] = inputs.try_into().unwrap();
+    let [input]: [SharedExecutor; 1] = inputs.try_into().unwrap();
     let schema = input.schema();
     let name2col = schema.name_to_col_map();
 
@@ -193,7 +211,7 @@ fn build_expand(
             schema: expand.schema().clone(),
             expand_kind_filter: ExpandIntoImpl { to_idx },
         }
-        .boxed()),
+        .into_shared()),
         None => Ok(ExpandExecutor {
             input,
             from,
@@ -202,17 +220,17 @@ fn build_expand(
             schema: expand.schema().clone(),
             expand_kind_filter: ExpandAllImpl,
         }
-        .boxed()),
+        .into_shared()),
     }
 }
 
 fn build_var_expand(
     _ctx: &mut ExecutorBuildContext,
     expand: &plan_node::VarExpand,
-    inputs: Vec<BoxedExecutor>,
-) -> Result<BoxedExecutor, BuildError> {
+    inputs: Vec<SharedExecutor>,
+) -> Result<SharedExecutor, BuildError> {
     assert_eq!(inputs.len(), 1);
-    let [input]: [BoxedExecutor; 1] = inputs.try_into().unwrap();
+    let [input]: [SharedExecutor; 1] = inputs.try_into().unwrap();
     let schema = input.schema();
     let name2col = schema.name_to_col_map();
 
@@ -259,7 +277,7 @@ fn build_var_expand(
             path_container_factory: &TRAIL_PATH_MODE_FACTORY,
             expand_kind_filter: ExpandAllImpl,
         }
-        .boxed()),
+        .into_shared()),
         (plan_node::PathMode::Trail, Some(to_idx)) => Ok(VarExpandExecutor {
             input,
             from,
@@ -273,7 +291,7 @@ fn build_var_expand(
             path_container_factory: &TRAIL_PATH_MODE_FACTORY,
             expand_kind_filter: ExpandIntoImpl { to_idx },
         }
-        .boxed()),
+        .into_shared()),
         (plan_node::PathMode::Walk, None) => Ok(VarExpandExecutor {
             input,
             from,
@@ -287,7 +305,7 @@ fn build_var_expand(
             path_container_factory: &WALK_PATH_MODE_FACTORY,
             expand_kind_filter: ExpandAllImpl,
         }
-        .boxed()),
+        .into_shared()),
 
         (plan_node::PathMode::Walk, Some(to_idx)) => Ok(VarExpandExecutor {
             input,
@@ -302,17 +320,122 @@ fn build_var_expand(
             path_container_factory: &WALK_PATH_MODE_FACTORY,
             expand_kind_filter: ExpandIntoImpl { to_idx },
         }
-        .boxed()),
+        .into_shared()),
     }
+}
+
+fn build_apply(ctx: &mut ExecutorBuildContext, apply: &plan_node::Apply) -> Result<SharedExecutor, BuildError> {
+    // Build only the left child first (without argument context)
+    let left = build_node(ctx, &apply.inner().left)?;
+    let left_schema = left.schema().clone();
+
+    // Find argument variables from the right subtree
+    let argument_vars = find_argument_variables(&apply.inner().right);
+
+    // Create shared ArgumentContext
+    let argument_ctx = ArgumentContext::default();
+
+    // Build right child WITH argument context
+    let mut right_ctx = ExecutorBuildContext {
+        ctx: ctx.ctx.clone(),
+        argument_ctx: Some(argument_ctx.clone()),
+    };
+    let right = build_node(&mut right_ctx, &apply.inner().right)?;
+
+    // Map argument variables to left schema columns
+    let left_name_to_col = left_schema.name_to_col_map();
+    let argument_mapping: Vec<usize> = argument_vars
+        .iter()
+        .map(|var_name| {
+            left_name_to_col
+                .get(var_name)
+                .copied()
+                .ok_or_else(|| BuildError::variable_not_found(var_name.clone()))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+
+    if argument_mapping.is_empty() {
+        return Err(BuildError::MalformedPlan(
+            "Apply node requires argument variables".to_string(),
+            Backtrace::capture(),
+        ));
+    }
+
+    // Compute output column mapping: for each output column, determine if it comes from left or right
+    let right_schema = right.schema();
+    let right_name_to_col = right_schema.name_to_col_map();
+    let output_schema = apply.schema();
+
+    let output_mapping: Vec<OutputColumnSource> = output_schema
+        .columns()
+        .iter()
+        .map(|col| {
+            // First check if the column exists in left schema
+            if let Some(&left_idx) = left_name_to_col.get(&col.name) {
+                Ok(OutputColumnSource::Left(left_idx))
+            } else if let Some(&right_idx) = right_name_to_col.get(&col.name) {
+                Ok(OutputColumnSource::Right(right_idx))
+            } else {
+                Err(BuildError::MalformedPlan(
+                    format!("Output column {} not found in left or right schema", col.name),
+                    Backtrace::capture(),
+                ))
+            }
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(ApplyExecutor {
+        left,
+        right,
+        argument_ctx,
+        schema: apply.schema().clone(),
+        argument_mapping,
+        output_mapping,
+    }
+    .into_shared())
+}
+
+/// Recursively find Argument nodes and return their variable names in order
+/// TODO(pgao): handle nested Apply nodes
+fn find_argument_variables(plan: &PlanExpr) -> Vec<VariableName> {
+    match plan {
+        PlanExpr::Argument(arg) => arg.schema().columns().iter().map(|f| f.name.clone()).collect(),
+        _ => plan
+            .inputs()
+            .iter()
+            .find_map(|child| {
+                let vars = find_argument_variables(child);
+                if vars.is_empty() { None } else { Some(vars) }
+            })
+            .unwrap_or_default(),
+    }
+}
+
+fn build_argument(
+    ctx: &mut ExecutorBuildContext,
+    argument: &plan_node::Argument,
+) -> Result<SharedExecutor, BuildError> {
+    let argument_ctx = ctx.argument_ctx.clone().ok_or_else(|| {
+        BuildError::MalformedPlan(
+            "Argument node requires argument context (must be inside Apply)".to_string(),
+            Backtrace::capture(),
+        )
+    })?;
+
+    Ok(ArgumentExecutor {
+        schema: argument.schema().clone(),
+        argument_ctx,
+    }
+    .into_shared())
 }
 
 fn build_produce_result(
     _ctx: &mut ExecutorBuildContext,
     produce_result: &plan_node::ProduceResult,
-    inputs: Vec<BoxedExecutor>,
-) -> Result<BoxedExecutor, BuildError> {
+    inputs: Vec<SharedExecutor>,
+) -> Result<SharedExecutor, BuildError> {
     assert_eq!(inputs.len(), 1);
-    let [input]: [BoxedExecutor; 1] = inputs.try_into().unwrap();
+    let [input]: [SharedExecutor; 1] = inputs.try_into().unwrap();
 
     let schema = input.schema().clone();
     let name2col = schema.name_to_col_map();
@@ -333,16 +456,16 @@ fn build_produce_result(
         return_columns,
         schema: produce_result.schema().clone(),
     }
-    .boxed())
+    .into_shared())
 }
 
 fn build_create_node(
     ctx: &mut ExecutorBuildContext,
     node: &CreateNode,
-    inputs: Vec<BoxedExecutor>,
-) -> Result<BoxedExecutor, BuildError> {
+    inputs: Vec<SharedExecutor>,
+) -> Result<SharedExecutor, BuildError> {
     assert_eq!(inputs.len(), 1);
-    let [input]: [BoxedExecutor; 1] = inputs.try_into().unwrap();
+    let [input]: [SharedExecutor; 1] = inputs.try_into().unwrap();
 
     let schema = input.schema().clone();
     let ectx = BuildExprContext::new(&schema, ctx);
@@ -367,16 +490,16 @@ fn build_create_node(
         items,
         schema: node.schema().clone(),
     }
-    .boxed())
+    .into_shared())
 }
 
 fn build_create_rel(
     ctx: &mut ExecutorBuildContext,
     node: &plan_node::CreateRel,
-    inputs: Vec<BoxedExecutor>,
-) -> Result<BoxedExecutor, BuildError> {
+    inputs: Vec<SharedExecutor>,
+) -> Result<SharedExecutor, BuildError> {
     assert_eq!(inputs.len(), 1);
-    let [input]: [BoxedExecutor; 1] = inputs.try_into().unwrap();
+    let [input]: [SharedExecutor; 1] = inputs.try_into().unwrap();
 
     let schema = input.schema().clone();
     let ectx = BuildExprContext::new(&schema, ctx);
@@ -410,16 +533,16 @@ fn build_create_rel(
         items,
         schema: node.schema().clone(),
     }
-    .boxed())
+    .into_shared())
 }
 
 fn build_project(
     ctx: &mut ExecutorBuildContext,
     node: &Project,
-    inputs: Vec<BoxedExecutor>,
-) -> Result<BoxedExecutor, BuildError> {
+    inputs: Vec<SharedExecutor>,
+) -> Result<SharedExecutor, BuildError> {
     assert_eq!(inputs.len(), 1);
-    let [input]: [BoxedExecutor; 1] = inputs.try_into().unwrap();
+    let [input]: [SharedExecutor; 1] = inputs.try_into().unwrap();
 
     let schema = input.schema().clone();
     let ectx = BuildExprContext::new(&schema, ctx);
@@ -429,7 +552,7 @@ fn build_project(
     // findout project item order
     let project_items = &node.inner().projections;
     let mut out_idx_to_idx = vec![0; project_items.len()];
-    let mut exprs = vec![];
+    let mut exprs: Vec<Option<SharedExpression>> = vec![];
     for (i, (var, expr)) in project_items.iter().enumerate() {
         let out_idx = out_name_to_col[var];
         out_idx_to_idx[out_idx] = i;
@@ -449,16 +572,16 @@ fn build_project(
         // we assume the schema is with the same order of projections
         schema: node.schema().clone(),
     }
-    .boxed())
+    .into_shared())
 }
 
 fn build_filter(
     ctx: &mut ExecutorBuildContext,
     node: &plan_node::Filter,
-    inputs: Vec<BoxedExecutor>,
-) -> Result<BoxedExecutor, BuildError> {
+    inputs: Vec<SharedExecutor>,
+) -> Result<SharedExecutor, BuildError> {
     assert_eq!(inputs.len(), 1);
-    let [input]: [BoxedExecutor; 1] = inputs.try_into().unwrap();
+    let [input]: [SharedExecutor; 1] = inputs.try_into().unwrap();
 
     let schema = input.schema().clone();
     let ectx = BuildExprContext::new(&schema, ctx);
@@ -474,5 +597,5 @@ fn build_filter(
         filter: expr,
         schema: node.schema().clone(),
     }
-    .boxed())
+    .into_shared())
 }

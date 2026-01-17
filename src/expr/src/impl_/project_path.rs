@@ -12,7 +12,7 @@ use super::*;
 #[derive(Debug)]
 pub struct ProjectPathExpr {
     // expected to be interleaved by node and rel
-    pub inputs: Vec<BoxedExpression>,
+    pub inputs: Vec<SharedExpression>,
     // output type, expected to be virtualpath
     pub typ: DataType,
 }

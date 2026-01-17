@@ -18,6 +18,10 @@ impl VariableRef {
     pub fn from_variable(var: &Variable) -> Self {
         Self::new_unchecked(var.name.clone(), var.typ.clone())
     }
+
+    pub fn as_variable(&self) -> Variable {
+        Variable::new(&self.name, &self.typ)
+    }
 }
 
 impl ExprNode for VariableRef {

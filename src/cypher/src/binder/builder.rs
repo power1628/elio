@@ -1,3 +1,6 @@
+use elio_common::schema::Variable;
+use indexmap::IndexSet;
+
 use crate::ir::query::{IrSingleQuery, IrSingleQueryPart};
 
 // TODO(pgao): do we really need this structure?
@@ -25,8 +28,10 @@ impl IrSingleQueryBuilder {
         self.parts.last_mut()
     }
 
-    pub fn new_part(&mut self) {
-        self.parts.push(IrSingleQueryPart::empty());
+    pub fn new_tail(&mut self, imported: IndexSet<Variable>) {
+        let mut tail = IrSingleQueryPart::empty();
+        tail.query_graph.add_imported_set(&imported);
+        self.parts.push(tail);
     }
 
     pub fn build(self) -> IrSingleQuery {

@@ -6,7 +6,7 @@ use elio_common::data_type::DataType;
 use elio_common::scalar::{ListValue, ScalarVTable};
 
 use crate::error::EvalError;
-use crate::impl_::{BoxedExpression, EvalCtx, Expression};
+use crate::impl_::{EvalCtx, Expression, SharedExpression};
 
 /// Expression that creates a list from multiple element expressions.
 ///
@@ -15,7 +15,7 @@ use crate::impl_::{BoxedExpression, EvalCtx, Expression};
 #[derive(Debug)]
 pub struct CreateListExpr {
     /// Element expressions - each produces one element per row
-    pub elements: Vec<BoxedExpression>,
+    pub elements: Vec<SharedExpression>,
     /// The result type (List<T>)
     pub typ: DataType,
     /// Physical type for building arrays
@@ -23,7 +23,7 @@ pub struct CreateListExpr {
 }
 
 impl CreateListExpr {
-    pub fn new(elements: Vec<BoxedExpression>, typ: DataType) -> Self {
+    pub fn new(elements: Vec<SharedExpression>, typ: DataType) -> Self {
         let physical_type = typ.physical_type();
         Self {
             elements,

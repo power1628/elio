@@ -47,11 +47,12 @@ pub fn bind_return_items(
         }
     }
 
-    // WITH clause must be aliased
+    // WITH clause must be aliased if it contains an non-variable or function call expression
     if matches!(for_clause, ClauseKind::With) {
-        let item = items.iter().find(|x| x.alias.is_none());
-        if let Some(item) = item {
-            return Err(SemanticError::return_item_must_be_aliased(&item.to_string(), "WITH").into());
+        for item in items.iter() {
+            if item.alias.is_none() && !item.expr.is_variable() {
+                return Err(SemanticError::return_item_must_be_aliased(&item.to_string(), "WITH").into());
+            }
         }
     }
 
@@ -243,7 +244,8 @@ pub fn bind_return_items(
             });
         }
         // add new part
-        builder.new_part();
+        // TODO(pgao): we should add the imported variables to the tail
+        builder.new_tail(Default::default());
         builder
             .tail_mut()
             .unwrap()

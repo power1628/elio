@@ -15,7 +15,7 @@ use crate::impl_::Expression;
 // If input is VirtualNode / VirtualRel, they should be materialized before the call of eval_batch.
 #[derive(Debug)]
 pub struct HasLabelExpr {
-    pub entity: BoxedExpression,
+    pub entity: SharedExpression,
     // TODO(pgao): use token id
     pub label: IrToken,
 }

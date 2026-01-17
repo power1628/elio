@@ -18,7 +18,7 @@ use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 use crate::builder::{ExecutorBuildContext, build_executor};
 use crate::error::ExecError;
-use crate::executor::BoxedExecutor;
+use crate::executor::SharedExecutor;
 
 // global execution context
 #[derive(Educe)]
@@ -157,7 +157,7 @@ pub async fn create_task(ectx: &Arc<ExecContext>, query_id: Arc<str>, plan: Root
 pub struct TaskRunner {
     ctx: Arc<TaskExecContext>,
     tx: UnboundedSender<Result<DataChunk, ExecError>>,
-    root_executor: BoxedExecutor,
+    root_executor: SharedExecutor,
     // TODO(pgao): cancellation token
 }
 
@@ -166,7 +166,7 @@ impl TaskRunner {
         // spawn task and drive task to finish
         let TaskRunner { ctx, tx, root_executor } = self;
         let txn = ctx.tx().clone();
-        let stream = match root_executor.build_stream(ctx) {
+        let stream = match root_executor.open(ctx) {
             Ok(s) => s,
             Err(e) => {
                 let _ = tx.send(Err(e));

@@ -21,6 +21,8 @@ pub enum ExecError {
         actual: PhysicalType,
         trace: Backtrace,
     },
+    #[error("channel error: {0}")]
+    ChannelError(String, #[backtrace] Backtrace),
     #[error("constraint violation: {constraint} - {reason}")]
     ConstraintViolation {
         constraint: String,

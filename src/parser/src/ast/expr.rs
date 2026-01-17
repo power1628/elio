@@ -3,7 +3,7 @@
 use derive_more::Display;
 use enum_as_inner::EnumAsInner;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, EnumAsInner)]
 pub enum Expr {
     Literal {
         lit: Literal,

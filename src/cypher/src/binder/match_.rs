@@ -1,4 +1,6 @@
+use elio_common::schema::Variable;
 use elio_parser::ast;
+use indexmap::IndexSet;
 
 use crate::binder::BindContext;
 use crate::binder::builder::IrSingleQueryBuilder;
@@ -13,7 +15,7 @@ use crate::ir::query_graph::QueryGraph;
 pub(crate) fn bind_match(
     bctx: &BindContext,
     builder: &mut IrSingleQueryBuilder,
-    scope: Scope,
+    in_scope: Scope,
     match_ @ ast::MatchClause {
         optional,
         mode,
@@ -35,16 +37,21 @@ pub(crate) fn bind_match(
         reject_named_path: false,
         reject_selective: false,
     };
-    let (paths, mut scope) = bind_pattern(&pctx, scope, &pattern.patterns)?;
+    let (paths, mut scope) = bind_pattern(&pctx, in_scope.clone(), &pattern.patterns)?;
 
-    let qg = {
+    let mut qg = {
         let mut qg = QueryGraph::empty();
         paths.iter().for_each(|path| qg.add_path_pattern(path));
         qg
     };
 
     if *optional {
+        // optional match qg imported variables := in_scope intersect qg's match used variables
         // SAFETY: tail must exists
+        let imported: IndexSet<Variable> = in_scope.items.iter().map(|item| item.as_variable()).collect();
+        let qg_used_vars = qg.used_variables();
+        let optional_imported: IndexSet<Variable> = imported.intersection(&qg_used_vars).cloned().collect();
+        qg.add_imported_set(&optional_imported);
         builder.tail_mut().unwrap().query_graph.add_optional_qg(qg);
     } else {
         builder.tail_mut().unwrap().query_graph.merge(qg);

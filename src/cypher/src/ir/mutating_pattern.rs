@@ -1,8 +1,11 @@
 use std::collections::HashSet;
 
 use elio_common::IrToken;
+use elio_common::data_type::DataType;
+use elio_common::schema::Variable;
 use elio_common::store_types::RelDirection;
 use elio_common::variable::VariableName;
+use indexmap::IndexSet;
 use pretty_xmlish::XmlNode;
 
 use crate::expr::{BoxedExpr, CreateStruct};
@@ -13,6 +16,21 @@ pub enum MutatingPattern {
 }
 
 impl MutatingPattern {
+    pub fn used_variables(&self) -> IndexSet<Variable> {
+        let mut vars = IndexSet::new();
+        match self {
+            MutatingPattern::Create(create_pattern) => {
+                create_pattern.nodes.iter().for_each(|n| {
+                    vars.insert(Variable::new(&n.variable, &DataType::Node));
+                });
+                create_pattern.rels.iter().for_each(|r| {
+                    vars.insert(Variable::new(&r.variable, &DataType::Rel));
+                });
+            }
+        }
+        vars
+    }
+
     pub fn xmlnode(&self) -> XmlNode<'_> {
         match self {
             MutatingPattern::Create(create_pattern) => create_pattern.xmlnode(),

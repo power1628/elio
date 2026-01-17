@@ -52,7 +52,7 @@ pub(crate) fn bind_load(
     out_scope.add_item(item);
 
     // create a new part
-    builder.new_part();
+    builder.new_tail(out_scope.items.iter().map(|item| item.as_variable()).collect());
 
     Ok(out_scope)
 }
