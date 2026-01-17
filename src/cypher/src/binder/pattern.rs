@@ -287,7 +287,7 @@ fn bind_simple_pattern(
     } in nodes
     {
         // bind variable
-        let (var, is_outer) = bind_variable(pctx, &mut scope, variable.as_deref(), &DataType::Node)?;
+        let (var, is_outer) = bind_variable(pctx, &mut scope, variable.as_deref(), &DataType::VirtualNode)?;
         if is_outer {
             outer.insert(var.name.clone());
         }
@@ -516,7 +516,7 @@ fn bind_quantified_path_pattern(
             // safety: must be resolved, since do not allow implicit join in QPP
             .unwrap()
             .symbol;
-        let item = ScopeItem::new_variable(vg.group.clone(), symbol.as_deref(), DataType::Node);
+        let item = ScopeItem::new_variable(vg.group.clone(), symbol.as_deref(), DataType::VirtualNode);
         scope.add_item(item);
     }
     for vg in qpp.rel_grouping.iter() {

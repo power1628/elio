@@ -80,11 +80,13 @@ impl Executor for ApplyExecutor {
 
                     // Open a new stream from the right executor (reuses executor, just new stream)
                     let mut right_stream = right.open(ctx.clone())?;
+                    let mut right_row_count = 0;
 
                     while let Some(right_chunk_result) = right_stream.next().await {
                         let right_chunk = right_chunk_result?.compact();
 
                         for right_row in right_chunk.iter() {
+                            right_row_count += 1;
                             let mut output_row = Vec::with_capacity(output_mapping.len());
                             for source in &output_mapping {
                                 let val = match source {
@@ -93,7 +95,6 @@ impl Executor for ApplyExecutor {
                                 };
                                 output_row.push(val);
                             }
-
                             if let Some(chunk) = out_builder.append_row(output_row) {
                                 yield chunk;
                             }

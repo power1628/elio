@@ -39,7 +39,28 @@ RootPlan { names: [a, b] }
       └─Argument { variables: [a@1, b@2] }
 */
 
--- with clause with match clause
+-- with clause with single variable
+MATCH (a)-[]-(b) WITH a RETURN a
+
+/*
+RootIR { names: [a] }
+└─IrSingleQueryPart
+  ├─QueryGraph { imported: [a@3] }
+  ├─Project { items: [a@4 AS a@3] }
+  └─IrSingleQueryPart
+    ├─QueryGraph { nodes: [a@0, b@1], rels: [(a@0)<-[anon@2:]->(b@1)] }
+    └─Project { items: [a@3 AS a@0] }
+RootPlan { names: [a] }
+└─ProduceResult { return_columns: a@4 }
+  └─Project { exprs: [a@4 AS a@3] }
+    └─Apply
+      ├─Project { exprs: [a@3 AS a@0] }
+      │ └─ExpandAll { from: a@0, to: b@1, rel: anon@2, direction: -, types: [] }
+      │   └─AllNodeScan { variable: a@0 }
+      └─Argument { variables: [a@3] }
+*/
+
+-- with clause with match clause, SHOULD GENERATE CROSS PRODUCT PLAN
 MATCH (a)-[]-(b) WITH a MATCH (b)-[]-(c) RETURN a,b,c
 
 /*
@@ -61,7 +82,7 @@ RootPlan { names: [a, b, c] }
         └─AllNodeScan { variable: b@4, arguments: [a@3] }
 */
 
--- with clause with match clause
+-- with clause with match clause, should generate apply plan
 MATCH (a)-[]-(b) WITH a, b MATCH (b)-[]-(c) RETURN a,b,c
 
 /*

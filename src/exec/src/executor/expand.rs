@@ -44,9 +44,11 @@ impl<EXPANDKIND: ExpandKindStrategy + Clone> Executor for ExpandExecutor<EXPANDK
 
         let stream = try_stream! {
             let mut out_builder = DataChunkBuilder::new(schema.columns().iter().map(|col| col.typ.physical_type()), CHUNK_SIZE);
+            let mut total_output_rows = 0;
             for await chunk in input_stream {
                 let outer = chunk?;
                 let outer = outer.compact();
+                tracing::debug!("ExpandExecutor: got input chunk with {} rows", outer.len());
                 for row in outer.iter(){
                     // if from is null, then remove this row
                     let from_id = match row[from].and_then(|id| id.get_node_id()){
@@ -54,6 +56,7 @@ impl<EXPANDKIND: ExpandKindStrategy + Clone> Executor for ExpandExecutor<EXPANDK
                         None => continue, // if from is null, then skip this row
                     };
                     let rel_iter = ctx.tx().rel_iter_for_node(from_id, dir, &rtype)?;
+                    let mut rel_count = 0;
                     for rel_kv in rel_iter {
                         let (from_id, rel_dir, token_id, to_id, rel_id, value) = rel_kv?;
                         let mut row = row.clone();
@@ -91,18 +94,23 @@ impl<EXPANDKIND: ExpandKindStrategy + Clone> Executor for ExpandExecutor<EXPANDK
                             // add to node to row
                             EXPANDKIND::append_other_node(&mut row, to_id);
                             // add to output
+                            rel_count += 1;
+                            total_output_rows += 1;
                             if let Some(chunk) = out_builder.append_row(row) {
                                 yield chunk;
                             }
                         }
                     }
+                    tracing::debug!("ExpandExecutor: from node {:?} produced {} relationships", from_id, rel_count);
                 }
 
                 // flush out builder
                 if let Some(chunk) = out_builder.yield_chunk() {
+                    tracing::debug!("ExpandExecutor: yielding chunk with rows");
                     yield chunk;
                 }
             }
+            tracing::debug!("ExpandExecutor: finished with {} total output rows", total_output_rows);
 
         }
         .boxed();

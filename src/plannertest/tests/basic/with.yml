@@ -11,6 +11,12 @@
     - bind
     - plan
 - sql: |
+    MATCH (a)-[]-(b) WITH a RETURN a
+  desc: with clause with single variable
+  tasks: 
+    - bind
+    - plan
+- sql: |
     MATCH (a)-[]-(b) WITH a MATCH (b)-[]-(c) RETURN a,b,c
   desc: with clause with match clause, SHOULD GENERATE CROSS PRODUCT PLAN
   tasks: 

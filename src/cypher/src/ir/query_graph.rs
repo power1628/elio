@@ -137,7 +137,7 @@ impl QueryGraph {
             vars.insert(v.clone());
         });
         self.nodes.iter().for_each(|n| {
-            vars.insert(Variable::new(n, &DataType::Node));
+            vars.insert(Variable::new(n, &DataType::VirtualNode));
         });
         self.rels.iter().for_each(|v| {
             vars.insert(Variable::new(&v.variable, &DataType::Rel));
@@ -165,7 +165,7 @@ impl QueryGraph {
         let mut vars = IndexSet::new();
         // match pattern
         for var in self.nodes.iter() {
-            vars.insert(Variable::new(var, &DataType::Node));
+            vars.insert(Variable::new(var, &DataType::VirtualNode));
         }
         for rel in self.rels.iter() {
             vars.insert(Variable::new(&rel.variable, &DataType::Rel));
