@@ -10,6 +10,7 @@ use super::*;
 /// Shared context for passing values from Apply to Argument
 #[derive(Debug, Clone, Default)]
 pub struct ArgumentContext {
+    // TODO(pgao): currently we are single thread executor, the rwlock is not necessary.
     inner: Arc<RwLock<Option<Vec<ScalarValue>>>>,
 }
 
@@ -52,7 +53,6 @@ impl Executor for ApplyExecutor {
         let argument_mapping = self.argument_mapping.clone();
         let output_mapping = self.output_mapping.clone();
 
-        // Get the left stream outside try_stream! to avoid lifetime issues
         let left_stream = left.open(ctx.clone())?;
 
         let stream = try_stream! {
@@ -61,9 +61,7 @@ impl Executor for ApplyExecutor {
                 CHUNK_SIZE
             );
 
-            let mut left_stream = left_stream;
-
-            while let Some(left_chunk_result) = left_stream.next().await {
+            for await left_chunk_result in left_stream {
                 let left_chunk = left_chunk_result?.compact();
 
                 for left_row in left_chunk.iter() {
@@ -80,13 +78,11 @@ impl Executor for ApplyExecutor {
 
                     // Open a new stream from the right executor (reuses executor, just new stream)
                     let mut right_stream = right.open(ctx.clone())?;
-                    let mut right_row_count = 0;
 
                     while let Some(right_chunk_result) = right_stream.next().await {
                         let right_chunk = right_chunk_result?.compact();
 
                         for right_row in right_chunk.iter() {
-                            right_row_count += 1;
                             let mut output_row = Vec::with_capacity(output_mapping.len());
                             for source in &output_mapping {
                                 let val = match source {

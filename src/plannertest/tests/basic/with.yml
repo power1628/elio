@@ -28,3 +28,9 @@
   tasks: 
     - bind
     - plan
+- sql: |
+    MATCH (a) WITH a MATCH (b) WITH a, b MATCH (c) WITH a, b, c RETURN a,b,c
+  desc: with clause with cross product
+  tasks: 
+    - bind
+    - plan

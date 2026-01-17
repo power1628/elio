@@ -30,8 +30,6 @@ pub enum ExecError {
         #[backtrace]
         trace: Backtrace,
     },
-    #[error("executor {0} is not resettable")]
-    NotResettable(&'static str),
 }
 
 impl ExecError {

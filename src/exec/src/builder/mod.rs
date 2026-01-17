@@ -7,6 +7,7 @@ use elio_common::schema::Name2ColumnMap;
 use elio_common::variable::VariableName;
 use elio_cypher::plan_node::{self, CreateNode, PlanExpr, PlanNode, Project};
 use elio_cypher::planner::RootPlan;
+use elio_expr::impl_::SharedExpression;
 
 use crate::builder::expression::{BuildExprContext, build_expression};
 use crate::executor::all_node_scan::AllNodeScanExectuor;
@@ -353,6 +354,13 @@ fn build_apply(ctx: &mut ExecutorBuildContext, apply: &plan_node::Apply) -> Resu
         })
         .collect::<Result<Vec<_>, _>>()?;
 
+    if argument_mapping.is_empty() {
+        return Err(BuildError::MalformedPlan(
+            "Apply node requires argument variables".to_string(),
+            Backtrace::capture(),
+        ));
+    }
+
     // Compute output column mapping: for each output column, determine if it comes from left or right
     let right_schema = right.schema();
     let right_name_to_col = right_schema.name_to_col_map();
@@ -364,14 +372,17 @@ fn build_apply(ctx: &mut ExecutorBuildContext, apply: &plan_node::Apply) -> Resu
         .map(|col| {
             // First check if the column exists in left schema
             if let Some(&left_idx) = left_name_to_col.get(&col.name) {
-                OutputColumnSource::Left(left_idx)
+                Ok(OutputColumnSource::Left(left_idx))
             } else if let Some(&right_idx) = right_name_to_col.get(&col.name) {
-                OutputColumnSource::Right(right_idx)
+                Ok(OutputColumnSource::Right(right_idx))
             } else {
-                panic!("Output column {} not found in left or right schema", col.name);
+                Err(BuildError::MalformedPlan(
+                    format!("Output column {} not found in left or right schema", col.name),
+                    Backtrace::capture(),
+                ))
             }
         })
-        .collect();
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(ApplyExecutor {
         left,
@@ -385,6 +396,7 @@ fn build_apply(ctx: &mut ExecutorBuildContext, apply: &plan_node::Apply) -> Resu
 }
 
 /// Recursively find Argument nodes and return their variable names in order
+/// TODO(pgao): handle nested Apply nodes
 fn find_argument_variables(plan: &PlanExpr) -> Vec<VariableName> {
     match plan {
         PlanExpr::Argument(arg) => arg.schema().columns().iter().map(|f| f.name.clone()).collect(),
@@ -540,7 +552,7 @@ fn build_project(
     // findout project item order
     let project_items = &node.inner().projections;
     let mut out_idx_to_idx = vec![0; project_items.len()];
-    let mut exprs: Vec<Option<Arc<dyn elio_expr::impl_::Expression>>> = vec![];
+    let mut exprs: Vec<Option<SharedExpression>> = vec![];
     for (i, (var, expr)) in project_items.iter().enumerate() {
         let out_idx = out_name_to_col[var];
         out_idx_to_idx[out_idx] = i;

@@ -30,9 +30,7 @@ pub type DataChunkStream = Pin<Box<dyn Stream<Item = Result<DataChunk, ExecError
 pub const CHUNK_SIZE: usize = 4096;
 
 pub trait Executor: Send + Sync + std::fmt::Debug {
-    fn open(&self, _ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError> {
-        Err(ExecError::NotResettable(self.name()))
-    }
+    fn open(&self, _ctx: Arc<TaskExecContext>) -> Result<DataChunkStream, ExecError>;
 
     fn schema(&self) -> &Schema;
 

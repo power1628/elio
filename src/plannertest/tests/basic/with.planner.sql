@@ -104,3 +104,35 @@ RootPlan { names: [a, b, c] }
         └─Argument { variables: [a@3, b@4] }
 */
 
+-- with clause with cross product
+MATCH (a) WITH a MATCH (b) WITH a, b MATCH (c) WITH a, b, c RETURN a,b,c
+
+/*
+RootIR { names: [a, b, c] }
+└─IrSingleQueryPart
+  ├─QueryGraph { imported: [a@6, b@7, c@8] }
+  ├─Project { items: [a@9 AS a@6, b@10 AS b@7, c@11 AS c@8] }
+  └─IrSingleQueryPart
+    ├─QueryGraph { imported: [a@3, b@4], nodes: [c@5] }
+    ├─Project { items: [a@6 AS a@3, b@7 AS b@4, c@8 AS c@5] }
+    └─IrSingleQueryPart
+      ├─QueryGraph { imported: [a@1], nodes: [b@2] }
+      ├─Project { items: [a@3 AS a@1, b@4 AS b@2] }
+      └─IrSingleQueryPart
+        ├─QueryGraph { nodes: [a@0] }
+        └─Project { items: [a@1 AS a@0] }
+RootPlan { names: [a, b, c] }
+└─ProduceResult { return_columns: a@9,b@10,c@11 }
+  └─Project { exprs: [a@9 AS a@6, b@10 AS b@7, c@11 AS c@8] }
+    └─Apply
+      ├─Project { exprs: [a@6 AS a@3, b@7 AS b@4, c@8 AS c@5] }
+      │ └─Apply
+      │   ├─Project { exprs: [a@3 AS a@1, b@4 AS b@2] }
+      │   │ └─Apply
+      │   │   ├─Project { exprs: [a@1 AS a@0] }
+      │   │   │ └─AllNodeScan { variable: a@0 }
+      │   │   └─AllNodeScan { variable: b@2, arguments: [a@1] }
+      │   └─AllNodeScan { variable: c@5, arguments: [a@3, b@4] }
+      └─Argument { variables: [a@6, b@7, c@8] }
+*/
+
