@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use elio_common::data_type::DataType;
 use elio_parser::ast;
 
 use crate::binder::BindContext;
@@ -37,6 +36,7 @@ pub(crate) fn bind_load(
         source_url: Arc::from(load.source.as_str()),
         format,
     };
+    let output_type = ir_load.format.output_type();
 
     // Add Load projection to builder
     builder
@@ -45,10 +45,8 @@ pub(crate) fn bind_load(
         .with_projection(QueryProjection::Load(ir_load));
 
     // Update scope with the new variable
-    // Use Any type since we don't know the schema at bind time
-    // The actual schema will be determined at execution time based on the CSV header
     let mut out_scope = in_scope;
-    let item = ScopeItem::new_variable(var_name, Some(&load.variable), DataType::Any);
+    let item = ScopeItem::new_variable(var_name, Some(&load.variable), output_type);
     out_scope.add_item(item);
 
     // create a new part

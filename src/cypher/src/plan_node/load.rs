@@ -36,7 +36,7 @@ pub struct LoadInner {
 impl InnerNode for LoadInner {
     fn build_base(&self) -> PlanBase {
         let mut schema = Schema::empty();
-        schema.add_column(Variable::new(&self.variable, &DataType::Any));
+        schema.add_column(Variable::new(&self.variable, &self.format.output_type()));
         PlanBase::new(schema.into(), self.ctx.clone())
     }
 
